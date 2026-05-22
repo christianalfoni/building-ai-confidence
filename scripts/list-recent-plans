@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Lists plan files dated within the last 7 days, newest first.
+# Filenames must follow the DD_MM_YYYY_<title>.md convention.
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLANS_DIR="$(dirname "$SCRIPTS_DIR")/plans"
+
+today=$(date +%s)
+cutoff=$((today - 7 * 86400))
+
+results=()
+
+for f in "$PLANS_DIR"/[0-9][0-9]_[0-9][0-9]_[0-9][0-9][0-9][0-9]_*.md; do
+  [[ -f "$f" ]] || continue
+  filename=$(basename "$f")
+  date_part="${filename:0:10}"  # DD_MM_YYYY
+  file_epoch=$(date -j -f "%d_%m_%Y" "$date_part" "+%s" 2>/dev/null)
+  [[ -n "$file_epoch" && "$file_epoch" -ge "$cutoff" ]] && results+=("$file_epoch $filename")
+done
+
+if [[ ${#results[@]} -eq 0 ]]; then
+  echo "No plans in the last 7 days."
+  exit 0
+fi
+
+printf '%s\n' "${results[@]}" | sort -rn | while IFS=' ' read -r _ name; do
+  echo "$name"
+done
