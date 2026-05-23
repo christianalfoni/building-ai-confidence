@@ -6,11 +6,13 @@
 plans/                        # Approved implementation plans (see workflows/PLAN.md)
 scripts/                      # Bash scripts for deterministic context retrieval (run these instead of manual searches)
   list-recent-plans           # Prints plans from the last 7 days, newest first
+  upsert-pr                   # Creates or updates the GitHub PR for the current branch
 workflows/                    # Agent workflow instructions
   RESEARCH.md                 # How to investigate before planning
   PLAN.md                     # How to plan and get approval before coding
   IMPLEMENT.md                # How to execute an approved plan
   UX.md                       # How to define a user experience before planning
+  PR.md                       # How to branch, commit, and submit changes as a PR
 src/
   assets/                     # Static assets (images, SVGs)
   components/                 # Domain components: read state, call state methods, render UI. React components (functional)
@@ -41,6 +43,7 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | Script                      | When to use                                                                                                                           |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `scripts/list-recent-plans` | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work. |
+| `scripts/upsert-pr`         | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                               |
 
 Run from the project root: `./scripts/list-recent-plans`
 
@@ -65,3 +68,7 @@ Use when the user wants to create or change something a user interacts with — 
 ### implement
 
 Use when an approved plan exists and the user wants to execute it. You work through the task list, checking off each item as it is completed. See [`workflows/IMPLEMENT.md`](workflows/IMPLEMENT.md).
+
+### pr
+
+Use when the user wants to submit completed changes as a pull request. Branch, commit with a conventional prefix, and run the `upsert-pr` script to create or update the PR on GitHub. See [`workflows/PR.md`](workflows/PR.md).
