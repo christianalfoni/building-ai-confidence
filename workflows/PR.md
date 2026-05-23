@@ -44,6 +44,9 @@ Submit completed work as a pull request on GitHub.
 
    ## Validation
    How the change was verified — tests run, manual steps taken, or edge cases checked.
+
+   ## Instructions followed
+   Bullet list of the specific agent instructions (from AGENTS.md or workflow files) that governed this change — so the reviewer can verify compliance.
    ```
 
    The `Current behavior` and `New behavior` sections must use ASCII diagrams to visually represent the behavioral change — not prose. Use boxes, arrows, and flow notation to make the before/after immediately scannable.
