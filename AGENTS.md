@@ -49,6 +49,12 @@ Run from the project root: `./scripts/list-recent-plans`
 
 ## How to work
 
+At the start of every session, check whether the conversation is continuing work on an existing branch. If it is not — i.e. the session is starting fresh with no prior branch context — switch to `main` and pull the latest:
+
+```bash
+git checkout main && git pull
+```
+
 Before responding to any request, identify which workflow applies. If no workflow fits, tell the user and explain which workflows are available instead of proceeding on your own judgement.
 
 ## Workflows
