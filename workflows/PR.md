@@ -31,10 +31,10 @@ Submit completed work as a pull request on GitHub.
 
    ```
    ## Current behavior
-   How things worked before this change.
+   ASCII diagram showing how things worked before this change.
 
    ## New behavior
-   What is different after this change.
+   ASCII diagram showing what is different after this change.
 
    ## Assumptions
    Any assumptions made about intent, scope, or implementation that were not explicitly stated.
@@ -45,6 +45,8 @@ Submit completed work as a pull request on GitHub.
    ## Validation
    How the change was verified — tests run, manual steps taken, or edge cases checked.
    ```
+
+   The `Current behavior` and `New behavior` sections must use ASCII diagrams to visually represent the behavioral change — not prose. Use boxes, arrows, and flow notation to make the before/after immediately scannable.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 6. Report the PR URL to the user.
