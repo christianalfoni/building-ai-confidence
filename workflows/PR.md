@@ -4,12 +4,20 @@ Submit completed work as a pull request on GitHub.
 
 ## Steps
 
-1. Determine a branch name from the changes — short, kebab-case, descriptive (e.g. `fix/login-redirect`, `feat/user-profile`).
-2. Check out (or create) that branch:
+1. Check that the current branch is not already associated with a merged or closed PR:
+   ```bash
+   gh pr view --json state -q .state 2>/dev/null
+   ```
+   If the result is `MERGED` or `CLOSED`, stop and create a new branch instead:
+   ```bash
+   git checkout main && git pull && git checkout -b <new-branch-name>
+   ```
+2. Determine a branch name from the changes — short, kebab-case, descriptive (e.g. `fix/login-redirect`, `feat/user-profile`).
+3. Check out (or create) that branch:
    ```bash
    git checkout -b <branch-name>
    ```
-3. Stage and commit changes using the conventional commit prefix that best fits:
+4. Stage and commit changes using the conventional commit prefix that best fits:
    - `feat:` — new feature
    - `fix:` — bug fix
    - `chore:` — tooling, deps, config, scripts
@@ -17,11 +25,11 @@ Submit completed work as a pull request on GitHub.
    - `docs:` — documentation only
    - `test:` — tests only
    - `style:` — formatting, whitespace
-4. Push the branch:
+5. Push the branch:
    ```bash
    git push -u origin <branch-name>
    ```
-5. Create or update the PR using the script:
+6. Create or update the PR using the script:
    ```bash
    ./scripts/upsert-pr --title "<conventional-prefix>: <short description>" --body "<body>"
    ```
@@ -52,7 +60,7 @@ Submit completed work as a pull request on GitHub.
    The `Current behavior` and `New behavior` sections must use ASCII diagrams to visually represent the behavioral change — not prose. Use boxes, arrows, and flow notation to make the before/after immediately scannable.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
-6. Report the PR URL to the user.
+7. Report the PR URL to the user.
 
 ## Rules
 

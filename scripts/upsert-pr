@@ -22,7 +22,13 @@ fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 
-if gh pr view "$branch" --json number -q .number &>/dev/null; then
+if gh pr view "$branch" --json state -q .state &>/dev/null; then
+  state=$(gh pr view "$branch" --json state -q .state)
+  if [[ "$state" == "MERGED" || "$state" == "CLOSED" ]]; then
+    echo "Error: branch '$branch' already has a $state PR." >&2
+    echo "Create a new branch before submitting: git checkout -b <new-branch-name>" >&2
+    exit 1
+  fi
   gh pr edit "$branch" --title "$title" ${body:+--body "$body"}
   echo "Updated PR for branch: $branch"
 else
