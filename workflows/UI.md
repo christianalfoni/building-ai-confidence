@@ -12,15 +12,15 @@ This workflow is distinct from the **ux** workflow, which defines interaction de
 
 ## Prerequisites
 
-- The component must have a `*.stories.tsx` file next to it in `src/components/`.
+- The component must have a `*.stories.tsx` file next to it in its platform folder — either `src/desktop/components/` or `src/mobile/components/`.
 - Each story must export a named function returning `{ element, appState }`.
 
 ## Story format
 
 ```tsx
-// src/components/MyComponent.stories.tsx
-import { AppContext } from "../contexts/AppContext";
-import { createAppState } from "../test-utils";
+// src/desktop/components/MyComponent.stories.tsx  (or src/mobile/components/…)
+import { AppContext } from "../../contexts/AppContext";
+import { createAppState } from "../../test-utils";
 import { MyComponent } from "./MyComponent";
 
 export function someState() {
@@ -42,19 +42,32 @@ Stories are also imported by tests — they are the single source of truth for c
 ## Steps
 
 1. Identify which story represents the state to iterate on, or add a new story if the desired state does not exist yet.
-2. Make the code change (component, styles, tokens).
-3. Run the screenshot script:
+2. Take a **before** screenshot of that story so the starting point is captured:
    ```bash
-   ./scripts/screenshot <Component> <storyName>
+   ./scripts/screenshot <platform/Component> <storyName>
    ```
-   Example: `./scripts/screenshot App withTodos`
-4. Read the saved PNG and display it to the user:
+3. Make the code change (component, styles, tokens).
+4. Take an **after** screenshot:
+   ```bash
+   ./scripts/screenshot <platform/Component> <storyName>
    ```
-   screenshots/<Component>-<storyName>.png
+   Example: `./scripts/screenshot desktop/App withTodos`
+   Example: `./scripts/screenshot mobile/App withTodos`
+
+   The platform prefix determines both where the story file is found and the viewport size used (desktop: 1280×800, mobile: 390×844).
+5. Read the saved PNG and display it to the user:
    ```
-5. Ask the user if the result looks right or if further changes are needed.
-6. Repeat from step 2 until the user approves.
-7. Run `npm test -- --run` to confirm no regressions before handing off to the **pr** workflow.
+   screenshots/<platform>-<Component>-<storyName>.png
+   ```
+6. Ask the user if the result looks right or if further changes are needed.
+7. Repeat from step 3 until the user approves.
+8. Run `npm test -- --run` to confirm no regressions before handing off to the **pr** workflow.
+
+To include screenshots in a PR, upload them first:
+```bash
+./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png
+```
+The script prints a GitHub-hosted URL that can be embedded directly in the PR body as `![label](url)`.
 
 ## Rules
 

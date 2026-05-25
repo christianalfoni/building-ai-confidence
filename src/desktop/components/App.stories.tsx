@@ -1,5 +1,5 @@
-import { AppContext } from "../contexts/AppContext";
-import { createAppState } from "../test-utils";
+import { AppContext } from "../../contexts/AppContext";
+import { createAppState } from "../../test-utils";
 import { App } from "./App";
 
 export function empty() {

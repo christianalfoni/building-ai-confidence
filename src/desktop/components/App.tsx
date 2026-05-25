@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useApp } from "../contexts/AppContext";
+import { useApp } from "../../contexts/AppContext";
 import { Input } from "../ui-components/Input";
 import { Checkbox } from "../ui-components/Checkbox";
 import { IconButton } from "../ui-components/IconButton";
-import type { Todo } from "../state/AppState";
+import type { Todo } from "../../state/AppState";
 
 export function App() {
   const app = useApp();

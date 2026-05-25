@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Uploads a screenshot to the shared screenshot-assets release and prints the URL.
+# Usage: ./scripts/upload-screenshot <path-to-screenshot.png>
+
+set -euo pipefail
+
+FILE="$1"
+
+if [[ -z "$FILE" ]]; then
+  echo "Usage: scripts/upload-screenshot <path-to-screenshot.png>" >&2
+  exit 1
+fi
+
+if [[ ! -f "$FILE" ]]; then
+  echo "File not found: $FILE" >&2
+  exit 1
+fi
+
+RELEASE_TAG="screenshot-assets"
+ASSET_NAME=$(basename "$FILE")
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+
+gh release upload "$RELEASE_TAG" "$FILE" --clobber
+
+gh api "repos/$REPO/releases/tags/$RELEASE_TAG" \
+  --jq ".assets[] | select(.name == \"$ASSET_NAME\") | .browser_download_url"

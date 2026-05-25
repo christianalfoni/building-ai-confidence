@@ -31,10 +31,10 @@ Submit completed work as a pull request on GitHub.
 
    ```
    ## Current behavior
-   ASCII diagram showing how things worked before this change.
+   ASCII diagram or screenshot showing how things worked before this change.
 
    ## New behavior
-   ASCII diagram showing what is different after this change.
+   ASCII diagram or screenshot showing what is different after this change.
 
    ## Assumptions
    Any assumptions made about intent, scope, or implementation that were not explicitly stated.
@@ -49,7 +49,21 @@ Submit completed work as a pull request on GitHub.
    Bullet list of the specific agent instructions (from AGENTS.md or workflow files) that governed this change — so the reviewer can verify compliance.
    ```
 
-   The `Current behavior` and `New behavior` sections must use ASCII diagrams to visually represent the behavioral change — not prose. Use boxes, arrows, and flow notation to make the before/after immediately scannable.
+   The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
+
+   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot` and upload each one:
+   ```bash
+   BEFORE_URL=$(./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png)
+   AFTER_URL=$(./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png)
+   ```
+   Then embed them in the PR body:
+   ```
+   ## Current behavior
+   ![before]($BEFORE_URL)
+
+   ## New behavior
+   ![after]($AFTER_URL)
+   ```
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 6. Report the PR URL to the user.

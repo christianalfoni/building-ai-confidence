@@ -8,9 +8,10 @@ const storyName = params.get("story");
 
 if (!component || !storyName) {
   document.getElementById("root")!.textContent =
-    "Usage: /stories.html?component=App&story=withTodos";
+    "Usage: /stories.html?component=desktop/App&story=withTodos";
 } else {
-  import(`./components/${component}.stories.tsx`)
+  const [platform, name] = component.split("/");
+  import(`./${platform}/components/${name}.stories.tsx`)
     .then((mod) => {
       const story = mod[storyName];
       if (!story) {
