@@ -1,43 +1,39 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createAppState, renderWithApp } from "../test-utils";
-import { App } from "./App";
+import * as stories from "./App.stories";
 
 describe("App", () => {
   it("shows empty state when there are no todos", () => {
-    const appState = createAppState();
-    renderWithApp(<App />, appState);
-    expect(screen.getByText("No todos yet")).toBeInTheDocument();
+    const { element } = stories.empty();
+    render(element);
+    expect(screen.getByText("No todos yet — add one below.")).toBeInTheDocument();
   });
 
   it("adds a todo by typing and pressing Enter", async () => {
-    const appState = createAppState();
-    renderWithApp(<App />, appState);
+    const { element } = stories.empty();
+    render(element);
     await userEvent.type(screen.getByPlaceholderText(/add a todo/i), "Buy milk{Enter}");
     expect(screen.getByText("Buy milk")).toBeInTheDocument();
   });
 
   it("toggles a todo as complete", async () => {
-    const appState = createAppState();
-    appState.addTodo("Buy milk");
-    renderWithApp(<App />, appState);
-    await userEvent.click(screen.getByRole("checkbox"));
+    const { element, appState } = stories.withTodos();
+    render(element);
+    await userEvent.click(screen.getAllByRole("checkbox")[0]);
     expect(appState.todos[0].completed).toBe(true);
   });
 
   it("deletes a todo", async () => {
-    const appState = createAppState();
-    appState.addTodo("Buy milk");
-    renderWithApp(<App />, appState);
-    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    const { element } = stories.withTodos();
+    render(element);
+    await userEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]);
     expect(screen.queryByText("Buy milk")).not.toBeInTheDocument();
   });
 
   it("edits a todo inline", async () => {
-    const appState = createAppState();
-    appState.addTodo("Buy milk");
-    renderWithApp(<App />, appState);
-    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    const { element } = stories.withTodos();
+    render(element);
+    await userEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
     const editInput = screen.getByDisplayValue("Buy milk");
     await userEvent.clear(editInput);
     await userEvent.type(editInput, "Buy oat milk{Enter}");
