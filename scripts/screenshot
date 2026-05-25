@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+
+import { chromium } from "playwright";
+import { createServer } from "vite";
+import { mkdir } from "fs/promises";
+import { resolve } from "path";
+
+const [component, story] = process.argv.slice(2);
+
+if (!component || !story) {
+  console.error("Usage: scripts/screenshot <Component> <story>");
+  process.exit(1);
+}
+
+const root = new URL("..", import.meta.url).pathname;
+const outDir = resolve(root, "screenshots");
+await mkdir(outDir, { recursive: true });
+
+const server = await createServer({ root, server: { port: 5199 } });
+await server.listen();
+
+const url = `http://localhost:5199/stories.html?component=${component}&story=${story}`;
+const outFile = resolve(outDir, `${component}-${story}.png`);
+
+const browser = await chromium.launch();
+const page = await browser.newPage();
+await page.setViewportSize({ width: 1280, height: 800 });
+await page.goto(url);
+await page.waitForLoadState("networkidle");
+await page.screenshot({ path: outFile, fullPage: false });
+
+await browser.close();
+await server.close();
+
+console.log(outFile);

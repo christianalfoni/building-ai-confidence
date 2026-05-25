@@ -12,6 +12,7 @@ workflows/                    # Agent workflow instructions
   PLAN.md                     # How to plan and get approval before coding
   IMPLEMENT.md                # How to execute an approved plan
   UX.md                       # How to define a user experience before planning
+  UI.md                       # How to iterate on component appearance using stories and screenshots
   PR.md                       # How to branch, commit, and submit changes as a PR
 src/
   assets/                     # Static assets (images, SVGs)
@@ -74,6 +75,10 @@ Use when the user wants to create or change something a user interacts with — 
 ### implement
 
 Use when an approved plan exists and the user wants to execute it. You work through the task list, checking off each item as it is completed. See [`workflows/IMPLEMENT.md`](workflows/IMPLEMENT.md).
+
+### ui
+
+Use when the user wants to refine the visual appearance of a component — layout, spacing, colour, or typography. Make a code change, take a screenshot with `./scripts/screenshot`, show it to the user, and iterate until they approve. See [`workflows/UI.md`](workflows/UI.md).
 
 ### pr
 

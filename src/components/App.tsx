@@ -11,6 +11,8 @@ export function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
+  const completedCount = app.todos.filter(t => t.completed).length;
+
   function handleAddKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
     app.addTodo(newText);
@@ -33,21 +35,24 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 flex flex-col gap-4 shadow-sm w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-navy">Todos</h1>
-        <Input
-          placeholder="Add a todo and press Enter…"
-          value={newText}
-          onChange={e => setNewText(e.target.value)}
-          onKeyDown={handleAddKeyDown}
-        />
-        {app.todos.length === 0 ? (
-          <p className="text-navy/50 text-sm text-center py-4">No todos yet</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
+    <div className="min-h-screen bg-white flex flex-col">
+      <header className="border-b border-surface px-8 py-4 flex items-center gap-3">
+        <span className="text-crimson font-bold text-lg">◈</span>
+        <span className="font-semibold text-navy text-sm">Building AI Confidence</span>
+      </header>
+      <main className="flex-1 px-8 py-8 max-w-2xl w-full mx-auto">
+        <div className="flex items-baseline justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-navy">Todos</h1>
+          {app.todos.length > 0 && (
+            <span className="text-sm text-navy/50">
+              {completedCount} of {app.todos.length} complete
+            </span>
+          )}
+        </div>
+        {app.todos.length > 0 && (
+          <ul className="flex flex-col divide-y divide-surface mb-4">
             {app.todos.map(todo => (
-              <li key={todo.id} className="flex items-center gap-3">
+              <li key={todo.id} className="flex items-center gap-3 py-3">
                 <Checkbox
                   checked={todo.completed}
                   onChange={() => app.toggleTodo(todo.id)}
@@ -85,7 +90,16 @@ export function App() {
             ))}
           </ul>
         )}
-      </div>
+        {app.todos.length === 0 && (
+          <p className="text-navy/50 text-sm py-4">No todos yet — add one below.</p>
+        )}
+        <Input
+          placeholder="Add a todo and press Enter…"
+          value={newText}
+          onChange={e => setNewText(e.target.value)}
+          onKeyDown={handleAddKeyDown}
+        />
+      </main>
     </div>
   );
 }
