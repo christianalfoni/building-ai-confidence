@@ -16,35 +16,55 @@ workflows/                    # Agent workflow instructions
   PR.md                       # How to branch, commit, and submit changes as a PR
 src/
   assets/                     # Static assets (images, SVGs)
-  components/                 # Domain components: read state, call state methods, render UI. React components (functional)
+  desktop/                    # Desktop platform tree — loaded only on pointer:fine devices
+    components/               # Desktop domain components: read state, call state methods, render UI
+    ui-components/            # Desktop UI primitives — keyboard nav, hover states, dense layout
+    App.tsx                   # Lazy entry point (default export) — imported by main.tsx
+  mobile/                     # Mobile platform tree — loaded only on pointer:coarse devices
+    components/               # Mobile domain components: read state, call state methods, render UI
+    ui-components/            # Mobile UI primitives — large touch targets, gesture-friendly
+    App.tsx                   # Lazy entry point (default export) — imported by main.tsx
   contexts/                   # React contexts and their typed hooks (e.g. AppContext + useApp)
   services/                   # Infrastructure layer: network, storage, SDKs — no domain knowledge. Classes (object oriented)
     index.ts                  # Defines the Services interface — the contract injected into state classes
   state/                      # Domain truth: data, computed values, and mutation methods. Classes (object oriented mutable state)
-  ui-components/              # Generic, reusable UI primitives — no app knowledge, may use useState (functional)
   index.css                   # Global styles, Tailwind import, and theme tokens
-  main.tsx                    # Entry point — wires services, state, and root component
+  main.tsx                    # Entry point — detects platform, lazy-loads desktop or mobile tree, wires services and state
 public/                       # Files served as-is (favicon, icons)
 DESIGN.md                     # Style guide, color tokens, component conventions
 AGENT.md                      # This file — agent instructions
 ```
 
-The four layers flow in one direction: `services → state → components → ui-components`.
+## Platform split
+
+The app has two separate UI trees — `desktop/` and `mobile/` — selected at startup and lazy-loaded via `React.lazy()`. Detection uses `window.matchMedia('(pointer: coarse)').matches`: coarse → mobile, fine → desktop. This is evaluated once; there is no runtime switching.
+
+Each platform folder is self-contained and has its own `components/` and `ui-components/`. There is no shared `ui-components/` layer — even generic primitives like `Button` or `Input` are platform-specific so they can diverge freely (touch targets, interaction patterns, layout density).
+
+Shared infrastructure — `contexts/`, `state/`, `services/` — lives at the top level and is imported by both trees.
+
+When building a new feature, implement it in the relevant platform folder(s). If the feature exists on both platforms, add it to both `desktop/components/` and `mobile/components/` separately.
+
+## Layers
+
+The four layers flow in one direction: `services → state → contexts → components → ui-components`.
 
 - **services** — Know how to `get`, `post`, `subscribe`. No idea what a User or Cart is. Inject them into state classes via the `Services` interface defined in `services/index.ts`. Easy to swap (e.g. web → native) or replace with in-memory fakes in tests.
 - **state** — Owns application truth. Use plain class fields (observable automatically by reactx), getters for derived values, and methods for all mutations. Never write to state directly from components.
 - **contexts** — Each context file exports a `createContext` instance and a typed `use*` hook (e.g. `useApp()`). Components access state exclusively through these hooks, never through raw `useContext`.
-- **components** — Derive UI from state via the hooks in `contexts/`. They re-render only when the specific properties they read change. You need no selectors or subscription hooks.
-- **ui-components** — `<Tooltip>`, `<Input>`, `<Dropdown>` and similar generic building blocks with no knowledge of the app. The only place you should use `useState`.
+- **components** — Live under `desktop/components/` or `mobile/components/`. Derive UI from state via the hooks in `contexts/`. They re-render only when the specific properties they read change. You need no selectors or subscription hooks.
+- **ui-components** — Live under `desktop/ui-components/` or `mobile/ui-components/`. `<Tooltip>`, `<Input>`, `<Dropdown>` and similar generic building blocks with no knowledge of the app. The only place you should use `useState`.
 
 ## Scripts
 
 Prefer scripts over manual `find`/`grep` for structured context retrieval — they encode naming conventions and produce consistent output.
 
-| Script                      | When to use                                                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/list-recent-plans` | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work. |
-| `scripts/upsert-pr`         | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                               |
+| Script                        | When to use                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/list-recent-plans`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work. |
+| `scripts/upsert-pr`           | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                               |
+| `scripts/screenshot`          | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`.                                      |
+| `scripts/upload-screenshot`   | Upload a screenshot PNG to GitHub and get back a URL for embedding in PR bodies: `./scripts/upload-screenshot <path-to-png>`.         |
 
 Run from the project root: `./scripts/list-recent-plans`
 

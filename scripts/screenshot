@@ -8,7 +8,23 @@ import { resolve } from "path";
 const [component, story] = process.argv.slice(2);
 
 if (!component || !story) {
-  console.error("Usage: scripts/screenshot <Component> <story>");
+  console.error("Usage: scripts/screenshot <platform/Component> <story>");
+  console.error("  e.g. scripts/screenshot desktop/App withTodos");
+  console.error("  e.g. scripts/screenshot mobile/App withTodos");
+  process.exit(1);
+}
+
+const [platform] = component.split("/");
+
+const viewports = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 390, height: 844 },
+};
+
+const viewport = viewports[platform];
+
+if (!viewport) {
+  console.error(`Unknown platform "${platform}". Use "desktop" or "mobile".`);
   process.exit(1);
 }
 
@@ -19,12 +35,13 @@ await mkdir(outDir, { recursive: true });
 const server = await createServer({ root, server: { port: 5199 } });
 await server.listen();
 
-const url = `http://localhost:5199/stories.html?component=${component}&story=${story}`;
-const outFile = resolve(outDir, `${component}-${story}.png`);
+const slug = component.replace("/", "-");
+const url = `http://localhost:5199/stories.html?component=${encodeURIComponent(component)}&story=${story}`;
+const outFile = resolve(outDir, `${slug}-${story}.png`);
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.setViewportSize({ width: 1280, height: 800 });
+await page.setViewportSize(viewport);
 await page.goto(url);
 await page.waitForLoadState("networkidle");
 await page.screenshot({ path: outFile, fullPage: false });
