@@ -4,13 +4,21 @@ Before writing any code, the agent must produce a plan and get it approved.
 
 ## Writing a plan
 
-Plans live in the `plans/` folder at the project root. Name the file:
+Each branch gets its own folder inside `work/`. Create the folder when starting a new branch:
 
 ```
-plans/DD_MM_YYYY_<title-in-kebab-case>.md
+work/YYYY_MM_DD_<branch-name>/
 ```
 
-Example: `plans/21_05_2026_user-auth-flow.md`
+Example: `work/2026_05_21_user-auth-flow/`
+
+Write the plan inside that folder as `PLAN.md`:
+
+```
+work/YYYY_MM_DD_<branch-name>/PLAN.md
+```
+
+Example: `work/2026_05_21_user-auth-flow/PLAN.md`
 
 ## Plan format
 
@@ -34,7 +42,7 @@ for the chosen approach. Include alternatives that were ruled out and why.
 
 ## Rules
 
-1. Write the plan file first — do not write application code before the plan exists.
+1. Create the `work/YYYY_MM_DD_<branch-name>/` folder and write `PLAN.md` first — do not write application code before the plan exists.
 2. Present the plan to the user and wait for explicit approval before starting tasks.
 3. As tasks are completed, check them off in the plan file (`- [x]`).
 4. If scope changes during implementation, update the plan before continuing.

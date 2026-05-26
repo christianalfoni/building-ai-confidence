@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Lists work/ folders dated within the last 7 days, newest first.
+# Folder names must follow the YYYY_MM_DD_<branch-name> convention.
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+WORK_DIR="$(dirname "$SCRIPTS_DIR")/work"
+
+today=$(date +%s)
+cutoff=$((today - 7 * 86400))
+
+results=()
+
+for d in "$WORK_DIR"/[0-9][0-9][0-9][0-9]_[0-9][0-9]_[0-9][0-9]_*/; do
+  [[ -d "$d" ]] || continue
+  folder=$(basename "$d")
+  date_part="${folder:0:10}"  # YYYY_MM_DD
+  file_epoch=$(date -j -f "%Y_%m_%d" "$date_part" "+%s" 2>/dev/null)
+  [[ -n "$file_epoch" && "$file_epoch" -ge "$cutoff" ]] && results+=("$file_epoch $folder")
+done
+
+if [[ ${#results[@]} -eq 0 ]]; then
+  echo "No work in the last 7 days."
+  exit 0
+fi
+
+printf '%s\n' "${results[@]}" | sort -rn | while IFS=' ' read -r _ name; do
+  plan_note=""
+  [[ -f "$WORK_DIR/$name/PLAN.md" ]] && plan_note=" [plan]"
+  echo "$name$plan_note"
+done

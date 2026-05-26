@@ -4,6 +4,8 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 import { mkdir } from "fs/promises";
 import { resolve } from "path";
+import { execSync } from "child_process";
+import { readdirSync } from "fs";
 
 const [component, story] = process.argv.slice(2);
 
@@ -29,7 +31,24 @@ if (!viewport) {
 }
 
 const root = new URL("..", import.meta.url).pathname;
-const outDir = resolve(root, "screenshots");
+const workDir = resolve(root, "work");
+
+// Resolve the work folder for the current branch
+const branch = execSync("git branch --show-current", { cwd: root }).toString().trim();
+const branchSuffix = `_${branch}`;
+
+let workFolder;
+try {
+  const entries = readdirSync(workDir, { withFileTypes: true });
+  const match = entries.find(
+    (e) => e.isDirectory() && e.name.endsWith(branchSuffix)
+  );
+  workFolder = match ? resolve(workDir, match.name) : resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branch}`);
+} catch {
+  workFolder = resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branch}`);
+}
+
+const outDir = resolve(workFolder, "screenshots");
 await mkdir(outDir, { recursive: true });
 
 const server = await createServer({ root, server: { port: 5199 } });
