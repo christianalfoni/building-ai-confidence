@@ -1,11 +1,11 @@
 # Implement Workflow
 
-Execute an approved plan from the `plans/` folder.
+Execute an approved plan from the `work/` folder.
 
 ## Steps
 
 1. Confirm with the user which plan to implement.
-2. Read the plan file and identify the first unchecked task.
+2. Read `work/YYYY_MM_DD_<branch-name>/PLAN.md` and identify the first unchecked task.
 3. Implement the task, following the architecture in `AGENT.md` and style guide in `DESIGN.md`.
 4. Check off the completed task in the plan file (`- [ ]` → `- [x]`).
 5. Repeat from step 2 until all tasks are checked off.

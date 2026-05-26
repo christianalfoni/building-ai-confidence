@@ -55,9 +55,9 @@ Stories are also imported by tests — they are the single source of truth for c
    Example: `./scripts/screenshot mobile/App withTodos`
 
    The platform prefix determines both where the story file is found and the viewport size used (desktop: 1280×800, mobile: 390×844).
-5. Read the saved PNG and display it to the user:
+5. Read the saved PNG and display it to the user. The script prints the full path — use that path directly:
    ```
-   screenshots/<platform>-<Component>-<storyName>.png
+   work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png
    ```
 6. Ask the user if the result looks right or if further changes are needed.
 7. Repeat from step 3 until the user approves.
@@ -65,7 +65,7 @@ Stories are also imported by tests — they are the single source of truth for c
 
 To include screenshots in a PR, upload them first:
 ```bash
-./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png
+./scripts/upload-screenshot work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png
 ```
 The script prints a GitHub-hosted URL that can be embedded directly in the PR body as `![label](url)`.
 
@@ -74,4 +74,4 @@ The script prints a GitHub-hosted URL that can be embedded directly in the PR bo
 - Never mark UI work as done without showing a screenshot to the user.
 - Do not add stories that are only used for screenshots — stories must also be usable in tests.
 - Follow the style guide in `DESIGN.md` for all visual changes.
-- The `screenshots/` directory is ephemeral — do not commit its contents.
+- The `work/*/screenshots/` directories are ephemeral — do not commit their contents.

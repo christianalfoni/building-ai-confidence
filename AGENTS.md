@@ -3,9 +3,12 @@
 ## Project structure
 
 ```
-plans/                        # Approved implementation plans (see workflows/PLAN.md)
+work/                         # One folder per branch — YYYY_MM_DD_<branch-name>/
+  YYYY_MM_DD_<branch-name>/   # All work for that branch lives here
+    PLAN.md                   # Approved implementation plan (see workflows/PLAN.md)
+    screenshots/              # Ephemeral screenshots for this branch (not committed)
 scripts/                      # Bash scripts for deterministic context retrieval (run these instead of manual searches)
-  list-recent-plans           # Prints plans from the last 7 days, newest first
+  list-recent-work            # Prints work folders from the last 7 days, newest first
   upsert-pr                   # Creates or updates the GitHub PR for the current branch
 workflows/                    # Agent workflow instructions
   RESEARCH.md                 # How to investigate before planning
@@ -59,14 +62,14 @@ The four layers flow in one direction: `services → state → contexts → comp
 
 Prefer scripts over manual `find`/`grep` for structured context retrieval — they encode naming conventions and produce consistent output.
 
-| Script                        | When to use                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/list-recent-plans`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work. |
-| `scripts/upsert-pr`           | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                               |
-| `scripts/screenshot`          | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`.                                      |
-| `scripts/upload-screenshot`   | Upload a screenshot PNG to GitHub and get back a URL for embedding in PR bodies: `./scripts/upload-screenshot <path-to-png>`.         |
+| Script                       | When to use                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scripts/list-recent-work`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work.            |
+| `scripts/upsert-pr`          | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                                          |
+| `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
+| `scripts/upload-screenshot`  | Upload a screenshot PNG to GitHub and get back a URL for embedding in PR bodies: `./scripts/upload-screenshot <path-to-png>`.                    |
 
-Run from the project root: `./scripts/list-recent-plans`
+Run from the project root: `./scripts/list-recent-work`
 
 ## How to work
 

@@ -55,14 +55,17 @@ Submit completed work as a pull request on GitHub.
 
    ## Instructions followed
    Bullet list of the specific agent instructions (from AGENTS.md or workflow files) that governed this change — so the reviewer can verify compliance.
+
+   ## Work session
+   This branch's plan and session artifacts are in `work/YYYY_MM_DD_<branch-name>/`. The plan documents the approach taken, tasks completed, and any deviations. GitHub Copilot can use this folder for context about the work session.
    ```
 
    The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
 
    **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot` and upload each one:
    ```bash
-   BEFORE_URL=$(./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png)
-   AFTER_URL=$(./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png)
+   BEFORE_URL=$(./scripts/upload-screenshot work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png)
+   AFTER_URL=$(./scripts/upload-screenshot work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png)
    ```
    Then embed them in the PR body using a linked image tag so the reviewer can click to open full size:
    ```
