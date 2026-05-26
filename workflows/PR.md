@@ -64,13 +64,13 @@ Submit completed work as a pull request on GitHub.
    BEFORE_URL=$(./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png)
    AFTER_URL=$(./scripts/upload-screenshot screenshots/<platform>-<Component>-<storyName>.png)
    ```
-   Then embed them in the PR body:
+   Then embed them in the PR body using a linked image tag so the reviewer can click to open full size:
    ```
    ## Current behavior
-   ![before]($BEFORE_URL)
+   <a href="$BEFORE_URL" target="_blank"><img src="$BEFORE_URL" width="600" /></a>
 
    ## New behavior
-   ![after]($AFTER_URL)
+   <a href="$AFTER_URL" target="_blank"><img src="$AFTER_URL" width="600" /></a>
    ```
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").

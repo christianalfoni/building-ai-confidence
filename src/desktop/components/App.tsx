@@ -39,18 +39,22 @@ export function App() {
       <header className="border-b border-surface px-8 py-4 flex items-center gap-3">
         <span className="text-crimson font-bold text-lg">◈</span>
         <span className="font-semibold text-navy text-sm">Building AI Confidence</span>
+        {app.todos.length > 0 && (
+          <span className="ml-auto text-sm text-navy/50">
+            {completedCount} of {app.todos.length} complete
+          </span>
+        )}
       </header>
       <main className="flex-1 px-8 py-8 max-w-2xl w-full mx-auto">
-        <div className="flex items-baseline justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-navy">Todos</h1>
-          {app.todos.length > 0 && (
-            <span className="text-sm text-navy/50">
-              {completedCount} of {app.todos.length} complete
-            </span>
-          )}
-        </div>
+        <Input
+          placeholder="Add a todo and press Enter…"
+          value={newText}
+          onChange={e => setNewText(e.target.value)}
+          onKeyDown={handleAddKeyDown}
+          className="mb-4"
+        />
         {app.todos.length > 0 && (
-          <ul className="flex flex-col divide-y divide-surface mb-4">
+          <ul className="flex flex-col divide-y divide-surface">
             {app.todos.map(todo => (
               <li key={todo.id} className="flex items-center gap-3 py-3">
                 <Checkbox
@@ -91,14 +95,8 @@ export function App() {
           </ul>
         )}
         {app.todos.length === 0 && (
-          <p className="text-navy/50 text-sm py-4">No todos yet — add one below.</p>
+          <p className="text-navy/50 text-sm py-4">No todos yet — add one above.</p>
         )}
-        <Input
-          placeholder="Add a todo and press Enter…"
-          value={newText}
-          onChange={e => setNewText(e.target.value)}
-          onKeyDown={handleAddKeyDown}
-        />
       </main>
     </div>
   );
