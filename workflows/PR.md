@@ -17,11 +17,11 @@ Submit completed work as a pull request on GitHub.
    ```bash
    git checkout -b <branch-name>
    ```
-4. Capture agent sessions into the work folder so they are included in the commit:
+4. If a work folder exists for this branch (`work/YYYY_MM_DD_<branch-name>/`), capture agent sessions so they are included in the commit:
    ```bash
    ./scripts/capture-agent-sessions
    ```
-   This writes one Markdown file per agent session into the branch work folder.
+   This writes one Markdown file per agent session into the branch work folder. If no work folder exists, skip this step.
 5. Stage and commit changes using the conventional commit prefix that best fits:
    - `feat:` — new feature
    - `fix:` — bug fix
