@@ -68,6 +68,8 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | `scripts/upsert-pr`          | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                                          |
 | `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
 | `scripts/upload-screenshot`  | Upload a screenshot PNG to GitHub and get back a URL for embedding in PR bodies: `./scripts/upload-screenshot <path-to-png>`.                    |
+| `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
+| `scripts/pr-review-comments`     | When addressing PR feedback — prints all review comments (overall and inline) for the current branch's open PR.                                 |
 
 Run from the project root: `./scripts/list-recent-work`
 
@@ -106,3 +108,7 @@ Use when the user wants to refine the visual appearance of a component — layou
 ### pr
 
 Use when the user wants to submit completed changes as a pull request. Branch, commit with a conventional prefix, and run the `upsert-pr` script to create or update the PR on GitHub. See [`workflows/PR.md`](workflows/PR.md).
+
+### review
+
+Use when the user wants to address feedback from a PR review. Fetch comments with `pr-review-comments`, propose a fix for each, get user approval, then apply and commit. See [`workflows/REVIEW.md`](workflows/REVIEW.md).
