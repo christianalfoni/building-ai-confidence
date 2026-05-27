@@ -1,38 +1,11 @@
-import { useState } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { Input } from "../ui-components/Input";
 import { Checkbox } from "../ui-components/Checkbox";
 import { IconButton } from "../ui-components/IconButton";
-import type { Todo } from "../../state/AppState";
 
 export function App() {
   const app = useApp();
-  const [newText, setNewText] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-
   const completedCount = app.todos.filter(t => t.completed).length;
-
-  function handleAddKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
-    app.addTodo(newText);
-    setNewText("");
-  }
-
-  function startEdit(todo: Todo) {
-    setEditingId(todo.id);
-    setEditText(todo.text);
-  }
-
-  function commitEdit(id: string) {
-    if (!editText.trim()) return;
-    app.editTodo(id, editText);
-    setEditingId(null);
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -48,9 +21,11 @@ export function App() {
       <main className="flex-1 px-8 py-8 max-w-2xl w-full mx-auto">
         <Input
           placeholder="Add a todo and press Enter…"
-          value={newText}
-          onChange={e => setNewText(e.target.value)}
-          onKeyDown={handleAddKeyDown}
+          value={app.newTodoText}
+          onChange={e => app.setNewTodoText(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter") app.submitNewTodo();
+          }}
           className="mb-4"
         />
         {app.todos.length > 0 && (
@@ -60,29 +35,29 @@ export function App() {
                 <Checkbox
                   checked={todo.completed}
                   onChange={() => app.toggleTodo(todo.id)}
-                  disabled={editingId === todo.id}
+                  disabled={app.editingId === todo.id}
                 />
-                {editingId === todo.id ? (
+                {app.editingId === todo.id ? (
                   <Input
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
+                    value={app.editText}
+                    onChange={e => app.setEditText(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === "Enter") commitEdit(todo.id);
-                      if (e.key === "Escape") cancelEdit();
+                      if (e.key === "Enter") app.commitEdit();
+                      if (e.key === "Escape") app.cancelEdit();
                     }}
-                    onBlur={() => commitEdit(todo.id)}
+                    onBlur={() => app.commitEdit()}
                     autoFocus
                     className="flex-1"
                   />
                 ) : (
                   <span
                     className={`flex-1 text-navy cursor-text ${todo.completed ? "line-through text-navy/40" : ""}`}
-                    onClick={() => startEdit(todo)}
+                    onClick={() => app.startEdit(todo.id)}
                   >
                     {todo.text}
                   </span>
                 )}
-                {editingId !== todo.id && (
+                {app.editingId !== todo.id && (
                   <IconButton onClick={() => app.deleteTodo(todo.id)} aria-label="Delete">
                     ×
                   </IconButton>

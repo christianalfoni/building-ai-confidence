@@ -19,4 +19,16 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/desktop/components/**/*.{ts,tsx}', 'src/mobile/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: 'react',
+          importNames: ['useState'],
+          message: 'useState is not allowed in components/. Move state to AppState (src/state/), or extract local UI state into a ui-component.',
+        }],
+      }],
+    },
+  },
 ])

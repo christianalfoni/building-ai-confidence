@@ -9,9 +9,12 @@ Execute an approved plan from the `work/` folder.
 3. Implement the task, following the architecture in `AGENT.md` and style guide in `DESIGN.md`.
 4. Check off the completed task in the plan file (`- [ ]` → `- [x]`).
 5. Repeat from step 2 until all tasks are checked off.
-6. Write a brief report under the `## Report` section of the plan file summarising what was done, any deviations from the plan, and the outcome of `npm test -- --run`.
-7. Tell the user that implementation is complete and paste the report.
-8. Always conclude by running the **pr** workflow to branch, commit, and submit the changes as a pull request. Do not wait for the user to ask.
+6. Validate the implementation:
+   - Run `npm run lint` and fix any errors before continuing.
+   - Run `npm test -- --run` and fix any failures before continuing.
+7. Write a brief report under the `## Report` section of the plan file summarising what was done, any deviations from the plan, and the outcomes of lint and tests.
+8. Tell the user that implementation is complete and paste the report.
+9. Always conclude by running the **pr** workflow to branch, commit, and submit the changes as a pull request. Do not wait for the user to ask.
 
 ## Rules
 

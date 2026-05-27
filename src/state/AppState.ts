@@ -9,6 +9,9 @@ export type Todo = {
 export class AppState {
   private services: Services;
   todos: Todo[] = [];
+  newTodoText = "";
+  editingId: string | null = null;
+  editText = "";
 
   constructor(services: Services) {
     this.services = services;
@@ -17,6 +20,15 @@ export class AppState {
 
   private save() {
     this.services.storage.set("todos", this.todos);
+  }
+
+  setNewTodoText(text: string) {
+    this.newTodoText = text;
+  }
+
+  submitNewTodo() {
+    this.addTodo(this.newTodoText);
+    this.newTodoText = "";
   }
 
   addTodo(text: string) {
@@ -30,6 +42,29 @@ export class AppState {
     const todo = this.todos.find(t => t.id === id);
     if (todo) todo.completed = !todo.completed;
     this.save();
+  }
+
+  startEdit(id: string) {
+    const todo = this.todos.find(t => t.id === id);
+    if (!todo) return;
+    this.editingId = id;
+    this.editText = todo.text;
+  }
+
+  setEditText(text: string) {
+    this.editText = text;
+  }
+
+  commitEdit() {
+    if (!this.editingId || !this.editText.trim()) return;
+    this.editTodo(this.editingId, this.editText);
+    this.editingId = null;
+    this.editText = "";
+  }
+
+  cancelEdit() {
+    this.editingId = null;
+    this.editText = "";
   }
 
   editTodo(id: string, text: string) {
