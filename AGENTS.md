@@ -80,10 +80,10 @@ At the start of every session:
    ```bash
    git branch --show-current
    ```
-2. **If you are on a non-main branch:** decide whether that branch is still relevant to the current request. If yes, continue on it. If the request is unrelated, create a new branch from `main` (step 3).
-3. **If you are on `main`:** do not start any work yet. Pull latest and create a new branch:
+2. **If you are on a non-main branch:** assume this is the branch to continue working on. Proceed.
+3. **If you are on `main`:** pull latest and create a new branch before doing anything else:
    ```bash
-   git checkout main && git pull
+   git pull
    git checkout -b <descriptive-branch-name>
    ```
 
