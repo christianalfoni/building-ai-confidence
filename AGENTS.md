@@ -72,11 +72,22 @@ Run from the project root: `./scripts/list-recent-work`
 
 ## How to work
 
-At the start of every session, check whether the conversation is continuing work on an existing branch. If it is not — i.e. the session is starting fresh with no prior branch context — switch to `main` and pull the latest:
+**Always establish the working branch before doing anything else.** Scripts like `./scripts/screenshot` derive the work folder from the current branch — running them on `main` creates a `work/YYYY_MM_DD_main/` folder, which is never correct.
 
-```bash
-git checkout main && git pull
-```
+At the start of every session:
+
+1. Check which branch you are on:
+   ```bash
+   git branch --show-current
+   ```
+2. **If you are on a non-main branch:** decide whether that branch is still relevant to the current request. If yes, continue on it. If the request is unrelated, create a new branch from `main` (step 3).
+3. **If you are on `main`:** do not start any work yet. Pull latest and create a new branch:
+   ```bash
+   git checkout main && git pull
+   git checkout -b <descriptive-branch-name>
+   ```
+
+Never make changes, run scripts, or create files while on `main`.
 
 Before responding to any request, identify which workflow applies. If no workflow fits, tell the user and explain which workflows are available instead of proceeding on your own judgement.
 
