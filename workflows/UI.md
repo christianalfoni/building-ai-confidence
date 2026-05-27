@@ -63,15 +63,8 @@ Stories are also imported by tests — they are the single source of truth for c
 7. Repeat from step 3 until the user approves.
 8. Run `npm test -- --run` to confirm no regressions before handing off to the **pr** workflow.
 
-To include screenshots in a PR, upload them first:
-```bash
-./scripts/upload-screenshot work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png
-```
-The script prints a GitHub-hosted URL that can be embedded directly in the PR body as `![label](url)`.
-
 ## Rules
 
 - Never mark UI work as done without showing a screenshot to the user.
 - Do not add stories that are only used for screenshots — stories must also be usable in tests.
 - Follow the style guide in `DESIGN.md` for all visual changes.
-- The `work/*/screenshots/` directories are ephemeral — do not commit their contents.

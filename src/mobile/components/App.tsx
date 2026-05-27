@@ -60,6 +60,7 @@ export function App() {
                 <Checkbox
                   checked={todo.completed}
                   onChange={() => app.toggleTodo(todo.id)}
+                  disabled={editingId === todo.id}
                 />
                 {editingId === todo.id ? (
                   <Input
@@ -75,20 +76,16 @@ export function App() {
                   />
                 ) : (
                   <span
-                    className={`flex-1 text-navy ${todo.completed ? "line-through text-navy/40" : ""}`}
+                    className={`flex-1 text-navy cursor-text ${todo.completed ? "line-through text-navy/40" : ""}`}
+                    onClick={() => startEdit(todo)}
                   >
                     {todo.text}
                   </span>
                 )}
                 {editingId !== todo.id && (
-                  <>
-                    <IconButton onClick={() => startEdit(todo)} aria-label="Edit">
-                      ✎
-                    </IconButton>
-                    <IconButton onClick={() => app.deleteTodo(todo.id)} aria-label="Delete">
-                      ×
-                    </IconButton>
-                  </>
+                  <IconButton onClick={() => app.deleteTodo(todo.id)} aria-label="Delete">
+                    ×
+                  </IconButton>
                 )}
               </li>
             ))}

@@ -11,6 +11,7 @@ Execute an approved plan from the `work/` folder.
 5. Repeat from step 2 until all tasks are checked off.
 6. Write a brief report under the `## Report` section of the plan file summarising what was done, any deviations from the plan, and the outcome of `npm test -- --run`.
 7. Tell the user that implementation is complete and paste the report.
+8. Always conclude by running the **pr** workflow to branch, commit, and submit the changes as a pull request. Do not wait for the user to ask.
 
 ## Rules
 

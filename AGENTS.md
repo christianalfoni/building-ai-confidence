@@ -6,7 +6,7 @@
 work/                         # One folder per branch — YYYY_MM_DD_<branch-name>/
   YYYY_MM_DD_<branch-name>/   # All work for that branch lives here
     PLAN.md                   # Approved implementation plan (see workflows/PLAN.md)
-    screenshots/              # Ephemeral screenshots for this branch (not committed)
+    screenshots/              # Screenshots for this branch, committed with the branch
 scripts/                      # Bash scripts for deterministic context retrieval (run these instead of manual searches)
   list-recent-work            # Prints work folders from the last 7 days, newest first
   upsert-pr                   # Creates or updates the GitHub PR for the current branch
@@ -67,7 +67,6 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | `scripts/list-recent-work`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work.            |
 | `scripts/upsert-pr`          | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                                          |
 | `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
-| `scripts/upload-screenshot`  | Upload a screenshot PNG to GitHub and get back a URL for embedding in PR bodies: `./scripts/upload-screenshot <path-to-png>`.                    |
 | `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
 | `scripts/pr-review-comments`     | When addressing PR feedback — prints all review comments (overall and inline) for the current branch's open PR.                                 |
 
@@ -75,11 +74,22 @@ Run from the project root: `./scripts/list-recent-work`
 
 ## How to work
 
-At the start of every session, check whether the conversation is continuing work on an existing branch. If it is not — i.e. the session is starting fresh with no prior branch context — switch to `main` and pull the latest:
+**Always establish the working branch before doing anything else.** Scripts like `./scripts/screenshot` derive the work folder from the current branch — running them on `main` creates a `work/YYYY_MM_DD_main/` folder, which is never correct.
 
-```bash
-git checkout main && git pull
-```
+At the start of every session:
+
+1. Check which branch you are on:
+   ```bash
+   git branch --show-current
+   ```
+2. **If you are on a non-main branch:** assume this is the branch to continue working on. Proceed.
+3. **If you are on `main`:** pull latest and create a new branch before doing anything else:
+   ```bash
+   git pull
+   git checkout -b <descriptive-branch-name>
+   ```
+
+Never make changes, run scripts, or create files while on `main`.
 
 Before responding to any request, identify which workflow applies. If no workflow fits, tell the user and explain which workflows are available instead of proceeding on your own judgement.
 

@@ -67,18 +67,19 @@ Submit completed work as a pull request on GitHub.
 
    The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
 
-   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot` and upload each one:
+   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`. Screenshots are committed to `work/<branch>/screenshots/` as part of the branch. Reference them in the PR body using raw GitHub URLs:
    ```bash
-   BEFORE_URL=$(./scripts/upload-screenshot work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png)
-   AFTER_URL=$(./scripts/upload-screenshot work/<YYYY_MM_DD_branch-name>/screenshots/<platform>-<Component>-<storyName>.png)
+   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   BRANCH=$(git branch --show-current)
+   WORK_DIR=work/<YYYY_MM_DD_branch-name>/screenshots
    ```
-   Then embed them in the PR body using a linked image tag so the reviewer can click to open full size:
+   Then embed them using linked image tags so the reviewer can click to open full size:
    ```
    ## Current behavior
-   <a href="$BEFORE_URL" target="_blank"><img src="$BEFORE_URL" width="600" /></a>
+   <a href="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<before>.png" target="_blank"><img src="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<before>.png" width="600" /></a>
 
    ## New behavior
-   <a href="$AFTER_URL" target="_blank"><img src="$AFTER_URL" width="600" /></a>
+   <a href="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<after>.png" target="_blank"><img src="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<after>.png" width="600" /></a>
    ```
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
