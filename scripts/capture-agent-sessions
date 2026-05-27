@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Distills all agent sessions for the current branch into the branch work folder.
+# Each session is written as <session-id>.md alongside PLAN.md.
+
+set -euo pipefail
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPTS_DIR")"
+WORK_DIR="$ROOT_DIR/work"
+
+BRANCH=$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD)
+BRANCH_SAFE=$(echo "$BRANCH" | tr '/' '-')
+
+# Find the work folder for this branch (matches *_<branch-name>)
+BRANCH_WORK=$(find "$WORK_DIR" -maxdepth 1 -type d -name "*_${BRANCH_SAFE}" | head -1)
+
+if [[ -z "$BRANCH_WORK" ]]; then
+  echo "No work folder found for branch '$BRANCH'" >&2
+  exit 1
+fi
+
+SESSIONS=$("$SCRIPTS_DIR/agent-review" sessions --branch 2>/dev/null)
+
+if [[ -z "$SESSIONS" ]]; then
+  echo "No agent sessions found for branch '$BRANCH'."
+  exit 0
+fi
+
+while IFS= read -r line; do
+  # Lines start with [claude-code]; skip headers and blank lines
+  [[ "$line" != \[* ]] && continue
+  SESSION_ID=$(echo "$line" | awk '{print $4}')
+  [[ -z "$SESSION_ID" ]] && continue
+  OUT="$BRANCH_WORK/${SESSION_ID}.md"
+  echo "Distilling $SESSION_ID..."
+  "$SCRIPTS_DIR/agent-review" distill "$SESSION_ID" > "$OUT"
+done <<< "$SESSIONS"
+
+echo "Agent sessions written to $BRANCH_WORK"

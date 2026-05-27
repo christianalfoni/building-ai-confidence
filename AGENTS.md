@@ -68,6 +68,7 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | `scripts/upsert-pr`          | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                                          |
 | `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
 | `scripts/upload-screenshot`  | Upload a screenshot PNG to GitHub and get back a URL for embedding in PR bodies: `./scripts/upload-screenshot <path-to-png>`.                    |
+| `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
 
 Run from the project root: `./scripts/list-recent-work`
 

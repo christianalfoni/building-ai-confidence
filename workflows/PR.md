@@ -17,7 +17,12 @@ Submit completed work as a pull request on GitHub.
    ```bash
    git checkout -b <branch-name>
    ```
-4. Stage and commit changes using the conventional commit prefix that best fits:
+4. Capture agent sessions into the work folder so they are included in the commit:
+   ```bash
+   ./scripts/capture-agent-sessions
+   ```
+   This writes one Markdown file per agent session into the branch work folder.
+5. Stage and commit changes using the conventional commit prefix that best fits:
    - `feat:` — new feature
    - `fix:` — bug fix
    - `chore:` — tooling, deps, config, scripts
@@ -25,11 +30,11 @@ Submit completed work as a pull request on GitHub.
    - `docs:` — documentation only
    - `test:` — tests only
    - `style:` — formatting, whitespace
-5. Push the branch:
+6. Push the branch:
    ```bash
    git push -u origin <branch-name>
    ```
-6. Create or update the PR using the script:
+7. Create or update the PR using the script:
    ```bash
    ./scripts/upsert-pr --title "<conventional-prefix>: <short description>" --body "<body>"
    ```
@@ -77,7 +82,7 @@ Submit completed work as a pull request on GitHub.
    ```
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
-7. Report the PR URL to the user.
+8. Report the PR URL to the user.
 
 ## Rules
 

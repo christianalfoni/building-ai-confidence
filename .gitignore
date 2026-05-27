@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 work/*/screenshots/
+scripts/agent-review
 
 # Editor directories and files
 .vscode/*
