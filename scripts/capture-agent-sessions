@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Distills all agent sessions for the current branch into the branch work folder.
+# Each session is written as <session-id>.md alongside PLAN.md.
+
+set -euo pipefail
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPTS_DIR")"
+WORK_DIR="$ROOT_DIR/work"
+
+BRANCH=$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD)
+BRANCH_SAFE=$(echo "$BRANCH" | tr '/' '-')
+
+# Find the work folder for this branch (matches *_<branch-name>)
+MATCHES=$(find "$WORK_DIR" -maxdepth 1 -type d -name "*_${BRANCH_SAFE}")
+MATCH_COUNT=$(echo "$MATCHES" | grep -c . || true)
+
+if [[ -z "$MATCHES" ]]; then
+  echo "No work folder found for branch '$BRANCH'" >&2
+  exit 1
+fi
+
+if [[ "$MATCH_COUNT" -gt 1 ]]; then
+  echo "Multiple work folders match branch '$BRANCH' — cannot pick one automatically:" >&2
+  echo "$MATCHES" | sed 's/^/  /' >&2
+  exit 1
+fi
+
+BRANCH_WORK="$MATCHES"
+
+if [[ ! -x "$SCRIPTS_DIR/agent-review" ]]; then
+  echo "scripts/agent-review not found or not executable — install it globally first" >&2
+  exit 1
+fi
+
+SESSIONS=$("$SCRIPTS_DIR/agent-review" sessions --branch)
+
+if [[ -z "$SESSIONS" ]]; then
+  echo "No agent sessions found for branch '$BRANCH'."
+  exit 0
+fi
+
+while IFS= read -r line; do
+  # Lines start with [claude-code]; skip headers and blank lines
+  [[ "$line" != \[* ]] && continue
+  SESSION_ID=$(echo "$line" | awk '{print $4}')
+  [[ -z "$SESSION_ID" ]] && continue
+  OUT="$BRANCH_WORK/${SESSION_ID}.md"
+  echo "Distilling $SESSION_ID..."
+  "$SCRIPTS_DIR/agent-review" distill "$SESSION_ID" > "$OUT"
+done <<< "$SESSIONS"
+
+echo "Agent sessions written to $BRANCH_WORK"
