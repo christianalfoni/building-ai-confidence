@@ -4,14 +4,12 @@ Submit completed work as a pull request on GitHub.
 
 ## Steps
 
-1. Check that the current branch is not already associated with a merged or closed PR:
-   ```bash
-   gh pr view --json state -q .state 2>/dev/null
-   ```
-   If the result is `MERGED` or `CLOSED`, stop and create a new branch instead:
-   ```bash
-   git checkout main && git pull && git checkout -b <new-branch-name>
-   ```
+1. Check whether the current branch already has a PR using the `mcp__github__list_pull_requests` tool
+   (`owner=christianalfoni`, `repo=building-ai-confidence`, `head=<branch>`).
+   - If the result is `MERGED` or `CLOSED`, stop and create a new branch instead:
+     ```bash
+     git checkout main && git pull && git checkout -b <new-branch-name>
+     ```
 2. Determine a branch name from the changes — short, kebab-case, descriptive (e.g. `fix/login-redirect`, `feat/user-profile`).
 3. Check out (or create) that branch:
    ```bash
@@ -34,13 +32,19 @@ Submit completed work as a pull request on GitHub.
    ```bash
    git push -u origin <branch-name>
    ```
-7. Create or update the PR using the script:
+7. Run lint before submitting:
    ```bash
-   ./scripts/upsert-pr --title "<conventional-prefix>: <short description>" --body "<body>"
+   npm run lint
    ```
-   The script detects whether a PR already exists for the branch and creates or updates it accordingly.
+   Fix any errors before continuing.
 
-   Use this template for `--body`:
+8. Create or update the PR using MCP tools:
+   - **No open PR exists:** call `mcp__github__create_pull_request` with `owner=christianalfoni`,
+     `repo=building-ai-confidence`, `head=<branch>`, `base=main`, `title`, and `body`.
+   - **Open PR exists:** call `mcp__github__update_pull_request` with `owner=christianalfoni`,
+     `repo=building-ai-confidence`, `pullNumber=<number>`, `title`, and `body`.
+
+   Use this template for the body:
 
    ```
    ## Current behavior
@@ -67,23 +71,24 @@ Submit completed work as a pull request on GitHub.
 
    The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
 
-   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`. Screenshots are committed to `work/<branch>/screenshots/` as part of the branch. Reference them in the PR body using raw GitHub URLs:
-   ```bash
-   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-   BRANCH=$(git branch --show-current)
+   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`. Screenshots are committed to `work/<branch>/screenshots/` as part of the branch. Reference them in the PR body using raw GitHub URLs — the repo is `christianalfoni/building-ai-confidence`:
+
+   ```
+   BRANCH=<current-branch>
    WORK_DIR=work/<YYYY_MM_DD_branch-name>/screenshots
    ```
-   Then embed them using linked image tags so the reviewer can click to open full size:
+
+   Embed them using linked image tags so the reviewer can click to open full size:
    ```
    ## Current behavior
-   <a href="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<before>.png" target="_blank"><img src="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<before>.png" width="600" /></a>
+   <a href="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<before>.png" target="_blank"><img src="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<before>.png" width="600" /></a>
 
    ## New behavior
-   <a href="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<after>.png" target="_blank"><img src="https://raw.githubusercontent.com/$REPO/$BRANCH/$WORK_DIR/<after>.png" width="600" /></a>
+   <a href="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<after>.png" target="_blank"><img src="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<after>.png" width="600" /></a>
    ```
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
-8. Report the PR URL to the user.
+9. Report the PR URL to the user.
 
 ## Rules
 
