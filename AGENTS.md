@@ -70,7 +70,7 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `scripts/start-work`         | At session start when on `main` — pulls latest, creates a branch, and sets up the work folder: `./scripts/start-work <branch-name>`.            |
 | `scripts/list-recent-work`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work.            |
-| `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
+| `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot desktop/App <storyName>` or `./scripts/screenshot mobile/App <storyName>`. Saves into the current branch's work folder.    |
 | `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
 
 Run from the project root: `./scripts/list-recent-work`
