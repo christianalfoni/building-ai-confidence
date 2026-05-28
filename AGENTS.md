@@ -12,8 +12,11 @@ work/                         # One folder per branch — YYYY_MM_DD_<branch-nam
     PLAN.md                   # Approved implementation plan (see workflows/PLAN.md)
     screenshots/              # Screenshots for this branch, committed with the branch
 scripts/                      # Bash scripts for deterministic context retrieval (run these instead of manual searches)
+  start-work                  # Pulls main, creates a branch, and sets up the work folder
   list-recent-work            # Prints work folders from the last 7 days, newest first
-  upsert-pr                   # Creates or updates the GitHub PR for the current branch
+  screenshot                  # Takes a screenshot of a component story
+  screenshot-url              # Generates raw-GitHub <a>/<img> embed markup for PR bodies
+  capture-agent-sessions      # Distills agent sessions into the current branch's work folder
 workflows/                    # Agent workflow instructions
   RESEARCH.md                 # How to investigate before planning
   PLAN.md                     # How to plan and get approval before coding
@@ -70,10 +73,9 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `scripts/start-work`         | At session start when on `main` — pulls latest, creates a branch, and sets up the work folder: `./scripts/start-work <branch-name>`.            |
 | `scripts/list-recent-work`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work.            |
-| `scripts/upsert-pr`          | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                                          |
-| `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
+| `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot desktop/App <storyName>` or `./scripts/screenshot mobile/App <storyName>`. Saves into the current branch's work folder.    |
+| `scripts/screenshot-url`     | Generate raw-GitHub `<a>/<img>` embed markup for screenshots: `./scripts/screenshot-url <name> [<name> ...]`. Paste output directly into a PR body.                                      |
 | `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
-| `scripts/pr-review-comments`     | When addressing PR feedback — prints all review comments (overall and inline) for the current branch's open PR.                                 |
 
 Run from the project root: `./scripts/list-recent-work`
 
@@ -130,8 +132,8 @@ Use when the user wants to refine the visual appearance of a component — layou
 
 ### pr
 
-Use when the user wants to submit completed changes as a pull request. Branch, commit with a conventional prefix, and run the `upsert-pr` script to create or update the PR on GitHub. See [`workflows/PR.md`](workflows/PR.md).
+Use when the user wants to submit completed changes as a pull request. Branch, commit with a conventional prefix, and use MCP GitHub tools to create or update the PR. See [`workflows/PR.md`](workflows/PR.md).
 
 ### review
 
-Use when the user wants to address feedback from a PR review. Fetch comments with `pr-review-comments`, propose a fix for each, get user approval, then apply and commit. See [`workflows/REVIEW.md`](workflows/REVIEW.md).
+Use when the user wants to address feedback from a PR review. Fetch comments via MCP GitHub tools, propose a fix for each, get user approval, then apply and commit. See [`workflows/REVIEW.md`](workflows/REVIEW.md).
