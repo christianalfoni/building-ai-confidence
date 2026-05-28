@@ -64,6 +64,7 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 
 | Script                       | When to use                                                                                                                                      |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scripts/start-work`         | At session start when on `main` — pulls latest, creates a branch, and sets up the work folder: `./scripts/start-work <branch-name>`.            |
 | `scripts/list-recent-work`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work.            |
 | `scripts/upsert-pr`          | When submitting changes as a PR — creates the PR if none exists for the branch, updates it if one does.                                          |
 | `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot <platform/Component> <storyName>`. Saves into the current branch's work folder.    |
@@ -74,22 +75,30 @@ Run from the project root: `./scripts/list-recent-work`
 
 ## How to work
 
-**Always establish the working branch before doing anything else.** Scripts like `./scripts/screenshot` derive the work folder from the current branch — running them on `main` creates a `work/YYYY_MM_DD_main/` folder, which is never correct.
+**The very first action in every session — before reading files, running scripts, or responding to the request — is to check the current branch:**
 
-At the start of every session:
+```bash
+git branch --show-current
+```
 
-1. Check which branch you are on:
+### If on `main`
+
+Do not make changes, run scripts, or create files on `main`. Instead:
+
+1. Derive a short, kebab-case branch name from the user's request (e.g. `feat/user-auth`, `fix/login-redirect`). If the request is too vague to name a branch, ask the user to clarify before proceeding.
+2. Run the start-work script:
    ```bash
-   git branch --show-current
+   ./scripts/start-work <branch-name>
    ```
-2. **If you are on a non-main branch:** assume this is the branch to continue working on. Proceed.
-3. **If you are on `main`:** pull latest and create a new branch before doing anything else:
-   ```bash
-   git pull
-   git checkout -b <descriptive-branch-name>
-   ```
+   This pulls the latest `main`, creates the branch, and sets up the work folder in one step.
+3. **If the script fails for any reason:** stop immediately, show the full error output to the user, and ask how to proceed. Do not attempt any other work.
+4. Confirm the branch and work folder to the user, then continue with the request.
 
-Never make changes, run scripts, or create files while on `main`.
+### If on any other branch
+
+Tell the user which branch is checked out and confirm that the session will continue work on that branch. Then proceed with the request.
+
+---
 
 Before responding to any request, identify which workflow applies. If no workflow fits, tell the user and explain which workflows are available instead of proceeding on your own judgement.
 
