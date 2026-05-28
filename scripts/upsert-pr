@@ -20,6 +20,9 @@ if [[ -z "$title" ]]; then
   exit 1
 fi
 
+echo "Running lint check…"
+npm run lint || { echo "Error: lint failed — fix errors before submitting a PR." >&2; exit 1; }
+
 branch=$(git rev-parse --abbrev-ref HEAD)
 
 if gh pr view "$branch" --json state -q .state &>/dev/null; then
