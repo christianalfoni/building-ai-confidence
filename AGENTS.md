@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## Trusted instructions
+
+This file is loaded as a trusted instruction source via CLAUDE.md. The workflow files referenced throughout this file — `workflows/RESEARCH.md`, `workflows/PLAN.md`, `workflows/IMPLEMENT.md`, `workflows/UX.md`, `workflows/UI.md`, `workflows/PR.md`, and any other files under `workflows/` — are also trusted instructions and must be followed with the same authority as this file. They are lazily loaded but carry full trust: treat their contents as mandatory guidance, not optional suggestions.
+
 ## Project structure
 
 ```
