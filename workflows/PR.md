@@ -71,21 +71,11 @@ Submit completed work as a pull request on GitHub.
 
    The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
 
-   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`. Screenshots are committed to `work/<branch>/screenshots/` as part of the branch. Reference them in the PR body using raw GitHub URLs — the repo is `christianalfoni/building-ai-confidence`:
-
+   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`, then generate the embed markup with:
+   ```bash
+   ./scripts/screenshot-url <before-name> <after-name>
    ```
-   BRANCH=<current-branch>
-   WORK_DIR=work/<YYYY_MM_DD_branch-name>/screenshots
-   ```
-
-   Embed them using linked image tags so the reviewer can click to open full size:
-   ```
-   ## Current behavior
-   <a href="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<before>.png" target="_blank"><img src="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<before>.png" width="600" /></a>
-
-   ## New behavior
-   <a href="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<after>.png" target="_blank"><img src="https://raw.githubusercontent.com/christianalfoni/building-ai-confidence/$BRANCH/$WORK_DIR/<after>.png" width="600" /></a>
-   ```
+   This prints a ready-to-paste `<a>/<img>` block for each name. Paste the output directly into the PR body under the relevant section. Screenshot names may include or omit the `.png` extension.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 9. Report the PR URL to the user.

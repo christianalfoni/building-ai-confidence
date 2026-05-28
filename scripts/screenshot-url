@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Prints raw-GitHub linked-image markup for one or more screenshots.
+# Usage: ./scripts/screenshot-url <name> [<name> ...]
+#   e.g. ./scripts/screenshot-url desktop-App-before desktop-App-after
+# Screenshot names may include or omit the .png extension.
+
+set -euo pipefail
+
+REPO="christianalfoni/building-ai-confidence"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BRANCH="$(git -C "$ROOT" branch --show-current)"
+WORK_DIR="$ROOT/work"
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: ./scripts/screenshot-url <name> [<name> ...]" >&2
+  exit 1
+fi
+
+# Sanitized branch: replace / with - (matches start-work convention)
+SANITIZED="${BRANCH//\//-}"
+
+# Find the work folder — two conventions exist:
+#   1. work/YYYY_MM_DD_<sanitized-branch>/     (start-work: replaces / with -)
+#   2. work/YYYY_MM_DD_<prefix>/<suffix>/      (screenshot fallback: / becomes a real path separator)
+WORK_FOLDER=""
+
+# Try convention 1 first
+MATCH=$(find "$WORK_DIR" -maxdepth 1 -type d -name "*_${SANITIZED}" 2>/dev/null | sort | tail -1)
+if [[ -n "$MATCH" ]]; then
+  WORK_FOLDER="$MATCH"
+fi
+
+# Try convention 2 for branches that contain /
+if [[ -z "$WORK_FOLDER" ]] && [[ "$BRANCH" == */* ]]; then
+  PREFIX="${BRANCH%%/*}"
+  SUFFIX="${BRANCH#*/}"
+  MATCH=$(find "$WORK_DIR" -maxdepth 2 -type d -name "$SUFFIX" -path "*_${PREFIX}/*" 2>/dev/null | sort | tail -1)
+  if [[ -n "$MATCH" ]]; then
+    WORK_FOLDER="$MATCH"
+  fi
+fi
+
+if [[ -z "$WORK_FOLDER" ]]; then
+  echo "Error: no work folder found for branch '$BRANCH' in work/" >&2
+  exit 1
+fi
+
+SCREENSHOTS_REL="$(realpath --relative-to="$ROOT" "$WORK_FOLDER")/screenshots"
+
+for name in "$@"; do
+  name="${name%.png}"
+  URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/${SCREENSHOTS_REL}/${name}.png"
+  echo "<a href=\"${URL}\" target=\"_blank\"><img src=\"${URL}\" width=\"600\" /></a>"
+  echo ""
+done
