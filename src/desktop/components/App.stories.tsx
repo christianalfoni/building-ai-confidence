@@ -43,3 +43,19 @@ export function withCompletedTodo() {
     appState,
   };
 }
+
+export function editingTodo() {
+  const appState = createAppState();
+  appState.addTodo("Buy milk");
+  appState.addTodo("Walk the dog");
+  appState.addTodo("Read a book");
+  appState.startEdit(appState.todos[1].id);
+  return {
+    element: (
+      <AppContext.Provider value={appState}>
+        <App />
+      </AppContext.Provider>
+    ),
+    appState,
+  };
+}
