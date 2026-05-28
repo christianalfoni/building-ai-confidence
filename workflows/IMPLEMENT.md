@@ -20,7 +20,7 @@ Execute an approved plan from the `work/` folder.
 
 - Implement one task at a time. Do not skip ahead.
 - If a task turns out to require scope changes, update the plan and confirm with the user before continuing.
-- Follow the layer conventions from `AGENT.md`: `services → state → contexts → components → ui-components`. Note that `components` and `ui-components` are platform-scoped — they live under `src/desktop/` or `src/mobile/`, not at the top level.
+- Follow the layer conventions from `AGENTS.md`: `services → state → contexts → components → ui-components`. Note that `components` and `ui-components` are platform-scoped — they live under `src/desktop/` or `src/mobile/`, not at the top level.
 - Follow the style guide in `DESIGN.md` for all UI work.
 
 ## Testing
