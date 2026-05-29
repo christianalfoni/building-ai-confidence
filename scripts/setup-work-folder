@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Creates the work folder for the current branch and exports WORK_FOLDER
+# so all scripts in the session can use it without searching.
+#
+# Writes WORK_FOLDER to $CLAUDE_ENV_FILE when available (Claude Code sessions).
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+BRANCH="$(git -C "$ROOT" branch --show-current)"
+BRANCH_SAFE="${BRANCH//\//-}"
+DATE="$(date +%Y_%m_%d)"
+WORK_FOLDER="$ROOT/work/${DATE}_${BRANCH_SAFE}"
+
+mkdir -p "$WORK_FOLDER"
+
+export WORK_FOLDER
+
+if [[ -n "${CLAUDE_ENV_FILE:-}" ]]; then
+  echo "WORK_FOLDER=$WORK_FOLDER" >> "$CLAUDE_ENV_FILE"
+fi
+
+echo "Work folder: $WORK_FOLDER"

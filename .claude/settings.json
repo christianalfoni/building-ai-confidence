@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm install && npx playwright install chromium"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm install && npx playwright install chromium && ./scripts/setup-work-folder"
           }
         ]
       }

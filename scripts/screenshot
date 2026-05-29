@@ -4,8 +4,6 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 import { mkdir } from "fs/promises";
 import { resolve } from "path";
-import { execSync } from "child_process";
-import { readdirSync } from "fs";
 
 const [component, story] = process.argv.slice(2);
 
@@ -31,29 +29,13 @@ if (!viewport) {
 }
 
 const root = new URL("..", import.meta.url).pathname;
-const workDir = resolve(root, "work");
 
-// Resolve the work folder for the current branch
-const branch = execSync("git branch --show-current", { cwd: root }).toString().trim();
-const branchSafe = branch.replace(/\//g, "-");
-const branchSuffix = `_${branchSafe}`;
-
-let entries;
-try {
-  entries = readdirSync(workDir, { withFileTypes: true });
-} catch {
-  console.error(`Error: work/ directory not found. Run ./scripts/start-work <branch-name> first.`);
+if (!process.env.WORK_FOLDER) {
+  console.error("Error: WORK_FOLDER is not set. The SessionStart hook may not have run.");
   process.exit(1);
 }
 
-const match = entries.find((e) => e.isDirectory() && e.name.endsWith(branchSuffix));
-if (!match) {
-  console.error(`Error: no work folder found for branch '${branch}'. Run ./scripts/start-work <branch-name> first.`);
-  process.exit(1);
-}
-
-const workFolder = resolve(workDir, match.name);
-const outDir = resolve(workFolder, "screenshots");
+const outDir = resolve(process.env.WORK_FOLDER, "screenshots");
 await mkdir(outDir, { recursive: true });
 
 const server = await createServer({ root, server: { port: 5199 } });

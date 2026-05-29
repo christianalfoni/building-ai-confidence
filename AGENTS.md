@@ -12,7 +12,7 @@ work/                         # One folder per branch — YYYY_MM_DD_<branch-nam
     PLAN.md                   # Approved implementation plan (see workflows/PLAN.md)
     screenshots/              # Screenshots for this branch, committed with the branch
 scripts/                      # Bash scripts for deterministic context retrieval (run these instead of manual searches)
-  start-work                  # Pulls main, creates a branch, and sets up the work folder
+  setup-work-folder           # Creates the work folder for the current branch and exports $WORK_FOLDER (run by SessionStart hook)
   list-recent-work            # Prints work folders from the last 7 days, newest first
   screenshot                  # Takes a screenshot of a component story
   screenshot-url              # Generates raw-GitHub <a>/<img> embed markup for PR bodies
@@ -71,7 +71,6 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 
 | Script                       | When to use                                                                                                                                      |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scripts/start-work`         | At session start when on `main` — pulls latest, creates a branch, and sets up the work folder: `./scripts/start-work <branch-name>`.            |
 | `scripts/list-recent-work`   | Before planning or implementing — check what has been worked on in the last 7 days to avoid duplicating or contradicting recent work.            |
 | `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot desktop/App <storyName>` or `./scripts/screenshot mobile/App <storyName>`. Saves into the current branch's work folder.    |
 | `scripts/screenshot-url`     | Generate raw-GitHub `<a>/<img>` embed markup for screenshots: `./scripts/screenshot-url <name> [<name> ...]`. Paste output directly into a PR body.                                      |
@@ -87,22 +86,7 @@ Run from the project root: `./scripts/list-recent-work`
 git branch --show-current
 ```
 
-### If on `main`
-
-Do not make changes, run scripts, or create files on `main`. Instead:
-
-1. Derive a short, kebab-case branch name from the user's request (e.g. `feat/user-auth`, `fix/login-redirect`). If the request is too vague to name a branch, ask the user to clarify before proceeding.
-2. Run the start-work script:
-   ```bash
-   ./scripts/start-work <branch-name>
-   ```
-   This pulls the latest `main`, creates the branch, and sets up the work folder in one step.
-3. **If the script fails for any reason:** stop immediately, show the full error output to the user, and ask how to proceed. Do not attempt any other work.
-4. Confirm the branch and work folder to the user, then continue with the request.
-
-### If on any other branch
-
-Tell the user which branch is checked out and confirm that the session will continue work on that branch. Then proceed with the request.
+Each session starts on a pre-created branch. Tell the user which branch is checked out and confirm that the session will continue work on that branch. Never commit directly to `main`.
 
 ---
 
