@@ -1,6 +1,8 @@
 import { lazy } from "react";
+import { isMobileUA } from "./utils.ts";
 
-const isMobile = window.matchMedia("(pointer: coarse)").matches;
+const isMobile =
+  typeof navigator !== "undefined" ? isMobileUA(navigator.userAgent) : false;
 
 export const PlatformApp = lazy(() =>
   isMobile ? import("./mobile/App") : import("./desktop/App")
