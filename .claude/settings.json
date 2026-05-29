@@ -1,9 +1,0 @@
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [{ "type": "command", "command": "bash .claude/load-env.sh" }]
-      }
-    ]
-  }
-}
