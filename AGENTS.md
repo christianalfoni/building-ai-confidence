@@ -29,6 +29,17 @@ scripts/                      # Bash scripts for deterministic context retrieval
   screenshot                  # Takes a screenshot of a component story
   screenshot-url              # Generates raw-GitHub <a>/<img> embed markup for PR bodies
   capture-agent-sessions      # Distills agent sessions into the current branch's work folder
+  db-migrate                  # Creates/migrates Neon DB tables (run once per environment)
+server/                       # Nitro server-only code (not bundled into the client)
+  routes/                     # File-based Nitro routes — filename maps to URL path
+    auth/
+      github.ts               # GET /auth/github — redirects to GitHub OAuth
+      callback.ts             # GET /auth/callback — exchanges code, sets session cookie
+      logout.ts               # POST /auth/logout — deletes session, clears cookie
+    api/
+      todos/
+        index.ts              # POST /api/todos
+        [id].ts               # PATCH/DELETE /api/todos/:id
 workflows/                    # Agent workflow instructions
   RESEARCH.md                 # How to investigate before planning
   PLAN.md                     # How to plan and get approval before coding
@@ -80,6 +91,48 @@ The four layers flow in one direction: `services → state → contexts → comp
 - **contexts** — Each context file exports a `createContext` instance and a typed `use*` hook (e.g. `useApp()`). Components access state exclusively through these hooks, never through raw `useContext`.
 - **components** — Live under `desktop/components/` or `mobile/components/`. Derive UI from state via the hooks in `contexts/`. They re-render only when the specific properties they read change. You need no selectors or subscription hooks.
 - **ui-components** — Live under `desktop/ui-components/` or `mobile/ui-components/`. `<Tooltip>`, `<Input>`, `<Dropdown>` and similar generic building blocks with no knowledge of the app. The only place you should use `useState`.
+
+## Server routes
+
+Nitro server-only routes live in `server/routes/`. The filename maps directly to the URL path — `server/routes/auth/github.ts` handles `GET /auth/github`. Dynamic segments use `[param]` syntax (e.g. `server/routes/api/todos/[id].ts` → `/api/todos/:id`).
+
+Route handlers use Nitro's auto-imported helpers (`defineEventHandler`, `getCookie`, `setCookie`, `readBody`, `sendRedirect`, `getRouterParam`, etc.) — no explicit imports needed.
+
+Route handlers that talk to the database instantiate `NeonDatabaseService` directly. They never import from `src/services/client/`.
+
+## Authentication
+
+Auth is handled via GitHub OAuth. The flow:
+
+1. `GET /auth/github` — redirects to `https://github.com/login/oauth/authorize`
+2. `GET /auth/callback` — exchanges the `code` param for an access token, fetches the GitHub user, upserts them into the `users` table, creates a row in `sessions`, sets an `httpOnly session` cookie, redirects to `/`
+3. `POST /auth/logout` — deletes the session row, clears the cookie, redirects to `/`
+
+The session cookie is read in `entry-server.tsx` on every request. The resolved `User | null` is passed into `AppState` and exposed via `useApp()` as `app.user`.
+
+**Environment variables required:** `DATABASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `APP_URL` (defaults to `http://localhost:5173`).
+
+## SSR rehydration pattern
+
+The server and client use separate service implementations for any service that accesses infrastructure the browser cannot reach (e.g. the database):
+
+| | Server | Client |
+|---|---|---|
+| `DatabaseService` | `NeonDatabaseService` — queries Neon directly | `ApiDatabaseService` — calls Nitro API routes |
+| `StorageService` | `MemoryStorageService` — in-memory | `LocalStorageService` — localStorage |
+
+**How rehydration works:**
+
+1. `entry-server.tsx` runs the server service, populates `AppState`, then serialises the initial data into `window.__INITIAL_DATA__` as an inline `<script>` tag in the SSR stream.
+2. `entry-client.tsx` reads `window.__INITIAL_DATA__` and passes it to the client service constructor and `AppState` — no extra network round-trip on first load.
+3. Subsequent mutations go through the client service, which calls Nitro API routes that proxy to the database server-side.
+
+When adding a new service that follows this pattern:
+- Define the interface in `src/services/index.ts`
+- Add the server impl to `src/services/server/`
+- Add the client impl to `src/services/client/` — constructor accepts the initial data payload
+- Extend `window.__INITIAL_DATA__` in `entry-server.tsx` and `entry-client.tsx`
+- Add corresponding Nitro API routes in `server/routes/api/`
 
 ## Scripts
 
