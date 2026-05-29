@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 import { Input } from "../ui-components/Input";
 import { Checkbox } from "../ui-components/Checkbox";
@@ -42,7 +43,7 @@ function TodoItem({ todo }: { todo: Todo }) {
         aria-label="Delete"
         disabled={isEditing}
       >
-        ×
+        <Trash2 className="w-4 h-4" />
       </IconButton>
     </li>
   );

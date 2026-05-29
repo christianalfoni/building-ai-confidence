@@ -11,6 +11,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "reactx": "^1.0.0-alpha.5"
