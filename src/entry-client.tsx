@@ -7,13 +7,23 @@ import { reactive } from 'reactx';
 import { AppState } from './state/AppState.ts';
 import type { Services } from './services/index.ts';
 import { LocalStorageService } from './services/client/StorageService.ts';
+import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
+
+declare global {
+  interface Window {
+    __INITIAL_DATA__?: InitialData;
+  }
+}
+
+const initialData: InitialData = window.__INITIAL_DATA__ ?? { user: null, todos: [] };
 
 const services: Services = {
   storage: new LocalStorageService(),
+  db: new ApiDatabaseService(initialData),
 };
 
-const app = reactive(new AppState(services));
+const app = reactive(new AppState(services, initialData.user, initialData.todos));
 
 hydrateRoot(
   document.getElementById('root')!,

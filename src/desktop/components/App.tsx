@@ -58,11 +58,31 @@ export function App() {
       <header className="border-b border-surface px-8 py-4 flex items-center gap-3">
         <span className="text-crimson font-bold text-lg">◈</span>
         <span className="font-semibold text-navy text-sm">Building AI Confidence</span>
-        {app.todos.length > 0 && (
-          <span className="ml-auto text-sm text-navy/50">
-            {completedCount} of {app.todos.length} complete
-          </span>
-        )}
+        <span className="ml-auto flex items-center gap-4">
+          {app.todos.length > 0 && (
+            <span className="text-sm text-navy/50">
+              {completedCount} of {app.todos.length} complete
+            </span>
+          )}
+          {app.user ? (
+            <span className="flex items-center gap-2">
+              <img src={app.user.avatarUrl} alt={app.user.name} className="w-7 h-7 rounded-full" />
+              <button
+                onClick={() => app.signOut()}
+                className="text-xs text-navy/60 hover:text-navy cursor-pointer"
+              >
+                Sign out
+              </button>
+            </span>
+          ) : (
+            <a
+              href="/auth/github"
+              className="text-xs bg-crimson text-white px-3 py-1.5 rounded-md hover:bg-terracotta"
+            >
+              Sign in with GitHub
+            </a>
+          )}
+        </span>
       </header>
       <main className="flex-1 px-8 py-8 max-w-2xl w-full mx-auto">
         <Input
