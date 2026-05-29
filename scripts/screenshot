@@ -38,17 +38,21 @@ const branch = execSync("git branch --show-current", { cwd: root }).toString().t
 const branchSafe = branch.replace(/\//g, "-");
 const branchSuffix = `_${branchSafe}`;
 
-let workFolder;
+let entries;
 try {
-  const entries = readdirSync(workDir, { withFileTypes: true });
-  const match = entries.find(
-    (e) => e.isDirectory() && e.name.endsWith(branchSuffix)
-  );
-  workFolder = match ? resolve(workDir, match.name) : resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branchSafe}`);
+  entries = readdirSync(workDir, { withFileTypes: true });
 } catch {
-  workFolder = resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branchSafe}`);
+  console.error(`Error: work/ directory not found. Run ./scripts/start-work <branch-name> first.`);
+  process.exit(1);
 }
 
+const match = entries.find((e) => e.isDirectory() && e.name.endsWith(branchSuffix));
+if (!match) {
+  console.error(`Error: no work folder found for branch '${branch}'. Run ./scripts/start-work <branch-name> first.`);
+  process.exit(1);
+}
+
+const workFolder = resolve(workDir, match.name);
 const outDir = resolve(workFolder, "screenshots");
 await mkdir(outDir, { recursive: true });
 
