@@ -1,9 +1,9 @@
 import { renderToReadableStream } from 'react-dom/server.edge';
 import { StrictMode, Suspense } from 'react';
 import { AppContext } from './contexts/AppContext.ts';
-import { reactive } from 'reactx';
 import { AppState } from './state/AppState.ts';
-import type { Services, StorageService } from './services/index.ts';
+import type { Services } from './services/index.ts';
+import { MemoryStorageService } from './services/server/StorageService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
 
 // @ts-expect-error — Nitro virtual module types
@@ -11,27 +11,11 @@ import clientAssets from './entry-client?assets=client';
 // @ts-expect-error — Nitro virtual module types
 import serverAssets from './entry-server?assets=ssr';
 
-class MemoryStorageService implements StorageService {
-  #store = new Map<string, string>();
-  get<T>(key: string): T | null {
-    const item = this.#store.get(key);
-    if (!item) return null;
-    try {
-      return JSON.parse(item) as T;
-    } catch {
-      return null;
-    }
-  }
-  set<T>(key: string, value: T): void {
-    this.#store.set(key, JSON.stringify(value));
-  }
-}
-
 export default {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async fetch(_request: Request) {
     const services: Services = { storage: new MemoryStorageService() };
-    const app = reactive(new AppState(services));
+    const app = new AppState(services);
     const assets = clientAssets.merge(serverAssets);
 
     const stream = await renderToReadableStream(

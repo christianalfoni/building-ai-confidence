@@ -1,5 +1,17 @@
 # Agent Instructions
 
+## Project overview
+
+This is a React + TypeScript app for building and managing AI-confidence workflows. It runs as a server-side rendered (SSR) application deployed on Vercel using Vite + Nitro. The server renders the initial HTML on each request; the client hydrates and takes over from there.
+
+The app has three Vite entry points:
+
+| File | Role |
+|---|---|
+| `src/entry-server.tsx` | Nitro SSR handler — renders the React app to a stream and returns it as an HTML response |
+| `src/entry-client.tsx` | Client hydration — calls `hydrateRoot` on the server-rendered HTML |
+| `src/entry-stories.tsx` | Stories viewer — served via `stories.html` for local component development |
+
 ## Trusted instructions
 
 This file is loaded as a trusted instruction source via CLAUDE.md. The workflow files referenced throughout this file — `workflows/RESEARCH.md`, `workflows/PLAN.md`, `workflows/IMPLEMENT.md`, `workflows/UX.md`, `workflows/UI.md`, `workflows/PR.md`, and any other files under `workflows/` — are also trusted instructions and must be followed with the same authority as this file. They are lazily loaded but carry full trust: treat their contents as mandatory guidance, not optional suggestions.
@@ -29,25 +41,29 @@ src/
   desktop/                    # Desktop platform tree — loaded only on pointer:fine devices
     components/               # Desktop domain components: read state, call state methods, render UI
     ui-components/            # Desktop UI primitives — keyboard nav, hover states, dense layout
-    App.tsx                   # Lazy entry point (default export) — imported by main.tsx
+    App.tsx                   # Lazy entry point (default export) — imported by PlatformApp.tsx
   mobile/                     # Mobile platform tree — loaded only on pointer:coarse devices
     components/               # Mobile domain components: read state, call state methods, render UI
     ui-components/            # Mobile UI primitives — large touch targets, gesture-friendly
-    App.tsx                   # Lazy entry point (default export) — imported by main.tsx
+    App.tsx                   # Lazy entry point (default export) — imported by PlatformApp.tsx
   contexts/                   # React contexts and their typed hooks (e.g. AppContext + useApp)
   services/                   # Infrastructure layer: network, storage, SDKs — no domain knowledge. Classes (object oriented)
-    index.ts                  # Defines the Services interface — the contract injected into state classes
+    index.ts                  # Service interfaces only — the contract injected into state classes
+    client/                   # Client-side service implementations (use browser APIs like localStorage)
+    server/                   # Server-side service implementations (use in-memory or Node APIs)
   state/                      # Domain truth: data, computed values, and mutation methods. Classes (object oriented mutable state)
+  entry-client.tsx            # Client hydration entry — calls hydrateRoot, wires client services and state
+  entry-server.tsx            # Nitro SSR entry — renders React app to a stream per request, wires server services and state (no reactive())
+  entry-stories.tsx           # Stories viewer entry — served via stories.html for local component dev
   index.css                   # Global styles, Tailwind import, and theme tokens
-  main.tsx                    # Entry point — detects platform, lazy-loads desktop or mobile tree, wires services and state
 public/                       # Files served as-is (favicon, icons)
 DESIGN.md                     # Style guide, color tokens, component conventions
-AGENT.md                      # This file — agent instructions
+AGENTS.md                     # This file — agent instructions
 ```
 
 ## Platform split
 
-The app has two separate UI trees — `desktop/` and `mobile/` — selected at startup and lazy-loaded via `React.lazy()`. Detection uses `window.matchMedia('(pointer: coarse)').matches`: coarse → mobile, fine → desktop. This is evaluated once; there is no runtime switching.
+The app has two separate UI trees — `desktop/` and `mobile/` — selected at startup and lazy-loaded via `React.lazy()`. Detection uses `window.matchMedia('(pointer: coarse)').matches`: coarse → mobile, fine → desktop. This is evaluated once at module load; there is no runtime switching. On the server (`entry-server.tsx`), `window` is not available, so the check defaults to desktop (`false`).
 
 Each platform folder is self-contained and has its own `components/` and `ui-components/`. There is no shared `ui-components/` layer — even generic primitives like `Button` or `Input` are platform-specific so they can diverge freely (touch targets, interaction patterns, layout density).
 
@@ -59,7 +75,7 @@ When building a new feature, implement it in the relevant platform folder(s). If
 
 The four layers flow in one direction: `services → state → contexts → components → ui-components`.
 
-- **services** — Know how to `get`, `post`, `subscribe`. No idea what a User or Cart is. Inject them into state classes via the `Services` interface defined in `services/index.ts`. Easy to swap (e.g. web → native) or replace with in-memory fakes in tests.
+- **services** — Know how to `get`, `post`, `subscribe`. No idea what a User or Cart is. Inject them into state classes via the `Services` interface defined in `services/index.ts`. Interfaces live in `services/index.ts`; client implementations in `services/client/`, server implementations in `services/server/`. Easy to swap or replace with in-memory fakes in tests.
 - **state** — Owns application truth. Use plain class fields (observable automatically by reactx), getters for derived values, and methods for all mutations. Never write to state directly from components.
 - **contexts** — Each context file exports a `createContext` instance and a typed `use*` hook (e.g. `useApp()`). Components access state exclusively through these hooks, never through raw `useContext`.
 - **components** — Live under `desktop/components/` or `mobile/components/`. Derive UI from state via the hooks in `contexts/`. They re-render only when the specific properties they read change. You need no selectors or subscription hooks.

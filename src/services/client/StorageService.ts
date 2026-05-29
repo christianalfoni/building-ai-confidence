@@ -1,4 +1,4 @@
-import type { StorageService } from "./index";
+import type { StorageService } from '../index.ts';
 
 export class LocalStorageService implements StorageService {
   get<T>(key: string): T | null {

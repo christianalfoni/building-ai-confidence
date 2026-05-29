@@ -5,7 +5,7 @@ import { AppContext } from "./contexts/AppContext.ts";
 import { reactive } from "reactx";
 import { AppState } from "./state/AppState.ts";
 import type { Services } from "./services/index.ts";
-import { LocalStorageService } from "./services/StorageService.ts";
+import { LocalStorageService } from "./services/client/StorageService.ts";
 import { PlatformApp } from "./PlatformApp.tsx";
 
 const services: Services = {
