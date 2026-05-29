@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: \.env\.staging$
+    age: age1kxxfseqqv94x54yh58erxnt6qx6636fwksucp9m80dlcvn0xlszs648n70
