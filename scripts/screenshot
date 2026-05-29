@@ -35,7 +35,8 @@ const workDir = resolve(root, "work");
 
 // Resolve the work folder for the current branch
 const branch = execSync("git branch --show-current", { cwd: root }).toString().trim();
-const branchSuffix = `_${branch}`;
+const branchSafe = branch.replace(/\//g, "-");
+const branchSuffix = `_${branchSafe}`;
 
 let workFolder;
 try {
@@ -43,9 +44,9 @@ try {
   const match = entries.find(
     (e) => e.isDirectory() && e.name.endsWith(branchSuffix)
   );
-  workFolder = match ? resolve(workDir, match.name) : resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branch}`);
+  workFolder = match ? resolve(workDir, match.name) : resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branchSafe}`);
 } catch {
-  workFolder = resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branch}`);
+  workFolder = resolve(workDir, `${new Date().toISOString().slice(0, 10).replace(/-/g, "_")}_${branchSafe}`);
 }
 
 const outDir = resolve(workFolder, "screenshots");
