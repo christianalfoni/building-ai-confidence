@@ -24,7 +24,7 @@ SCREENSHOTS_REL="$(realpath --relative-to="$ROOT" "$WORK_FOLDER")/screenshots"
 
 for name in "$@"; do
   name="${name%.png}"
-  URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/${SCREENSHOTS_REL}/${name}.png"
-  echo "<a href=\"${URL}\" target=\"_blank\"><img src=\"${URL}\" width=\"600\" /></a>"
+  URL="//raw.githubusercontent.com/${REPO}/${BRANCH}/${SCREENSHOTS_REL}/${name}.png"
+  echo "<a href=\"https:${URL}\" target=\"_blank\"><img src=\"${URL}\" width=\"600\" /></a>"
   echo ""
 done
