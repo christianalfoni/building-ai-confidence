@@ -35,11 +35,11 @@ Submit completed work as a pull request on GitHub.
    ```bash
    git push -u origin <branch-name>
    ```
-7. Run lint before submitting:
+7. Run typecheck and lint before submitting:
    ```bash
-   npm run lint
+   npx tsc -b && npm run lint
    ```
-   Fix any errors before continuing.
+   Fix any errors before continuing. Both must pass — `tsc -b` catches type errors that ESLint misses (e.g. unused private fields, type mismatches).
 
 8. Create or update the PR using MCP tools:
    - **No open PR exists:** call `mcp__github__create_pull_request` with `owner=christianalfoni`,
