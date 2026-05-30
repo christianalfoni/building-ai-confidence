@@ -178,7 +178,15 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 
 Run from the project root: `./scripts/list-recent-work`
 
-## Vercel logs
+## Vercel deployments
+
+Every branch that has an open pull request automatically gets a **Vercel preview deployment** — a fully deployed instance of the app with SSR, auth, and the database all wired up. This is the primary way for the user to test a feature before it is merged: a PR is not just a code review artifact, it is also a live preview environment.
+
+**After creating a PR**, fetch the preview URL with `scripts/vercel-logs` (the deployment URL is printed in its header) and include it in your reply to the user so they can open it immediately.
+
+**When to use the preview instead of local screenshots:** any time the change involves SSR rendering, auth flows, API routes, or behaviour that depends on the real database. Screenshots from `./scripts/screenshot` cover component appearance; the preview deployment covers end-to-end behaviour.
+
+### Fetching logs
 
 Use `scripts/vercel-logs` to fetch logs for the latest deployment on the current branch:
 

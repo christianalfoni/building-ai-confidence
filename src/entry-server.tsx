@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { renderToReadableStream } from 'react-dom/server.edge';
 import { StrictMode, Suspense } from 'react';
 import { AppContext } from './contexts/AppContext.ts';
@@ -31,6 +30,7 @@ async function render(request: Request) {
     const user = db && sessionId ? await db.getUser(sessionId) : null;
     const todos = db ? await db.getTodos(user?.id ?? null) : [];
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { vercelEnv } = useRuntimeConfig();
     const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user, todos };
     const services: Services = { storage: new MemoryStorageService(), db };
