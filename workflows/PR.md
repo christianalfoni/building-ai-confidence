@@ -35,11 +35,11 @@ Submit completed work as a pull request on GitHub.
    ```bash
    git push -u origin <branch-name>
    ```
-7. Run lint before submitting:
+7. Run typecheck and lint before submitting:
    ```bash
-   npm run lint
+   npx tsc -b && npm run lint
    ```
-   Fix any errors before continuing.
+   Fix any errors before continuing. Both must pass — `tsc -b` catches type errors that ESLint misses (e.g. unused private fields, type mismatches).
 
 8. Create or update the PR using MCP tools:
    - **No open PR exists:** call `mcp__github__create_pull_request` with `owner=christianalfoni`,
@@ -74,11 +74,13 @@ Submit completed work as a pull request on GitHub.
 
    The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
 
-   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`, then generate the embed markup with:
+   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`, then generate links with:
    ```bash
    ./scripts/screenshot-url <before-name> <after-name>
    ```
-   This prints a ready-to-paste `<a>/<img>` block for each name. Paste the output directly into the PR body under the relevant section. Screenshot names may include or omit the `.png` extension.
+   This prints a `[name](/path)` link for each screenshot. Paste the output directly into the PR body. Screenshot names may include or omit the `.png` extension.
+
+   > **Note:** The Anthropic MCP proxy mangles `https://` URLs and HTML image tags in PR bodies, so screenshots are linked rather than inlined. Clicking a link opens the raw image on GitHub.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 9. Report the PR URL to the user.

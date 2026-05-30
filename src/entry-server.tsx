@@ -1,10 +1,7 @@
-/* eslint-disable react-refresh/only-export-components */
 import { renderToReadableStream } from 'react-dom/server.edge';
 import { StrictMode, Suspense } from 'react';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
-import type { Services } from './services/index.ts';
-import { MemoryStorageService } from './services/server/StorageService.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
@@ -16,7 +13,6 @@ export default {
       return await render(request);
     } catch (err) {
       console.error('[SSR] render error:', err);
-      // Return an empty shell so the client can still hydrate
       return new Response('', { status: 500, headers: { 'Content-Type': 'text/html;charset=utf-8' } });
     }
   },
@@ -29,12 +25,11 @@ async function render(request: Request) {
     const cookie = request.headers.get('cookie') ?? '';
     const sessionId = parseCookie(cookie, 'session');
     const user = db && sessionId ? await db.getUser(sessionId) : null;
-    const todos = db ? await db.getTodos(user?.id ?? null) : [];
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { vercelEnv } = useRuntimeConfig();
-    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user, todos };
-    const services: Services = { storage: new MemoryStorageService(), db };
-    const app = new AppState(services, user, todos, initialData.isPreview);
+    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user };
+    const app = new AppState(user, initialData.isPreview);
 
     const ua = request.headers.get('user-agent') ?? '';
     const App = isMobileUA(ua)

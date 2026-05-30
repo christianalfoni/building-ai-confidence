@@ -2,46 +2,45 @@
 
 ## Color Palette
 
+Terminal dark theme inspired by Catppuccin Mocha.
+
 | Token | Hex | Usage |
 |---|---|---|
-| `surface` | `#F3F2F5` | Page backgrounds, cards, containers |
-| `crimson` | `#C03535` | Primary actions, destructive states, emphasis |
-| `terracotta` | `#CD5130` | Secondary actions, hover states, highlights |
-| `gold` | `#D4A83C` | Accents, badges, warnings |
-| `navy` | `#2D4A7A` | Text on light, headers, navigation, trust signals |
+| `base` | `#070B10` | Outer page background |
+| `terminal` | `#13161D` | Terminal window background |
+| `chrome` | `#0F1219` | Title bar / sticky header |
+| `surface` | `#1A1E2A` | Card backgrounds, inset panels |
+| `border` | `#252836` | Borders, dividers |
+| `dim` | `#45475A` | Very muted text, separators |
+| `muted` | `#6C7086` | Placeholder text, timestamps, metadata |
+| `subtext` | `#BAC2DE` | Body text, post content |
+| `text` | `#CDD6F4` | Primary text |
+| `mauve` | `#CBA6F7` | Headings, prompt symbol, interactive accents |
+| `teal` | `#89DCEB` | Post titles, highlighted values |
+| `green` | `#A6E3A1` | Tags, success states |
 
 ## Theme Tokens
 
-Theme tokens are defined as CSS custom properties via Tailwind's `@theme` block in `src/index.css`. They are available as Tailwind utility classes (e.g. `bg-surface`, `text-navy`, `border-crimson`).
-
-### Scale convention
-
-Each color has a single semantic role. No numeric scale — keep it purposeful.
-
-```
-surface     → backgrounds / containers
-crimson     → primary / danger
-terracotta  → secondary / hover
-gold        → accent / badge / warning
-navy        → headings / navigation / body text on light
-```
+Defined as CSS custom properties via Tailwind's `@theme` block in `src/index.css`. Available as Tailwind utility classes (`bg-terminal`, `text-mauve`, `border-border`, etc.).
 
 ## Typography
 
-- **Font family:** system-ui stack (no custom font)
-- **Headings:** `font-semibold`, `text-navy`
-- **Body:** default weight, `text-navy/80` or `text-gray-700`
-- **Mono / code:** `font-mono`, `text-terracotta`
+- **Font family:** monospace (`font-mono`) throughout — the entire UI uses monospace to reinforce the terminal aesthetic
+- **Headings:** `font-bold text-mauve` (directory paths) or `font-semibold text-teal` (post titles)
+- **Body:** `text-subtext leading-relaxed`
+- **Meta / timestamps:** `text-xs text-muted`
 
 ## Spacing & Radius
 
 - Base unit: `4px` (Tailwind default)
-- Border radius: `rounded-md` (6px) for inputs/buttons, `rounded-lg` (8px) for cards
-- Card padding: `p-6`
+- Border radius: `rounded` (4px) for tags, `rounded-lg` (8px) for cards
+- Card padding: `p-4` (mobile), `p-6` (desktop)
 
 ## Component Conventions
 
-- **Buttons – primary:** `bg-crimson text-white hover:bg-terracotta`
-- **Buttons – secondary:** `border border-navy text-navy hover:bg-surface`
-- **Badges:** `bg-gold/20 text-navy text-xs font-semibold rounded-full px-2 py-0.5`
-- **Focus ring:** `focus-visible:ring-2 focus-visible:ring-crimson`
+- **Terminal window** (desktop): dark `bg-terminal` container with `bg-chrome` title bar and traffic-light dots (`#FF5F57`, `#FFBD2E`, `#28CA41`)
+- **Tags:** `text-xs text-green bg-green/10 px-1.5 py-0.5 rounded font-mono`
+- **Prompt symbol:** `text-mauve` `❯` character with a blinking `bg-mauve/80` cursor block
+- **Interactive rows:** `cursor-pointer` with `hover:text-mauve` on title, no background flash — keep it terminal-like
+- **Navigation back:** plain text `← cd ..` button, `text-muted hover:text-text`
+- **Auth controls:** minimal text links in the title bar, `text-muted` or `text-mauve`, `font-mono text-xs`
