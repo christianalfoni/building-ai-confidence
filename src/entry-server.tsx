@@ -39,9 +39,9 @@ export default {
     const user = db && sessionId ? await db.getUser(sessionId) : null;
     const todos = db ? await db.getTodos(user?.id ?? null) : [];
 
-    const initialData: InitialData = { dbEnabled: !!db, user, todos };
+    const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, todos };
     const services: Services = { storage: new MemoryStorageService(), db };
-    const app = new AppState(services, user, todos);
+    const app = new AppState(services, user, todos, initialData.isPreview);
 
     const ua = request.headers.get('user-agent') ?? '';
     const App = isMobileUA(ua)

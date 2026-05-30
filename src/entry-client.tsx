@@ -16,7 +16,7 @@ declare global {
   }
 }
 
-const initialData: InitialData = window.__INITIAL_DATA__ ?? { dbEnabled: false, user: null, todos: [] };
+const initialData: InitialData = window.__INITIAL_DATA__ ?? { dbEnabled: false, isPreview: false, user: null, todos: [] };
 
 const services: Services = {
   storage: new LocalStorageService(),
@@ -25,7 +25,7 @@ const services: Services = {
   db: initialData.dbEnabled ? new ApiDatabaseService(initialData) : undefined,
 };
 
-const app = reactive(new AppState(services, initialData.user, initialData.todos));
+const app = reactive(new AppState(services, initialData.user, initialData.todos, initialData.isPreview));
 
 hydrateRoot(
   document.getElementById('root')!,
