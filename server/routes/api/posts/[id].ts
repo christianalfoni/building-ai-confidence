@@ -18,7 +18,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const id = getRouterParam(event, 'id')!;
-  const body = await readBody(event);
 
-  return db.updatePost(id, body);
+  const posts = await db.getPosts();
+  const post = posts.find((p) => p.id === id);
+  if (!post) throw createError({ statusCode: 404, message: 'Not found' });
+  if (post.authorId !== user.id) throw createError({ statusCode: 403, message: 'Forbidden' });
+
+  const body = await readBody(event);
+  const fields: { title?: string; body?: string; published?: boolean } = {};
+  if (typeof body.title === 'string') fields.title = body.title;
+  if (typeof body.body === 'string') fields.body = body.body;
+  if (typeof body.published === 'boolean') fields.published = body.published;
+
+  return db.updatePost(id, fields);
 });

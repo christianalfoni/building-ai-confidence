@@ -15,23 +15,16 @@ export function BlogEditor() {
     if (bodyRef.current) {
       bodyRef.current.textContent = initialBody.current;
     }
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
   }, []);
 
   if (!post) return null;
 
   function scheduleSave(fields: Partial<Pick<DbPost, "title" | "body" | "published">>) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      const res = await fetch(`/api/posts/${post!.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (res.ok) {
-        const updated = (await res.json()) as DbPost;
-        app.updateDbPost(updated);
-      }
-    }, DEBOUNCE_MS);
+    saveTimer.current = setTimeout(() => { app.savePost(fields); }, DEBOUNCE_MS);
   }
 
   function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {

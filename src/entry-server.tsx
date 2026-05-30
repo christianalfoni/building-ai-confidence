@@ -7,6 +7,8 @@ import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import { useRuntimeConfig } from 'nitro/runtime-config';
 
+const AUTHOR_LOGINS = ['christianalfoni', 'test'];
+
 export default {
   async fetch(request: Request) {
     try {
@@ -28,7 +30,9 @@ async function render(request: Request) {
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { vercelEnv } = useRuntimeConfig();
-    const posts = db ? await db.getPosts() : [];
+    const posts = db ? (await db.getPosts()).filter(
+      (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
+    ) : [];
     const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user, posts };
     const app = new AppState(user, initialData.isPreview, posts);
 

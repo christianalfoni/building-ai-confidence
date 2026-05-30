@@ -5,7 +5,7 @@ import './index.css';
 import { AppContext } from './contexts/AppContext.ts';
 import { reactive } from 'reactx';
 import { AppState } from './state/AppState.ts';
-import type { InitialData } from './services/client/DatabaseService.ts';
+import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
 
 const dataEl = document.getElementById('__initial_data__');
@@ -13,7 +13,8 @@ const initialData: InitialData = dataEl
   ? (JSON.parse(dataEl.textContent!) as InitialData)
   : { dbEnabled: false, isPreview: false, user: null, posts: [] };
 
-const app = reactive(new AppState(initialData.user, initialData.isPreview, initialData.posts));
+const db = new ApiDatabaseService(initialData);
+const app = reactive(new AppState(initialData.user, initialData.isPreview, initialData.posts, db));
 
 hydrateRoot(
   document.getElementById('root')!,

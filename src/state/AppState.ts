@@ -1,4 +1,4 @@
-import type { DbPost, User } from "../services";
+import type { DatabaseService, DbPost, User } from "../services";
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
@@ -13,11 +13,13 @@ export class AppState {
   draftTitle: string = "";
   draftPublished: boolean = false;
   dbPosts: DbPost[] = [];
+  private db: DatabaseService | null;
 
-  constructor(user: User | null = null, isPreview = false, dbPosts: DbPost[] = []) {
+  constructor(user: User | null = null, isPreview = false, dbPosts: DbPost[] = [], db: DatabaseService | null = null) {
     this.user = user;
     this.isPreview = isPreview;
     this.dbPosts = dbPosts;
+    this.db = db;
   }
 
   get isAuthor(): boolean {
@@ -58,6 +60,19 @@ export class AppState {
     } else {
       this.dbPosts.unshift(post);
     }
+  }
+
+  async createPost() {
+    if (!this.db || !this.user) return;
+    const post = await this.db.createPost(this.user.id);
+    this.updateDbPost(post);
+    this.openEditor(post.id);
+  }
+
+  async savePost(fields: Partial<Pick<DbPost, 'title' | 'body' | 'published'>>) {
+    if (!this.db || !this.draftPostId) return;
+    const post = await this.db.updatePost(this.draftPostId, fields);
+    this.updateDbPost(post);
   }
 
   signOut() {

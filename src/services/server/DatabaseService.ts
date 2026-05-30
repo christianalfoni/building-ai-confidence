@@ -63,7 +63,11 @@ export class NeonDatabaseService implements DatabaseService {
   }
 
   async updatePost(id: string, fields: Partial<Pick<DbPost, 'title' | 'body' | 'published' | 'slug'>>): Promise<DbPost> {
-    const slug = fields.slug ?? (fields.title ? slugify(fields.title) : undefined);
+    const slug = fields.slug !== undefined
+      ? fields.slug
+      : fields.title !== undefined
+        ? (slugify(fields.title) || id)
+        : undefined;
     const rows = await this.sql`
       UPDATE posts SET
         title      = COALESCE(${fields.title ?? null}, title),

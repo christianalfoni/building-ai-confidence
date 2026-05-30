@@ -9,7 +9,12 @@ export default defineEventHandler(async (event) => {
   const db = new NeonDatabaseService(dbUrl);
 
   if (event.method === 'GET') {
-    return db.getPosts();
+    const sessionId = getCookie(event, 'session');
+    const user = sessionId ? await db.getUser(sessionId) : null;
+    const all = await db.getPosts();
+    return all.filter(
+      (p) => p.published || (user && ALLOWED_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
+    );
   }
 
   if (event.method === 'POST') {

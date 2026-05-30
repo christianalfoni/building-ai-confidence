@@ -24,14 +24,10 @@ export function BlogList() {
   const allPosts: Post[] = [
     ...visibleDbPosts.map(dbPostToPost),
     ...hardcodedPosts,
-  ];
+  ].sort((a, b) => b.date.localeCompare(a.date));
 
-  async function handleNewPost() {
-    const res = await fetch("/api/posts", { method: "POST" });
-    if (!res.ok) return;
-    const post = (await res.json()) as DbPost;
-    app.updateDbPost(post);
-    app.openEditor(post.id);
+  function handleNewPost() {
+    app.createPost();
   }
 
   return (
