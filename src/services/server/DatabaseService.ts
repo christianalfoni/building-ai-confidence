@@ -1,8 +1,9 @@
 import { neon } from '@neondatabase/serverless';
+import type { NeonQueryFunction } from '@neondatabase/serverless';
 import type { DatabaseService, User, Todo } from '../index.ts';
 
 export class NeonDatabaseService implements DatabaseService {
-  private sql: ReturnType<typeof neon>;
+  private sql: NeonQueryFunction<false, false>;
 
   constructor(connectionString: string) {
     this.sql = neon(connectionString);
