@@ -4,17 +4,20 @@ Submit completed work as a pull request on GitHub.
 
 ## Steps
 
-1. Check whether the current branch already has a PR using the `mcp__github__list_pull_requests` tool
+1. Confirm the current branch with `git branch --show-current`. Sessions start on a pre-assigned branch — use it as-is unless it is already merged or closed.
+
+   Check whether the current branch already has a PR using the `mcp__github__list_pull_requests` tool
    (`owner=christianalfoni`, `repo=building-ai-confidence`, `head=<branch>`).
    - If the result is `MERGED` or `CLOSED`, stop and create a new branch instead:
      ```bash
      git checkout main && git pull && git checkout -b <new-branch-name>
      ```
-2. Determine a branch name from the changes — short, kebab-case, descriptive (e.g. `fix/login-redirect`, `feat/user-profile`).
-3. Check out (or create) that branch:
-   ```bash
-   git checkout -b <branch-name>
-   ```
+   - Otherwise, continue on the current branch. Do not create a new branch.
+
+2. _(Skip — the branch is pre-assigned. Only create a new branch if step 1 required it.)_
+
+3. _(Skip — already on the correct branch.)_
+
 4. If a work folder exists for this branch (`work/YYYY_MM_DD_<branch-name>/`), capture agent sessions so they are included in the commit:
    ```bash
    ./scripts/capture-agent-sessions
@@ -79,6 +82,7 @@ Submit completed work as a pull request on GitHub.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 9. Report the PR URL to the user.
+10. After the PR is reviewed, use `./scripts/resolve-pr-thread <pr-number> "comment fragment"` to resolve addressed threads. Use the **review** workflow to apply feedback.
 
 ## Rules
 
