@@ -5,7 +5,7 @@ import { BlogPost } from "./BlogPost";
 export function App() {
   const app = useApp();
   return (
-    <div className="min-h-screen bg-terminal text-text">
+    <div className="min-h-screen bg-terminal text-text font-mono">
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-chrome border-b border-border">
         <span className="font-mono text-sm font-bold text-mauve">~/blog</span>
         {app.user ? (

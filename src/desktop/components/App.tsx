@@ -52,7 +52,7 @@ export function App() {
           </div>
         </div>
         {/* Content */}
-        <div className="p-6 bg-terminal">
+        <div className="p-6 bg-terminal font-mono">
           {app.selectedPostSlug ? <BlogPost /> : <BlogList />}
         </div>
       </div>
