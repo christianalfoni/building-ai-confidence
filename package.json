@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build --outDir dist/client && node scripts/gen-html-template.mjs && cp -r dist/client/. public/ && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --jsx=automatic --outfile=api/index.js",
+    "build": "vite build --outDir dist/client && node scripts/gen-html-template.mjs && tsc -b && cp -r dist/client/. public/ && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --jsx=automatic --outfile=api/index.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest"
