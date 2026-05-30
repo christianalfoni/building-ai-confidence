@@ -11,5 +11,7 @@ export default defineEventHandler(async (event) => {
     await db.deleteSession(sessionId);
   }
   deleteCookie(event, 'session', { path: '/' });
-  return sendRedirect(event, '/');
+  setResponseStatus(event, 302);
+  setHeader(event, 'location', '/');
+  return null;
 });
