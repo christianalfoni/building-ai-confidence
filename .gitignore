@@ -14,6 +14,7 @@ node_modules
 dist
 dist-ssr
 public/assets
+public/index.html
 public/stories.html
 
 *.local
