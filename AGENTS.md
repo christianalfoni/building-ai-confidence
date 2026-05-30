@@ -123,15 +123,18 @@ The server and client use separate service implementations for any service that 
 
 **How rehydration works:**
 
-1. `entry-server.tsx` runs the server service, populates `AppState`, then serialises the initial data into `window.__INITIAL_DATA__` as an inline `<script>` tag in the SSR stream.
-2. `entry-client.tsx` reads `window.__INITIAL_DATA__` and passes it to the client service constructor and `AppState` — no extra network round-trip on first load.
+1. `entry-server.tsx` runs the server service, populates `AppState`, then serialises the initial data into a hidden `<div id="__initial_data__">` element rendered as the first child of the React tree.
+2. `entry-client.tsx` reads `document.getElementById('__initial_data__').textContent`, parses it, and passes it to the client service constructor and `AppState` — no extra network round-trip on first load. It also renders the same hidden div in the hydration tree so React sees identical DOM on both sides.
 3. Subsequent mutations go through the client service, which calls Nitro API routes that proxy to the database server-side.
+
+**Why a hidden div, not `bootstrapScriptContent`?** Nitro renders only the React fragment into `<div id="root">` (not a full document). `bootstrapScriptContent` places its `<script>` inside `<div id="root">` but the client hydration tree doesn't include it — React 19 sees an extra node and throws hydration error #418. A `<div hidden>` is included in both trees and is never hoisted by React.
 
 When adding a new service that follows this pattern:
 - Define the interface in `src/services/index.ts`
 - Add the server impl to `src/services/server/`
 - Add the client impl to `src/services/client/` — constructor accepts the initial data payload
-- Extend `window.__INITIAL_DATA__` in `entry-server.tsx` and `entry-client.tsx`
+- Extend `InitialData` in `src/services/client/DatabaseService.ts`
+- Update the hidden div rendering in `entry-server.tsx` and `entry-client.tsx`
 - Add corresponding Nitro API routes in `server/routes/api/`
 
 ## Scripts
@@ -144,8 +147,19 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | `scripts/screenshot`         | Take a screenshot of a component story: `./scripts/screenshot desktop/App <storyName>` or `./scripts/screenshot mobile/App <storyName>`. Saves into the current branch's work folder.    |
 | `scripts/screenshot-url`     | Generate raw-GitHub `<a>/<img>` embed markup for screenshots: `./scripts/screenshot-url <name> [<name> ...]`. Paste output directly into a PR body.                                      |
 | `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
+| `scripts/resolve-pr-thread`  | Resolve a GitHub PR review thread by fragment: `./scripts/resolve-pr-thread <pr-number> "comment text fragment"`.                               |
 
 Run from the project root: `./scripts/list-recent-work`
+
+## Vercel logs
+
+The Vercel CLI is installed as a dev dependency. Use it to read deployment logs when diagnosing SSR or serverless function errors:
+
+```bash
+VERCEL_TOKEN=$(grep VERCEL_TOKEN .env | cut -d= -f2) npx vercel logs <deployment-url>
+```
+
+`VERCEL_TOKEN` is stored in `.env` (never committed). Get one from vercel.com/account/tokens.
 
 ## How to work
 

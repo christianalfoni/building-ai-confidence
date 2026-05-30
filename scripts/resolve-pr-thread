@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+// Resolves a GitHub PR review thread by matching comment text.
+// Usage: ./scripts/resolve-pr-thread <pr-number> <comment-text-fragment>
+// Example: ./scripts/resolve-pr-thread 42 "rename this variable"
+
+const [prNumber, fragment] = process.argv.slice(2);
+
+if (!prNumber || !fragment) {
+  console.error('Usage: resolve-pr-thread <pr-number> <comment-text-fragment>');
+  process.exit(1);
+}
+
+const { execSync } = await import('child_process');
+
+const repoJson = execSync('gh repo view --json owner,name').toString();
+const { owner, name } = JSON.parse(repoJson);
+
+const query = `
+  query($owner: String!, $name: String!, $pr: Int!) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 100) {
+          nodes {
+            id
+            isResolved
+            comments(first: 1) {
+              nodes { body }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const variables = JSON.stringify({ owner: owner.login, name, pr: parseInt(prNumber) });
+const result = JSON.parse(
+  execSync(`gh api graphql -f query='${query.replace(/'/g, `'"'"'`)}' -F variables='${variables}'`).toString()
+);
+
+const threads = result.data.repository.pullRequest.reviewThreads.nodes;
+const match = threads.find(
+  (t) => !t.isResolved && t.comments.nodes[0]?.body.toLowerCase().includes(fragment.toLowerCase())
+);
+
+if (!match) {
+  console.error(`No unresolved thread found matching: "${fragment}"`);
+  console.error('Unresolved threads:');
+  threads.filter((t) => !t.isResolved).forEach((t) => console.error(' -', t.comments.nodes[0]?.body.slice(0, 80)));
+  process.exit(1);
+}
+
+const mutation = `
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: { threadId: $threadId }) {
+      thread { isResolved }
+    }
+  }
+`;
+
+const mutVars = JSON.stringify({ threadId: match.id });
+execSync(`gh api graphql -f query='${mutation.replace(/'/g, `'"'"'`)}' -F variables='${mutVars}'`);
+console.log(`Resolved thread: "${match.comments.nodes[0]?.body.slice(0, 80)}"`);
