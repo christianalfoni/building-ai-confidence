@@ -8,6 +8,7 @@ import { MemoryStorageService } from './services/server/StorageService.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
+import { useRuntimeConfig } from 'nitro/runtime-config';
 
 function safeJsonSerialize(data: unknown): string {
   // Escape characters that can break an inline <script> tag or cause XSS.
@@ -29,7 +30,8 @@ export default {
     const user = db && sessionId ? await db.getUser(sessionId) : null;
     const todos = db ? await db.getTodos(user?.id ?? null) : [];
 
-    const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, todos };
+    const { vercelEnv } = useRuntimeConfig();
+    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user, todos };
     const services: Services = { storage: new MemoryStorageService(), db };
     const app = new AppState(services, user, todos, initialData.isPreview);
 
