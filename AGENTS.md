@@ -148,18 +148,19 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | `scripts/screenshot-url`     | Generate raw-GitHub `<a>/<img>` embed markup for screenshots: `./scripts/screenshot-url <name> [<name> ...]`. Paste output directly into a PR body.                                      |
 | `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
 | `scripts/resolve-pr-thread`  | Resolve a GitHub PR review thread by fragment: `./scripts/resolve-pr-thread <pr-number> "comment text fragment"`.                               |
+| `scripts/vercel-logs`        | Fetch Vercel logs for the latest deployment on the current branch. Requires `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` (injected by Doppler). |
 
 Run from the project root: `./scripts/list-recent-work`
 
 ## Vercel logs
 
-The Vercel CLI is installed as a dev dependency. Use it to read deployment logs when diagnosing SSR or serverless function errors:
+Use `scripts/vercel-logs` to fetch logs for the latest deployment on the current branch:
 
 ```bash
-VERCEL_TOKEN=$(grep VERCEL_TOKEN .env | cut -d= -f2) npx vercel logs <deployment-url>
+./scripts/vercel-logs
 ```
 
-`VERCEL_TOKEN` is stored in `.env` (never committed). Get one from vercel.com/account/tokens.
+`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, and `VERCEL_TEAM_ID` are injected by Doppler via the SessionStart hook.
 
 ## How to work
 
@@ -204,3 +205,7 @@ Use when the user wants to submit completed changes as a pull request. Branch, c
 ### review
 
 Use when the user wants to address feedback from a PR review. Fetch comments via MCP GitHub tools, propose a fix for each, get user approval, then apply and commit. See [`workflows/REVIEW.md`](workflows/REVIEW.md).
+
+### debug
+
+Use when the user wants to diagnose a production error or unexpected behaviour in the deployed app. Fetch Vercel deployment logs, identify the error, and hand off to the relevant workflow. See [`workflows/DEBUG.md`](workflows/DEBUG.md).
