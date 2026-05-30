@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+/// <reference path="../node_modules/nitro/lib/vite.types.d.mts" />
 import { renderToReadableStream } from 'react-dom/server.edge';
 import { StrictMode, Suspense } from 'react';
 import { AppContext } from './contexts/AppContext.ts';
@@ -9,6 +10,7 @@ import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import { useRuntimeConfig } from 'nitro/runtime-config';
+import clientAssets from './entry-client.tsx?assets=client';
 
 function safeJsonSerialize(data: unknown): string {
   // Escape characters that can break an inline <script> tag or cause XSS.
@@ -51,11 +53,29 @@ export default {
     );
 
     await stream.allReady;
-
     const appHtml = await new Response(stream).text();
-    const scriptTag = `<script>window.__INITIAL_DATA__ = ${safeJsonSerialize(initialData)}</script>`;
 
-    return new Response(`${scriptTag}<div id="root">${appHtml}</div>`, {
+    const css = clientAssets.css.map((a: { href: string }) => `<link rel="stylesheet" href="${a.href}" />`).join('\n    ');
+    const js = clientAssets.js.map((a: { href: string }) => `<link rel="modulepreload" href="${a.href}" />`).join('\n    ');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ai-driven</title>
+    ${css}
+    ${js}
+    <script>window.__INITIAL_DATA__ = ${safeJsonSerialize(initialData)}</script>
+  </head>
+  <body>
+    <div id="root">${appHtml}</div>
+    <script type="module" src="${clientAssets.entry}"></script>
+  </body>
+</html>`;
+
+    return new Response(html, {
       headers: { 'Content-Type': 'text/html;charset=utf-8' },
     });
   },
