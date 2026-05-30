@@ -6,6 +6,8 @@ import { AppState } from './state/AppState.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
+import DesktopApp from './desktop/App.tsx';
+import MobileApp from './mobile/App.tsx';
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
@@ -23,10 +25,7 @@ export async function render(req: Request, res: Response) {
     const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
     const app = new AppState(user, initialData.isPreview, posts);
 
-    const ua = req.headers['user-agent'] ?? '';
-    const App = isMobileUA(ua)
-      ? (await import('./mobile/App.tsx')).default
-      : (await import('./desktop/App.tsx')).default;
+    const App = isMobileUA(req.headers['user-agent'] ?? '') ? MobileApp : DesktopApp;
 
     res.setHeader('Content-Type', 'text/html;charset=utf-8');
 
