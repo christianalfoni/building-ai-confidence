@@ -1,18 +1,56 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import { posts } from "../../data/posts";
+import { posts as hardcodedPosts, type Post } from "../../data/posts";
+import type { DbPost } from "../../services";
+
+function dbPostToPost(p: DbPost): Post {
+  return {
+    slug: p.slug || p.id,
+    title: p.title || "Untitled",
+    date: p.createdAt.slice(0, 10),
+    readTime: "?m",
+    tags: [],
+    excerpt: p.body.slice(0, 120),
+    body: p.body.split("\n\n").filter(Boolean),
+  };
+}
 
 export function BlogList() {
   const app = useApp();
+
+  const visibleDbPosts = app.dbPosts.filter(
+    (p) => p.published || (app.isAuthor && p.authorId === app.user?.id)
+  );
+  const allPosts: Post[] = [
+    ...visibleDbPosts.map(dbPostToPost),
+    ...hardcodedPosts,
+  ];
+
+  async function handleNewPost() {
+    const res = await fetch("/api/posts", { method: "POST" });
+    if (!res.ok) return;
+    const post = (await res.json()) as DbPost;
+    app.updateDbPost(post);
+    app.openEditor(post.id);
+  }
+
   return (
     <div className="space-y-4 px-4 py-6">
       <div className="font-mono">
         <div className="text-lg font-bold text-mauve mb-1">~/posts</div>
-        <div className="text-xs text-muted">{posts.length} {posts.length === 1 ? "entry" : "entries"}</div>
+        <div className="text-xs text-muted">{allPosts.length} {allPosts.length === 1 ? "entry" : "entries"}</div>
       </div>
       <div className="border-t border-border" />
       <div className="space-y-3">
-        {posts.map((post) => (
+        {app.isAuthor && (
+          <button
+            className="w-full text-left rounded-lg p-4 bg-surface border border-dashed border-border active:opacity-70 opacity-60"
+            onClick={handleNewPost}
+          >
+            <span className="font-mono text-muted italic text-sm">+ new post...</span>
+          </button>
+        )}
+        {allPosts.map((post) => (
           <button
             key={post.slug}
             className="w-full text-left rounded-lg p-4 bg-surface border border-border active:opacity-70"
@@ -25,11 +63,13 @@ export function BlogList() {
               </span>
             </div>
             <div className="text-xs text-muted font-mono mb-2">{post.date}</div>
-            <div className="flex flex-wrap gap-1 mb-2">
-              {post.tags.map((t) => (
-                <Tag key={t} label={t} />
-              ))}
-            </div>
+            {post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {post.tags.map((t) => (
+                  <Tag key={t} label={t} />
+                ))}
+              </div>
+            )}
             <div className="text-xs text-dim leading-relaxed line-clamp-2">{post.excerpt}</div>
           </button>
         ))}

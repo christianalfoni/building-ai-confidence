@@ -22,17 +22,32 @@ Add the ability for authorized users (GitHub logins `christianalfoni` and `test`
 
 ## Tasks
 
-- [ ] Add `githubLogin` to the `User` type in `src/services/index.ts` and persist it in `NeonDatabaseService.upsertUser` + the `users` table schema
-- [ ] Run `scripts/db-migrate` to apply schema changes (users table `github_login` column + new `posts` table)
-- [ ] Extend `DatabaseService` interface with `getPosts`, `getPost`, `createPost`, `updatePost`
-- [ ] Implement the new methods in `NeonDatabaseService` (server)
-- [ ] Add `ApiDatabaseService` client stubs that call the new API routes
-- [ ] Add Nitro routes: `POST /api/posts`, `PATCH /api/posts/:id`, `GET /api/posts`
-- [ ] Extend `AppState`: add `isAuthor` getter, `view` discriminant (`'list' | 'post' | 'editor'`), `draftPostId`, `openEditor(id)`, `createPost()` action
-- [ ] Update `entry-server.tsx` and `entry-client.tsx` to pass posts initial data through the hidden div
-- [ ] Desktop `BlogList`: show "+ new post" entry at top when `app.isAuthor`; merge hardcoded + DB posts
-- [ ] Desktop `BlogEditor`: title `<input>`, `contenteditable` body, publish toggle in footer, debounce saving
-- [ ] Desktop `App.tsx`: render `BlogEditor` when `app.view === 'editor'`
-- [ ] Mobile: mirror the same changes in `mobile/components/`
+- [x] Add `githubLogin` to the `User` type in `src/services/index.ts` and persist it in `NeonDatabaseService.upsertUser` + the `users` table schema
+- [x] Run `scripts/db-migrate` to apply schema changes (users table `github_login` column + new `posts` table)
+- [x] Extend `DatabaseService` interface with `getPosts`, `getPost`, `createPost`, `updatePost`
+- [x] Implement the new methods in `NeonDatabaseService` (server)
+- [x] Add `ApiDatabaseService` client stubs that call the new API routes
+- [x] Add Nitro routes: `POST /api/posts`, `PATCH /api/posts/:id`, `GET /api/posts`
+- [x] Extend `AppState`: add `isAuthor` getter, `view` discriminant (`'list' | 'post' | 'editor'`), `draftPostId`, `openEditor(id)`, `createPost()` action
+- [x] Update `entry-server.tsx` and `entry-client.tsx` to pass posts initial data through the hidden div
+- [x] Desktop `BlogList`: show "+ new post" entry at top when `app.isAuthor`; merge hardcoded + DB posts
+- [x] Desktop `BlogEditor`: title `<input>`, `contenteditable` body, publish toggle in footer, debounce saving
+- [x] Desktop `App.tsx`: render `BlogEditor` when `app.view === 'editor'`
+- [x] Mobile: mirror the same changes in `mobile/components/`
 
 ## Report
+
+All tasks completed. The implementation adds full blog post authoring for `christianalfoni` and `test` users:
+
+- `github_login` column added to `users` table; `posts` table created via `scripts/db-migrate`
+- `DatabaseService` interface extended with `getPosts`, `createPost`, `updatePost`; implemented in `NeonDatabaseService` with slug auto-generation from title
+- `ApiDatabaseService` client stubs call `/api/posts` and `/api/posts/:id`
+- Nitro routes `GET/POST /api/posts` and `PATCH /api/posts/:id` enforce the author allowlist server-side
+- `AppState` extended with `isAuthor` getter, `view` discriminant, `draftTitle`/`draftPublished` with setter methods, `openEditor`, `updateDbPost`
+- SSR and client hydration both pass `posts` through the `__initial_data__` hidden div
+- Desktop and mobile `BlogList` show a "+ new post" entry for authors and merge DB posts with the hardcoded post
+- Desktop and mobile `BlogEditor` provide a title input and `contenteditable` body that debounce-save at 800ms, plus a publish toggle in the footer
+- `BlogPost` updated on both platforms to resolve DB posts by slug/id alongside hardcoded posts
+- One deviation: `draftTitle` and `draftPublished` were moved into `AppState` (not local `useState`) to comply with the `no-restricted-imports` lint rule banning `useState` in `components/`
+
+**Lint:** 0 errors · **Tests:** 3/3 passed

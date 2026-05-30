@@ -28,8 +28,9 @@ async function render(request: Request) {
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { vercelEnv } = useRuntimeConfig();
-    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user };
-    const app = new AppState(user, initialData.isPreview);
+    const posts = db ? await db.getPosts() : [];
+    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user, posts };
+    const app = new AppState(user, initialData.isPreview, posts);
 
     const ua = request.headers.get('user-agent') ?? '';
     const App = isMobileUA(ua)

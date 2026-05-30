@@ -11,9 +11,9 @@ import { PlatformApp } from './PlatformApp.tsx';
 const dataEl = document.getElementById('__initial_data__');
 const initialData: InitialData = dataEl
   ? (JSON.parse(dataEl.textContent!) as InitialData)
-  : { dbEnabled: false, isPreview: false, user: null };
+  : { dbEnabled: false, isPreview: false, user: null, posts: [] };
 
-const app = reactive(new AppState(initialData.user, initialData.isPreview));
+const app = reactive(new AppState(initialData.user, initialData.isPreview, initialData.posts));
 
 hydrateRoot(
   document.getElementById('root')!,

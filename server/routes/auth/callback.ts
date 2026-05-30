@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
   // Persist user + session
   const db = new NeonDatabaseService(dbUrl);
-  const user = await db.upsertUser(ghUser.id, ghUser.name ?? ghUser.login, ghUser.avatar_url);
+  const user = await db.upsertUser(ghUser.id, ghUser.login, ghUser.name ?? ghUser.login, ghUser.avatar_url);
   const sessionId = await db.createSession(user.id);
 
   setCookie(event, 'session', sessionId, {
