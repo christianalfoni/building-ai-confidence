@@ -1,42 +1,42 @@
-import { renderToReadableStream } from 'react-dom/server.edge';
+import { renderToPipeableStream } from 'react-dom/server';
 import { StrictMode, Suspense } from 'react';
+import { Transform } from 'node:stream';
+import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
-import { useRuntimeConfig } from 'nitro/runtime-config';
+import DesktopApp from './desktop/App.tsx';
+import MobileApp from './mobile/App.tsx';
+import { htmlTemplate } from './html-template.gen.ts';
 
-export default {
-  async fetch(request: Request) {
-    try {
-      return await render(request);
-    } catch (err) {
-      console.error('[SSR] render error:', err);
-      return new Response('', { status: 500, headers: { 'Content-Type': 'text/html;charset=utf-8' } });
-    }
-  },
-};
+const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
-async function render(request: Request) {
+const [htmlStart, htmlEnd] = htmlTemplate.split('<!--ssr-outlet-->');
+
+export async function render(req: Request, res: Response) {
+  try {
     const dbUrl = process.env.DATABASE_URL;
     const db = dbUrl ? new NeonDatabaseService(dbUrl) : undefined;
 
-    const cookie = request.headers.get('cookie') ?? '';
-    const sessionId = parseCookie(cookie, 'session');
+    const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
     const user = db && sessionId ? await db.getUser(sessionId) : null;
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { vercelEnv } = useRuntimeConfig();
-    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user };
-    const app = new AppState(user, initialData.isPreview);
+    const posts = db ? (await db.getPosts()).filter(
+      (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
+    ) : [];
+    const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
+    const app = new AppState(user, initialData.isPreview, posts);
 
-    const ua = request.headers.get('user-agent') ?? '';
-    const App = isMobileUA(ua)
-      ? (await import('./mobile/App.tsx')).default
-      : (await import('./desktop/App.tsx')).default;
+    const App = isMobileUA(req.headers['user-agent'] ?? '') ? MobileApp : DesktopApp;
 
-    const stream = await renderToReadableStream(
+    const appendEnd = new Transform({
+      transform(chunk, _enc, cb) { cb(null, chunk); },
+      flush(cb) { this.push(htmlEnd); cb(); },
+    });
+
+    const { pipe } = renderToPipeableStream(
       <StrictMode>
         <>
           <div id="__initial_data__" style={{ display: 'none' }}>
@@ -49,13 +49,25 @@ async function render(request: Request) {
           </AppContext>
         </>
       </StrictMode>,
+      {
+        onShellReady() {
+          res.setHeader('Content-Type', 'text/html;charset=utf-8');
+          res.write(htmlStart);
+          pipe(appendEnd).pipe(res);
+        },
+        onShellError(err) {
+          console.error('[SSR] shell error:', err);
+          if (!res.headersSent) res.status(500).end('Internal server error');
+        },
+        onError(err) {
+          console.error('[SSR] render error:', err);
+        },
+      }
     );
-
-    await stream.allReady;
-
-    return new Response(stream, {
-      headers: { 'Content-Type': 'text/html;charset=utf-8' },
-    });
+  } catch (err) {
+    console.error('[SSR] render error:', err);
+    res.status(500).end();
+  }
 }
 
 function parseCookie(header: string, name: string): string | null {

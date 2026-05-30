@@ -1,12 +1,16 @@
 import { useApp } from "../../contexts/AppContext";
 import { BlogList } from "./BlogList";
 import { BlogPost } from "./BlogPost";
+import { BlogEditor } from "./BlogEditor";
 
 export function App() {
   const app = useApp();
-  const title = app.selectedPostSlug
-    ? `${app.selectedPostSlug}.md — blog`
-    : "christian alfoni — blog";
+  const title =
+    app.view === "editor"
+      ? `new post — blog`
+      : app.selectedPostSlug
+      ? `${app.selectedPostSlug}.md — blog`
+      : "christian alfoni — blog";
 
   return (
     <div className="min-h-screen bg-base flex items-start justify-center p-8">
@@ -53,7 +57,13 @@ export function App() {
         </div>
         {/* Content */}
         <div className="p-6 bg-terminal font-mono">
-          {app.selectedPostSlug ? <BlogPost /> : <BlogList />}
+          {app.view === "editor" ? (
+            <BlogEditor />
+          ) : app.view === "post" ? (
+            <BlogPost />
+          ) : (
+            <BlogList />
+          )}
         </div>
       </div>
     </div>

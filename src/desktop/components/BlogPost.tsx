@@ -1,10 +1,28 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import { posts } from "../../data/posts";
+import { posts as hardcodedPosts, type Post } from "../../data/posts";
+import type { DbPost } from "../../services";
+
+function dbPostToPost(p: DbPost): Post {
+  return {
+    slug: p.slug || p.id,
+    title: p.title || "Untitled",
+    date: p.createdAt.slice(0, 10),
+    readTime: "?m",
+    tags: [],
+    excerpt: p.body.slice(0, 120),
+    body: p.body.split("\n\n").filter(Boolean),
+  };
+}
 
 export function BlogPost() {
   const app = useApp();
-  const post = posts.find((p) => p.slug === app.selectedPostSlug);
+  const dbMatch = app.dbPosts.find(
+    (p) => (p.slug || p.id) === app.selectedPostSlug
+  );
+  const post = dbMatch
+    ? dbPostToPost(dbMatch)
+    : hardcodedPosts.find((p) => p.slug === app.selectedPostSlug);
   if (!post) return null;
 
   return (
@@ -19,12 +37,16 @@ export function BlogPost() {
           <span>{post.date}</span>
           <span>·</span>
           <span>{post.readTime} read</span>
-          <span>·</span>
-          <div className="flex gap-1">
-            {post.tags.map((t) => (
-              <Tag key={t} label={t} />
-            ))}
-          </div>
+          {post.tags.length > 0 && (
+            <>
+              <span>·</span>
+              <div className="flex gap-1">
+                {post.tags.map((t) => (
+                  <Tag key={t} label={t} />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
       <div className="text-dim text-xs">{"─".repeat(60)}</div>

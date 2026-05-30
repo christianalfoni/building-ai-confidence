@@ -1,6 +1,7 @@
 import { useApp } from "../../contexts/AppContext";
 import { BlogList } from "./BlogList";
 import { BlogPost } from "./BlogPost";
+import { BlogEditor } from "./BlogEditor";
 
 export function App() {
   const app = useApp();
@@ -31,7 +32,13 @@ export function App() {
         )}
       </header>
       <main>
-        {app.selectedPostSlug ? <BlogPost /> : <BlogList />}
+        {app.view === "editor" ? (
+          <BlogEditor />
+        ) : app.view === "post" ? (
+          <BlogPost />
+        ) : (
+          <BlogList />
+        )}
       </main>
     </div>
   );

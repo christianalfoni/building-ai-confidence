@@ -1,20 +1,59 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import { posts } from "../../data/posts";
+import { posts as hardcodedPosts, type Post } from "../../data/posts";
+import type { DbPost } from "../../services";
+
+function dbPostToPost(p: DbPost): Post {
+  return {
+    slug: p.slug || p.id,
+    title: p.title || "Untitled",
+    date: p.createdAt.slice(0, 10),
+    readTime: "?m",
+    tags: [],
+    excerpt: p.body.slice(0, 120),
+    body: p.body.split("\n\n").filter(Boolean),
+  };
+}
 
 export function BlogList() {
   const app = useApp();
+
+  const visibleDbPosts = app.dbPosts.filter(
+    (p) => p.published || (app.isAuthor && p.authorId === app.user?.id)
+  );
+  const allPosts: Post[] = [
+    ...visibleDbPosts.map(dbPostToPost),
+    ...hardcodedPosts,
+  ].sort((a, b) => b.date.localeCompare(a.date));
+
+  function handleNewPost() {
+    app.createPost();
+  }
+
   return (
     <div className="space-y-6 font-mono text-sm text-text">
       <div>
         <div className="text-lg font-bold text-mauve mb-1">~/posts</div>
         <div className="text-xs text-muted">
-          {posts.length} {posts.length === 1 ? "entry" : "entries"} · sorted by date · newest first
+          {allPosts.length} {allPosts.length === 1 ? "entry" : "entries"} · sorted by date · newest first
         </div>
       </div>
       <div className="border-t border-border" />
       <div className="space-y-4">
-        {posts.map((post, i) => (
+        {app.isAuthor && (
+          <button
+            className="group w-full text-left opacity-50 hover:opacity-100 transition-opacity"
+            onClick={handleNewPost}
+          >
+            <div className="flex items-center gap-3 mb-1">
+              <span className="text-xs text-dim w-4 text-right shrink-0">+</span>
+              <span className="text-muted group-hover:text-mauve transition-colors italic">
+                new post...
+              </span>
+            </div>
+          </button>
+        )}
+        {allPosts.map((post, i) => (
           <div
             key={post.slug}
             className="group cursor-pointer"
@@ -33,12 +72,16 @@ export function BlogList() {
             </div>
             <div className="flex items-center gap-2 ml-7">
               <span className="text-xs text-muted">{post.date}</span>
-              <span className="text-dim">·</span>
-              <div className="flex gap-1">
-                {post.tags.map((t) => (
-                  <Tag key={t} label={t} />
-                ))}
-              </div>
+              {post.tags.length > 0 && (
+                <>
+                  <span className="text-dim">·</span>
+                  <div className="flex gap-1">
+                    {post.tags.map((t) => (
+                      <Tag key={t} label={t} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
             <div className="text-xs text-dim mt-1.5 ml-7 leading-relaxed line-clamp-1">
               {post.excerpt}
