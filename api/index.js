@@ -90,9 +90,7 @@ function slugify(text) {
 // src/entry-server.tsx
 import { renderToPipeableStream } from "react-dom/server";
 import { StrictMode, Suspense } from "react";
-import { readFileSync } from "node:fs";
 import { Transform } from "node:stream";
-import { join } from "node:path";
 
 // src/contexts/AppContext.ts
 import { createContext, useContext } from "react";
@@ -720,20 +718,13 @@ function App2() {
   ] });
 }
 
+// src/html-template.gen.ts
+var htmlTemplate = '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>ai-driven</title>\n    <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>\n    <script type="module" crossorigin src="/assets/main-q2N7Ppow.js"></script>\n    <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-XTjeSQJO.js">\n    <link rel="modulepreload" crossorigin href="/assets/esm-DyCqbqwY.js">\n    <link rel="stylesheet" crossorigin href="/assets/jsx-runtime-BEzbMlsm.css">\n  </head>\n  <body>\n    <div id="root"><!--ssr-outlet--></div>\n  </body>\n</html>\n';
+
 // src/entry-server.tsx
 import { Fragment as Fragment3, jsx as jsx9, jsxs as jsxs11 } from "react/jsx-runtime";
 var AUTHOR_LOGINS2 = ["christianalfoni", "test"];
-function loadTemplate() {
-  try {
-    const templatePath = join(process.cwd(), "dist/client/index.html");
-    const html = readFileSync(templatePath, "utf-8");
-    const parts = html.split("<!--ssr-outlet-->");
-    return [parts[0], parts[1] ?? ""];
-  } catch {
-    return ['<!doctype html><html><body><div id="root">', "</div></body></html>"];
-  }
-}
-var [htmlStart, htmlEnd] = loadTemplate();
+var [htmlStart, htmlEnd] = htmlTemplate.split("<!--ssr-outlet-->");
 async function render(req, res) {
   try {
     const dbUrl = process.env.DATABASE_URL;

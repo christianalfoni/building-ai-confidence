@@ -1,8 +1,6 @@
 import { renderToPipeableStream } from 'react-dom/server';
 import { StrictMode, Suspense } from 'react';
-import { readFileSync } from 'node:fs';
 import { Transform } from 'node:stream';
-import { join } from 'node:path';
 import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
@@ -11,21 +9,11 @@ import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import DesktopApp from './desktop/App.tsx';
 import MobileApp from './mobile/App.tsx';
+import { htmlTemplate } from './html-template.gen.ts';
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
-function loadTemplate(): [string, string] {
-  try {
-    const templatePath = join(process.cwd(), 'dist/client/index.html');
-    const html = readFileSync(templatePath, 'utf-8');
-    const parts = html.split('<!--ssr-outlet-->');
-    return [parts[0], parts[1] ?? ''];
-  } catch {
-    return ['<!doctype html><html><body><div id="root">', '</div></body></html>'];
-  }
-}
-
-const [htmlStart, htmlEnd] = loadTemplate();
+const [htmlStart, htmlEnd] = htmlTemplate.split('<!--ssr-outlet-->');
 
 export async function render(req: Request, res: Response) {
   try {
