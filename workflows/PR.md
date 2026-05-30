@@ -78,7 +78,9 @@ Submit completed work as a pull request on GitHub.
    ```bash
    ./scripts/screenshot-url <before-name> <after-name>
    ```
-   This prints a ready-to-paste `<a>/<img>` block for each name. Paste the output directly into the PR body under the relevant section. Screenshot names may include or omit the `.png` extension.
+   This prints an `<a>/<img>` block for each name. Paste the output directly into the PR body — do NOT wrap it in backticks or a code block. Screenshot names may include or omit the `.png` extension.
+
+   > **Known limitation:** The MCP GitHub tools wrap long `https://` URLs in backticks before sending to GitHub, which breaks image rendering. If screenshots do not appear in the PR, note their path in `work/YYYY_MM_DD_<branch>/screenshots/` and rely on the Vercel preview deployment for visual review instead.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 9. Report the PR URL to the user.
