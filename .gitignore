@@ -15,6 +15,7 @@ dist
 dist-ssr
 public/assets
 public/stories.html
+api/index.js
 *.local
 scripts/agent-review
 
