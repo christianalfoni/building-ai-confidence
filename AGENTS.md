@@ -156,10 +156,10 @@ Run from the project root: `./scripts/list-recent-work`
 The Vercel CLI is installed as a dev dependency. Use it to read deployment logs when diagnosing SSR or serverless function errors:
 
 ```bash
-VERCEL_TOKEN=$(grep VERCEL_TOKEN .env | cut -d= -f2) npx vercel logs <deployment-url>
+VERCEL_PROJECT_ID="" VERCEL_ORG_ID="" npx vercel logs --token=$VERCEL_TOKEN --scope=$VERCEL_TEAM_ID <deployment-url>
 ```
 
-`VERCEL_TOKEN` is stored in `.env` (never committed). Get one from vercel.com/account/tokens.
+`VERCEL_TOKEN` and `VERCEL_TEAM_ID` are injected by Doppler via the SessionStart hook and available as environment variables.
 
 ## How to work
 
@@ -204,3 +204,7 @@ Use when the user wants to submit completed changes as a pull request. Branch, c
 ### review
 
 Use when the user wants to address feedback from a PR review. Fetch comments via MCP GitHub tools, propose a fix for each, get user approval, then apply and commit. See [`workflows/REVIEW.md`](workflows/REVIEW.md).
+
+### debug
+
+Use when the user wants to diagnose a production error or unexpected behaviour in the deployed app. Fetch Vercel deployment logs, identify the error, and hand off to the relevant workflow. See [`workflows/DEBUG.md`](workflows/DEBUG.md).
