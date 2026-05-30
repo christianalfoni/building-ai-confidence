@@ -19,16 +19,6 @@ function safeJsonSerialize(data: unknown): string {
     .replace(new RegExp(' ', 'g'), '\\u2029');
 }
 
-function InitialDataScript({ data }: { data: InitialData }) {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `window.__INITIAL_DATA__ = ${safeJsonSerialize(data)}`,
-      }}
-    />
-  );
-}
-
 export default {
   async fetch(request: Request) {
     const dbUrl = process.env.DATABASE_URL;
@@ -50,7 +40,6 @@ export default {
 
     const stream = await renderToReadableStream(
       <StrictMode>
-        <InitialDataScript data={initialData} />
         <AppContext value={app}>
           <Suspense fallback={null}>
             <App />
@@ -61,7 +50,10 @@ export default {
 
     await stream.allReady;
 
-    return new Response(stream, {
+    const appHtml = await new Response(stream).text();
+    const scriptTag = `<script>window.__INITIAL_DATA__ = ${safeJsonSerialize(initialData)}</script>`;
+
+    return new Response(`${scriptTag}<div id="root">${appHtml}</div>`, {
       headers: { 'Content-Type': 'text/html;charset=utf-8' },
     });
   },
