@@ -1,6 +1,7 @@
 import express from 'express';
 import { randomBytes } from 'node:crypto';
 import { NeonDatabaseService } from '../src/services/server/DatabaseService.js';
+import { render } from '../src/entry-server.tsx';
 
 const ALLOWED_LOGINS = ['christianalfoni', 'test'];
 
@@ -158,7 +159,7 @@ app.patch('/api/posts/:id', async (req, res) => {
   }
 });
 
-// ── SSR catch-all (wired in api/index.ts after static middleware) ──────────────
+app.get('*', render);
 
 export default app;
 
