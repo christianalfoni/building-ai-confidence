@@ -5,7 +5,6 @@ import { AppState } from './state/AppState.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
-import { useRuntimeConfig } from 'nitro/runtime-config';
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
@@ -28,12 +27,10 @@ async function render(request: Request) {
     const sessionId = parseCookie(cookie, 'session');
     const user = db && sessionId ? await db.getUser(sessionId) : null;
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { vercelEnv } = useRuntimeConfig();
     const posts = db ? (await db.getPosts()).filter(
       (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
     ) : [];
-    const initialData: InitialData = { dbEnabled: !!db, isPreview: vercelEnv === 'preview', user, posts };
+    const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
     const app = new AppState(user, initialData.isPreview, posts);
 
     const ua = request.headers.get('user-agent') ?? '';

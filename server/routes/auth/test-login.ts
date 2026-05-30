@@ -1,5 +1,4 @@
 import { NeonDatabaseService } from '../../../src/services/server/DatabaseService.ts';
-import { useRuntimeConfig } from 'nitro/runtime-config';
 
 const TEST_USER = {
   githubId: 0,
@@ -13,8 +12,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 405, message: 'Method not allowed' });
   }
 
-  const { vercelEnv } = useRuntimeConfig();
-  if (vercelEnv !== 'preview') {
+  if (process.env.VERCEL_ENV !== 'preview') {
     throw createError({ statusCode: 403, message: 'Test login is only available in preview environments' });
   }
 
