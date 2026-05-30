@@ -38,7 +38,11 @@ if (!process.env.WORK_FOLDER) {
 const outDir = resolve(process.env.WORK_FOLDER, "screenshots");
 await mkdir(outDir, { recursive: true });
 
-const server = await createServer({ root, server: { port: 5199 } });
+const server = await createServer({
+  root,
+  configFile: resolve(root, "vite.stories.config.ts"),
+  server: { port: 5199 },
+});
 await server.listen();
 
 const slug = component.replace("/", "-");
