@@ -59,19 +59,29 @@ export class NeonDatabaseService implements DatabaseService {
     return { id: r.id, userId: r.user_id, text: r.text, completed: r.completed };
   }
 
-  async updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 'completed'>>): Promise<Todo> {
+  async updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 'completed'>>, callerUserId: string | null = null): Promise<Todo> {
+    // Allow update if caller owns the todo or the todo is public (user_id IS NULL)
     const rows = await this.sql`
       UPDATE todos SET
         text = COALESCE(${patch.text ?? null}, text),
         completed = COALESCE(${patch.completed ?? null}, completed)
       WHERE id = ${id}
+        AND (user_id = ${callerUserId} OR user_id IS NULL)
       RETURNING id, user_id, text, completed
     `;
+    if (!rows[0]) throw new Error('Todo not found or permission denied');
     const r = rows[0];
     return { id: r.id, userId: r.user_id, text: r.text, completed: r.completed };
   }
 
-  async deleteTodo(id: string): Promise<void> {
-    await this.sql`DELETE FROM todos WHERE id = ${id}`;
+  async deleteTodo(id: string, callerUserId: string | null = null): Promise<void> {
+    // Allow delete if caller owns the todo or the todo is public (user_id IS NULL)
+    const rows = await this.sql`
+      DELETE FROM todos
+      WHERE id = ${id}
+        AND (user_id = ${callerUserId} OR user_id IS NULL)
+      RETURNING id
+    `;
+    if (!rows[0]) throw new Error('Todo not found or permission denied');
   }
 }

@@ -3,8 +3,18 @@ import { NeonDatabaseService } from '../../../src/services/server/DatabaseServic
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const code = query.code as string;
+  const state = query.state as string;
+
   if (!code) throw createError({ statusCode: 400, message: 'Missing code' });
 
+  // Validate CSRF state
+  const expectedState = getCookie(event, 'oauth_state');
+  deleteCookie(event, 'oauth_state', { path: '/' });
+  if (!state || !expectedState || state !== expectedState) {
+    throw createError({ statusCode: 400, message: 'Invalid state parameter' });
+  }
+
+  // Exchange code for access token
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -14,14 +24,28 @@ export default defineEventHandler(async (event) => {
       code,
     }),
   });
-  const { access_token } = await tokenRes.json() as { access_token: string };
+  if (!tokenRes.ok) {
+    throw createError({ statusCode: 502, message: 'Failed to exchange GitHub OAuth code' });
+  }
+  const tokenData = await tokenRes.json() as { access_token?: string; error?: string };
+  if (!tokenData.access_token) {
+    throw createError({ statusCode: 400, message: tokenData.error ?? 'No access token returned' });
+  }
 
+  // Fetch GitHub user
   const userRes = await fetch('https://api.github.com/user', {
-    headers: { Authorization: `Bearer ${access_token}`, 'User-Agent': 'building-ai-confidence' },
+    headers: { Authorization: `Bearer ${tokenData.access_token}`, 'User-Agent': 'building-ai-confidence' },
   });
-  const ghUser = await userRes.json() as { id: number; name: string; avatar_url: string; login: string };
+  if (!userRes.ok) {
+    throw createError({ statusCode: 502, message: 'Failed to fetch GitHub user' });
+  }
+  const ghUser = await userRes.json() as { id: number; name: string | null; avatar_url: string; login: string };
 
-  const db = new NeonDatabaseService(process.env.DATABASE_URL!);
+  // Persist user + session
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) throw createError({ statusCode: 500, message: 'DATABASE_URL is not configured' });
+
+  const db = new NeonDatabaseService(dbUrl);
   const user = await db.upsertUser(ghUser.id, ghUser.name ?? ghUser.login, ghUser.avatar_url);
   const sessionId = await db.createSession(user.id);
 

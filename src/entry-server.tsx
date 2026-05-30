@@ -9,11 +9,22 @@ import { NeonDatabaseService } from './services/server/DatabaseService.ts';
 import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 
+function safeJsonSerialize(data: unknown): string {
+  // Escape characters that can break an inline <script> tag or cause XSS:
+  // < (closes </script>), U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR
+  // U+2028/2029 cannot appear in regex literals (they are line terminators),
+  // so we use split/join for those two.
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .split(' ').join('\\u2028')
+    .split(' ').join('\\u2029');
+}
+
 function InitialDataScript({ data }: { data: InitialData }) {
   return (
     <script
       dangerouslySetInnerHTML={{
-        __html: `window.__INITIAL_DATA__ = ${JSON.stringify(data)}`,
+        __html: `window.__INITIAL_DATA__ = ${safeJsonSerialize(data)}`,
       }}
     />
   );

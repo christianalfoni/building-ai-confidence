@@ -24,8 +24,8 @@ export interface DatabaseService {
   deleteSession(sessionId: string): Promise<void>;
   getTodos(userId: string | null): Promise<Todo[]>;
   createTodo(userId: string | null, text: string): Promise<Todo>;
-  updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 'completed'>>): Promise<Todo>;
-  deleteTodo(id: string): Promise<void>;
+  updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 'completed'>>, callerUserId?: string | null): Promise<Todo>;
+  deleteTodo(id: string, callerUserId?: string | null): Promise<void>;
 }
 
 export interface Services {

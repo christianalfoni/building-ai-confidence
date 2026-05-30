@@ -40,9 +40,8 @@ export class ApiDatabaseService implements DatabaseService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, text }),
     });
-    const todo: Todo = await res.json();
-    this.todos.push(todo);
-    return todo;
+    if (!res.ok) throw new Error(`Failed to create todo: ${res.status}`);
+    return res.json();
   }
 
   async updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 'completed'>>): Promise<Todo> {
@@ -51,15 +50,12 @@ export class ApiDatabaseService implements DatabaseService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
     });
-    const updated: Todo = await res.json();
-    const idx = this.todos.findIndex(t => t.id === id);
-    if (idx !== -1) this.todos[idx] = updated;
-    return updated;
+    if (!res.ok) throw new Error(`Failed to update todo: ${res.status}`);
+    return res.json();
   }
 
   async deleteTodo(id: string): Promise<void> {
-    await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-    const idx = this.todos.findIndex(t => t.id === id);
-    if (idx !== -1) this.todos.splice(idx, 1);
+    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete todo: ${res.status}`);
   }
 }
