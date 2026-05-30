@@ -1,6 +1,6 @@
 import express from 'express';
 import { randomBytes } from 'node:crypto';
-import { NeonDatabaseService } from '../src/services/server/DatabaseService.ts';
+import { NeonDatabaseService } from '../src/services/server/DatabaseService.js';
 
 const ALLOWED_LOGINS = ['christianalfoni', 'test'];
 
@@ -9,7 +9,7 @@ app.use(express.json());
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-app.get('/auth/github', (req, res) => {
+app.get('/auth/github', (_req, res) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   if (!clientId) { res.status(500).send('GITHUB_CLIENT_ID is not configured'); return; }
 
@@ -78,7 +78,7 @@ app.post('/auth/logout', async (req, res) => {
   }
 });
 
-app.post('/auth/test-login', async (req, res) => {
+app.post('/auth/test-login', async (_req, res) => {
   try {
     if (process.env.VERCEL_ENV !== 'preview') { res.status(403).send('Test login is only available in preview environments'); return; }
 

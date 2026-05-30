@@ -1,8 +1,8 @@
-import app from '../server/index.ts';
-import { render } from '../src/entry-server.tsx';
+import app from '../server/index.js';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error — pre-built SSR bundle has no type declarations
+import { render } from '../dist/server/entry-server.js';
 
-// SSR catch-all — must be added here (after the build, entry-server is a
-// compiled module; the import works in both dev/ts-node and production)
 app.get('*', render);
 
 export default app;
