@@ -1,5 +1,9 @@
 import { renderToPipeableStream } from 'react-dom/server';
 import { StrictMode, Suspense } from 'react';
+import { readFileSync } from 'node:fs';
+import { Transform } from 'node:stream';
+import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';
 import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
@@ -10,6 +14,20 @@ import DesktopApp from './desktop/App.tsx';
 import MobileApp from './mobile/App.tsx';
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
+
+function loadTemplate(): [string, string] {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const templatePath = join(__dirname, '../dist/client/index.html');
+    const html = readFileSync(templatePath, 'utf-8');
+    const parts = html.split('<!--ssr-outlet-->');
+    return [parts[0], parts[1] ?? ''];
+  } catch {
+    return ['<!doctype html><html><body><div id="root">', '</div></body></html>'];
+  }
+}
+
+const [htmlStart, htmlEnd] = loadTemplate();
 
 export async function render(req: Request, res: Response) {
   try {
@@ -28,6 +46,12 @@ export async function render(req: Request, res: Response) {
     const App = isMobileUA(req.headers['user-agent'] ?? '') ? MobileApp : DesktopApp;
 
     res.setHeader('Content-Type', 'text/html;charset=utf-8');
+    res.write(htmlStart);
+
+    const appendEnd = new Transform({
+      transform(chunk, _enc, cb) { cb(null, chunk); },
+      flush(cb) { this.push(htmlEnd); cb(); },
+    });
 
     const { pipe } = renderToPipeableStream(
       <StrictMode>
@@ -44,7 +68,7 @@ export async function render(req: Request, res: Response) {
       </StrictMode>,
       {
         onShellReady() {
-          pipe(res);
+          pipe(appendEnd).pipe(res);
         },
         onError(err) {
           console.error('[SSR] render error:', err);

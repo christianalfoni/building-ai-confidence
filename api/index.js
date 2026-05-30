@@ -90,6 +90,10 @@ function slugify(text) {
 // src/entry-server.tsx
 import { renderToPipeableStream } from "react-dom/server";
 import { StrictMode, Suspense } from "react";
+import { readFileSync } from "node:fs";
+import { Transform } from "node:stream";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 
 // src/contexts/AppContext.ts
 import { createContext, useContext } from "react";
@@ -720,6 +724,18 @@ function App2() {
 // src/entry-server.tsx
 import { Fragment as Fragment3, jsx as jsx9, jsxs as jsxs11 } from "react/jsx-runtime";
 var AUTHOR_LOGINS2 = ["christianalfoni", "test"];
+function loadTemplate() {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const templatePath = join(__dirname, "../dist/client/index.html");
+    const html = readFileSync(templatePath, "utf-8");
+    const parts = html.split("<!--ssr-outlet-->");
+    return [parts[0], parts[1] ?? ""];
+  } catch {
+    return ['<!doctype html><html><body><div id="root">', "</div></body></html>"];
+  }
+}
+var [htmlStart, htmlEnd] = loadTemplate();
 async function render(req, res) {
   try {
     const dbUrl = process.env.DATABASE_URL;
@@ -733,6 +749,16 @@ async function render(req, res) {
     const app2 = new AppState(user, initialData.isPreview, posts2);
     const App3 = isMobileUA(req.headers["user-agent"] ?? "") ? App2 : App;
     res.setHeader("Content-Type", "text/html;charset=utf-8");
+    res.write(htmlStart);
+    const appendEnd = new Transform({
+      transform(chunk, _enc, cb) {
+        cb(null, chunk);
+      },
+      flush(cb) {
+        this.push(htmlEnd);
+        cb();
+      }
+    });
     const { pipe } = renderToPipeableStream(
       /* @__PURE__ */ jsx9(StrictMode, { children: /* @__PURE__ */ jsxs11(Fragment3, { children: [
         /* @__PURE__ */ jsx9("div", { id: "__initial_data__", style: { display: "none" }, children: JSON.stringify(initialData) }),
@@ -740,7 +766,7 @@ async function render(req, res) {
       ] }) }),
       {
         onShellReady() {
-          pipe(res);
+          pipe(appendEnd).pipe(res);
         },
         onError(err) {
           console.error("[SSR] render error:", err);
