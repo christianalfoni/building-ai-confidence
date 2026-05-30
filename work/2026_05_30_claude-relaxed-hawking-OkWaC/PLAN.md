@@ -43,15 +43,30 @@ Additionally, migrate the server from Nitro to a plain Express app to eliminate 
 - [x] Desktop `BlogEditor`: title `<input>`, `contenteditable` body, publish toggle in footer, debounce saving
 - [x] Desktop `App.tsx`: render `BlogEditor` when `app.view === 'editor'`
 - [x] Mobile: mirror the same changes in `mobile/components/`
-- [ ] Install Express (`express`, `@types/express`); remove `nitro` from dependencies
-- [ ] Remove `nitro.config.ts` and the `nitro()` plugin from `vite.config.ts`
-- [ ] Rewrite `src/entry-server.tsx` to export an Express middleware using `renderToPipeableStream`
-- [ ] Create `server/index.ts` — Express app with all routes wired explicitly (auth, API, SSR catch-all)
-- [ ] Create `api/index.ts` — Vercel function entry that imports and exports the Express app
-- [ ] Add `vercel.json` — rewrite all traffic to `/api/index`
-- [ ] Update `vite.config.ts` — remove Nitro plugin, add SSR build entry for `src/entry-server.tsx`
-- [ ] Update `package.json` build scripts — client build + SSR build + copy to `public/`
-- [ ] Delete `server/routes/` directory (all routes now in `server/index.ts`)
-- [ ] Verify local build and smoke-test SSR + auth routes
+- [x] Update `AGENTS.md` to reflect the Express-based architecture (remove Nitro references, describe the new server structure)
+- [x] Install Express (`express`, `@types/express`); remove `nitro` from dependencies
+- [x] Remove `nitro.config.ts` and the `nitro()` plugin from `vite.config.ts`
+- [x] Rewrite `src/entry-server.tsx` to export an Express middleware using `renderToPipeableStream`
+- [x] Create `server/index.ts` — Express app with all routes wired explicitly (auth, API, SSR catch-all)
+- [x] Create `api/index.ts` — Vercel function entry that imports and exports the Express app
+- [x] Add `vercel.json` — rewrite all traffic to `/api/index`
+- [x] Update `vite.config.ts` — remove Nitro plugin, add SSR build entry for `src/entry-server.tsx`
+- [x] Update `package.json` build scripts — client build + SSR build + copy to `public/`
+- [x] Delete `server/routes/` directory (all routes now in `server/index.ts`)
+- [x] Verify local build and smoke-test SSR + auth routes
 
 ## Report
+
+All tasks completed. The Nitro → Express migration is done:
+
+- `nitro` dependency removed; `express` + `@types/express` added
+- `nitro.config.ts` deleted; `nitro()` plugin removed from `vite.config.ts`
+- `server/routes/` directory deleted; all routes wired explicitly in `server/index.ts`
+- `src/entry-server.tsx` rewritten as an Express middleware using `renderToPipeableStream`
+- `api/index.ts` exports the Express app as a Vercel serverless function
+- `vercel.json` rewrites all traffic to `/api/index`
+- Build: `vite build --outDir dist/client` + `vite build --ssr src/entry-server.tsx --outDir dist/server` + `cp -r dist/client/. public/`
+- `AGENTS.md` updated to describe the Express-based architecture
+- `VERCEL_ENV` read directly from `process.env` — no runtime config indirection
+
+**Lint:** 0 errors · **Tests:** 10/10 passed · **Build:** ✓

@@ -2,13 +2,13 @@
 
 ## Project overview
 
-This is a React + TypeScript app for building and managing AI-confidence workflows. It runs as a server-side rendered (SSR) application deployed on Vercel using Vite + Nitro. The server renders the initial HTML on each request; the client hydrates and takes over from there.
+This is a React + TypeScript app for building and managing AI-confidence workflows. It runs as a server-side rendered (SSR) application deployed on Vercel. The server is a plain Express app — all routes are wired explicitly, no framework magic. The client is built by Vite; the server bundle is also built by Vite in SSR mode.
 
 The app has three Vite entry points:
 
 | File | Role |
 |---|---|
-| `src/entry-server.tsx` | Nitro SSR handler — renders the React app to a stream and returns it as an HTML response |
+| `src/entry-server.tsx` | Express SSR middleware — renders the React app to a stream and pipes it into the response |
 | `src/entry-client.tsx` | Client hydration — calls `hydrateRoot` on the server-rendered HTML |
 | `src/entry-stories.tsx` | Stories viewer — served via `stories.html` for local component development |
 
@@ -51,16 +51,10 @@ scripts/                      # Bash scripts for deterministic context retrieval
   screenshot-url              # Generates raw-GitHub <a>/<img> embed markup for PR bodies
   capture-agent-sessions      # Distills agent sessions into the current branch's work folder
   db-migrate                  # Creates/migrates Neon DB tables (run once per environment)
-server/                       # Nitro server-only code — picked up by Nitro via `serverDir: 'server'` in nitro.config.ts (not bundled into the client)
-  routes/                     # File-based Nitro routes — filename maps to URL path
-    auth/
-      github.ts               # GET /auth/github — redirects to GitHub OAuth
-      callback.ts             # GET /auth/callback — exchanges code, sets session cookie
-      logout.ts               # POST /auth/logout — deletes session, clears cookie
-    api/
-      todos/
-        index.ts              # POST /api/todos
-        [id].ts               # PATCH/DELETE /api/todos/:id
+server/
+  index.ts                    # Express app — all routes wired here (auth, API, SSR catch-all)
+api/
+  index.ts                    # Vercel serverless function entry — imports and re-exports the Express app
 workflows/                    # Agent workflow instructions
   RESEARCH.md                 # How to investigate before planning
   PLAN.md                     # How to plan and get approval before coding
@@ -89,10 +83,11 @@ src/
   test-utils.tsx              # createAppState() and renderWithApp() helpers used by every component test
   utils.ts                    # Shared utility functions (no domain knowledge)
   entry-client.tsx            # Client hydration entry — calls hydrateRoot, wires client services and state
-  entry-server.tsx            # Nitro SSR entry — renders React app to a stream per request, wires server services and state (no reactive())
+  entry-server.tsx            # Express SSR middleware — renders React app to a stream per request, wires server services and state (no reactive())
   entry-stories.tsx           # Stories viewer entry — served via stories.html for local component dev
   index.css                   # Global styles, Tailwind import, and theme tokens
-public/                       # Files served as-is (favicon, icons)
+public/                       # Static files served by Vercel CDN (favicon, icons, and Vite client build output copied here at build time)
+vercel.json                   # Rewrites all non-static traffic to api/index.ts
 DESIGN.md                     # Style guide, color tokens, component conventions
 AGENTS.md                     # This file — agent instructions
 ```
@@ -117,22 +112,59 @@ The four layers flow in one direction: `services → state → contexts → comp
 - **components** — Live under `desktop/components/` or `mobile/components/`. Derive UI from state via the hooks in `contexts/`. They re-render only when the specific properties they read change. You need no selectors or subscription hooks.
 - **ui-components** — Live under `desktop/ui-components/` or `mobile/ui-components/`. `<Tooltip>`, `<Input>`, `<Dropdown>` and similar generic building blocks with no knowledge of the app. The only place you should use `useState`.
 
-## Server routes
+## Server
 
-Nitro server-only routes live in `server/routes/`. The filename maps directly to the URL path — `server/routes/auth/github.ts` handles `GET /auth/github`. Dynamic segments use `[param]` syntax (e.g. `server/routes/api/todos/[id].ts` → `/api/todos/:id`).
+All server-side HTTP handling lives in `server/index.ts` — a plain Express app. Routes are wired explicitly; there is no file-based routing, no auto-imports, and no framework magic.
 
-Route handlers use Nitro's auto-imported helpers (`defineEventHandler`, `getCookie`, `setCookie`, `readBody`, `getRouterParam`, `createError`, etc.) — no explicit imports needed in route files.
-
-Route handlers that talk to the database instantiate `NeonDatabaseService` directly. They never import from `src/services/client/`.
-
-**Critical:** `nitro.config.ts` must include `serverDir: 'server'`. Without it, Nitro's default `serverDir` is `false` and the entire `server/routes/` directory is silently excluded from the build — every request falls through to the SSR renderer and returns 200.
-
-**Redirects in route handlers:** do NOT use `sendRedirect()`. In h3 v2, `sendRedirect` returns a custom `HTTPResponse` class that is not `instanceof Response`, so Nitro serialises it as a 200. Use this pattern instead:
 ```ts
-setResponseStatus(event, 302);
-setHeader(event, 'location', '/target');
-return null;
+// Example shape of server/index.ts
+import express from 'express';
+import { NeonDatabaseService } from '../src/services/server/DatabaseService.js';
+import { render } from '../dist/server/entry-server.js';
+
+const app = express();
+app.use(express.json());
+
+app.get('/auth/github', (req, res) => { /* redirect to GitHub OAuth */ });
+app.get('/auth/callback', async (req, res) => { /* exchange code, set cookie */ });
+app.post('/auth/logout', async (req, res) => { /* delete session, clear cookie */ });
+app.post('/auth/test-login', async (req, res) => { /* preview-only test login */ });
+
+app.get('/api/posts', async (req, res) => { /* list posts */ });
+app.post('/api/posts', async (req, res) => { /* create post */ });
+app.patch('/api/posts/:id', async (req, res) => { /* update post */ });
+
+app.get('*', render); // SSR catch-all
+
+export default app;
 ```
+
+Route handlers that need the database instantiate `NeonDatabaseService` directly using `process.env.DATABASE_URL`. They never import from `src/services/client/`.
+
+## Build
+
+Two Vite builds run in sequence:
+
+1. **Client** — `vite build` → outputs to `dist/client/`
+2. **Server (SSR)** — `vite build --ssr src/entry-server.tsx` → outputs to `dist/server/`
+
+After both builds, `dist/client/` is copied into `public/` so Vercel's CDN serves static assets directly before the Express function is reached.
+
+The `package.json` build script runs all three steps: `vite build && vite build --ssr src/entry-server.tsx && cp -r dist/client/. public/`
+
+## Vercel deployment
+
+`api/index.ts` is a Vercel serverless function that imports the Express app from `server/index.ts` and exports it as the default export. `vercel.json` rewrites all traffic to this function:
+
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+}
+```
+
+Static assets in `public/` are served by Vercel's CDN and never reach the function.
+
+**Environment variables:** `DATABASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `APP_URL` (defaults to `http://localhost:5173`), `VERCEL_ENV` (set automatically by Vercel — `"preview"` on preview deployments).
 
 ## Authentication
 
@@ -141,10 +173,9 @@ Auth is handled via GitHub OAuth. The flow:
 1. `GET /auth/github` — redirects to `https://github.com/login/oauth/authorize`
 2. `GET /auth/callback` — exchanges the `code` param for an access token, fetches the GitHub user, upserts them into the `users` table, creates a row in `sessions`, sets an `httpOnly session` cookie, redirects to `/`
 3. `POST /auth/logout` — deletes the session row, clears the cookie, redirects to `/`
+4. `POST /auth/test-login` — preview-only shortcut (checks `process.env.VERCEL_ENV === 'preview'`), creates a session for the hardcoded `test` user
 
 The session cookie is read in `entry-server.tsx` on every request. The resolved `User | null` is passed into `AppState` and exposed via `useApp()` as `app.user`.
-
-**Environment variables required:** `DATABASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `APP_URL` (defaults to `http://localhost:5173`).
 
 ## SSR rehydration pattern
 
@@ -152,16 +183,16 @@ The server and client use separate service implementations for any service that 
 
 | | Server | Client |
 |---|---|---|
-| `DatabaseService` | `NeonDatabaseService` — queries Neon directly | `ApiDatabaseService` — calls Nitro API routes |
+| `DatabaseService` | `NeonDatabaseService` — queries Neon directly | `ApiDatabaseService` — calls Express API routes |
 | `StorageService` | `MemoryStorageService` — in-memory | `LocalStorageService` — localStorage |
 
 **How rehydration works:**
 
 1. `entry-server.tsx` runs the server service, populates `AppState`, then serialises the initial data into a hidden `<div id="__initial_data__">` element rendered as the first child of the React tree.
 2. `entry-client.tsx` reads `document.getElementById('__initial_data__').textContent`, parses it, and passes it to the client service constructor and `AppState` — no extra network round-trip on first load. It also renders the same hidden div in the hydration tree so React sees identical DOM on both sides.
-3. Subsequent mutations go through the client service, which calls Nitro API routes that proxy to the database server-side.
+3. Subsequent mutations go through the client service, which calls Express API routes that proxy to the database server-side.
 
-**Why a hidden div, not `bootstrapScriptContent`?** Nitro renders only the React fragment into `<div id="root">` (not a full document). `bootstrapScriptContent` places its `<script>` inside `<div id="root">` but the client hydration tree doesn't include it — React 19 sees an extra node and throws hydration error #418. A `<div hidden>` is included in both trees and is never hoisted by React.
+**Why a hidden div, not `bootstrapScriptContent`?** The Express server renders only the React fragment into `<div id="root">` (not a full document). `bootstrapScriptContent` places its `<script>` inside `<div id="root">` but the client hydration tree doesn't include it — React 19 sees an extra node and throws hydration error #418. A `<div hidden>` is included in both trees and is never hoisted by React.
 
 When adding a new service that follows this pattern:
 - Define the interface in `src/services/index.ts`
@@ -169,7 +200,7 @@ When adding a new service that follows this pattern:
 - Add the client impl to `src/services/client/` — constructor accepts the initial data payload
 - Extend `InitialData` in `src/services/client/DatabaseService.ts`
 - Update the hidden div rendering in `entry-server.tsx` and `entry-client.tsx`
-- Add corresponding Nitro API routes in `server/routes/api/`
+- Add corresponding Express routes in `server/index.ts`
 
 ## Scripts
 

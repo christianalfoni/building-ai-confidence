@@ -4,10 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { reactx } from 'reactx/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import { nitro } from 'nitro/vite'
 
 export default defineConfig({
-  plugins: [nitro(), tailwindcss(), reactx(), react()],
+  plugins: [tailwindcss(), reactx(), react()],
   ssr: {
     noExternal: ['reactx'],
   },
