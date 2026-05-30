@@ -92,8 +92,7 @@ import { renderToPipeableStream } from "react-dom/server";
 import { StrictMode, Suspense } from "react";
 import { readFileSync } from "node:fs";
 import { Transform } from "node:stream";
-import { fileURLToPath } from "node:url";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 
 // src/contexts/AppContext.ts
 import { createContext, useContext } from "react";
@@ -726,8 +725,7 @@ import { Fragment as Fragment3, jsx as jsx9, jsxs as jsxs11 } from "react/jsx-ru
 var AUTHOR_LOGINS2 = ["christianalfoni", "test"];
 function loadTemplate() {
   try {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const templatePath = join(__dirname, "../dist/client/index.html");
+    const templatePath = join(process.cwd(), "dist/client/index.html");
     const html = readFileSync(templatePath, "utf-8");
     const parts = html.split("<!--ssr-outlet-->");
     return [parts[0], parts[1] ?? ""];

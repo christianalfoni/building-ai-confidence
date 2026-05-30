@@ -2,8 +2,7 @@ import { renderToPipeableStream } from 'react-dom/server';
 import { StrictMode, Suspense } from 'react';
 import { readFileSync } from 'node:fs';
 import { Transform } from 'node:stream';
-import { fileURLToPath } from 'node:url';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
@@ -17,8 +16,7 @@ const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
 function loadTemplate(): [string, string] {
   try {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const templatePath = join(__dirname, '../dist/client/index.html');
+    const templatePath = join(process.cwd(), 'dist/client/index.html');
     const html = readFileSync(templatePath, 'utf-8');
     const parts = html.split('<!--ssr-outlet-->');
     return [parts[0], parts[1] ?? ''];
