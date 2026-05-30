@@ -21,40 +21,50 @@ Replace the todo app with a terminal-themed blog service using the "modernDark" 
 ## Tasks
 
 ### Cleanup
-- [ ] Delete `server/routes/api/todos/index.ts` and `server/routes/api/todos/[id].ts`
-- [ ] Delete `src/assets/hero.png`, `src/assets/react.svg`, `src/assets/vite.svg`
-- [ ] Delete `src/desktop/ui-components/Checkbox.tsx`, `Input.tsx`, `IconButton.tsx`
-- [ ] Delete `src/mobile/ui-components/Checkbox.tsx`, `Input.tsx`, `IconButton.tsx`
-- [ ] Delete `src/desktop/components/App.stories.tsx` (todo stories)
-- [ ] Delete `src/mobile/components/App.stories.tsx` (todo stories)
-- [ ] Delete `src/desktop/components/BlogTerminal.stories.tsx` (POC, replaced by proper stories)
+- [x] Delete `server/routes/api/todos/index.ts` and `server/routes/api/todos/[id].ts`
+- [x] Delete `src/assets/hero.png`, `src/assets/react.svg`, `src/assets/vite.svg`
+- [x] Delete `src/desktop/ui-components/Checkbox.tsx`, `Input.tsx`, `IconButton.tsx`
+- [x] Delete `src/mobile/ui-components/Checkbox.tsx`, `Input.tsx`, `IconButton.tsx`
+- [x] Delete `src/desktop/components/App.stories.tsx` (todo stories)
+- [x] Delete `src/mobile/components/App.stories.tsx` (todo stories)
+- [x] Delete `src/desktop/components/BlogTerminal.stories.tsx` (POC, replaced by proper stories)
 
 ### Theme & design
-- [ ] Update `src/index.css` — replace light color tokens with dark terminal palette
-- [ ] Update `DESIGN.md` — rewrite style guide for the terminal dark theme
+- [x] Update `src/index.css` — replace light color tokens with dark terminal palette
+- [x] Update `DESIGN.md` — rewrite style guide for the terminal dark theme
 
 ### Data & state layer
-- [ ] Add `src/data/posts.ts` — `Post` type + one hardcoded full article
-- [ ] Simplify `src/services/index.ts` — remove `Todo` type and all todo methods from `DatabaseService`
-- [ ] Simplify `src/services/server/DatabaseService.ts` — remove todo methods
-- [ ] Simplify `src/services/client/DatabaseService.ts` — remove todo methods and `todos` from `InitialData`
-- [ ] Rewrite `src/state/AppState.ts` — remove all todo logic; add `selectedPostSlug: string | null`, `selectPost(slug: string)`, `goBack()`
-- [ ] Update `src/entry-server.tsx` — remove todo fetching, strip `todos` from `initialData`
-- [ ] Update `src/entry-client.tsx` — remove `todos` from `InitialData` hydration
-- [ ] Rewrite `src/state/AppState.test.ts` — test `selectPost` and `goBack`
-- [ ] Update `src/test-utils.tsx` — adapt `createAppState` to new shape
+- [x] Add `src/data/posts.ts` — `Post` type + one hardcoded full article
+- [x] Simplify `src/services/index.ts` — remove `Todo` type and all todo methods from `DatabaseService`
+- [x] Simplify `src/services/server/DatabaseService.ts` — remove todo methods
+- [x] Simplify `src/services/client/DatabaseService.ts` — remove todo methods and `todos` from `InitialData`
+- [x] Rewrite `src/state/AppState.ts` — remove all todo logic; add `selectedPostSlug: string | null`, `selectPost(slug: string)`, `goBack()`
+- [x] Update `src/entry-server.tsx` — remove todo fetching, strip `todos` from `initialData`
+- [x] Update `src/entry-client.tsx` — remove `todos` from `InitialData` hydration
+- [x] Rewrite `src/state/AppState.test.ts` — test `selectPost` and `goBack`
+- [x] Update `src/test-utils.tsx` — verified no changes needed; `createAppState` signature is compatible with the new AppState constructor
 
 ### Desktop UI
-- [ ] Create `src/desktop/ui-components/Tag.tsx` — small coloured tag chip
-- [ ] Create `src/desktop/components/BlogList.tsx` — modernDark terminal post listing
-- [ ] Create `src/desktop/components/BlogPost.tsx` — modernDark terminal post reader
-- [ ] Rewrite `src/desktop/components/App.tsx` — terminal window chrome, renders BlogList or BlogPost
-- [ ] Create `src/desktop/components/App.stories.tsx` — list view story and post view story
+- [x] Create `src/desktop/ui-components/Tag.tsx` — small coloured tag chip
+- [x] Create `src/desktop/components/BlogList.tsx` — modernDark terminal post listing
+- [x] Create `src/desktop/components/BlogPost.tsx` — modernDark terminal post reader
+- [x] Rewrite `src/desktop/components/App.tsx` — terminal window chrome, renders BlogList or BlogPost
+- [x] Create `src/desktop/components/App.stories.tsx` — list view story and post view story
 
 ### Mobile UI
-- [ ] Create `src/mobile/ui-components/Tag.tsx` — tag chip, larger touch target
-- [ ] Create `src/mobile/components/BlogList.tsx` — dark card-based post list
-- [ ] Create `src/mobile/components/BlogPost.tsx` — full-screen dark post reader
-- [ ] Rewrite `src/mobile/components/App.tsx` — renders BlogList or BlogPost
+- [x] Create `src/mobile/ui-components/Tag.tsx` — tag chip, larger touch target
+- [x] Create `src/mobile/components/BlogList.tsx` — dark card-based post list
+- [x] Create `src/mobile/components/BlogPost.tsx` — full-screen dark post reader
+- [x] Rewrite `src/mobile/components/App.tsx` — renders BlogList or BlogPost
 
 ## Report
+
+All 27 tasks completed. The todo app has been fully replaced with a terminal-themed blog service.
+
+**Deviations from plan:**
+- `src/test-utils.tsx` required no changes — `createAppState` already passed only a `Services` object and the new `AppState` constructor accepts the same first argument with `user` and `isPreview` defaulting to `null`/`false`.
+- Auth controls in the desktop App use plain text links/buttons directly in the title bar rather than the `Button` ui-component, which was kept but is now unused. This is intentional — the terminal aesthetic favors minimal text controls over styled buttons.
+
+**Lint:** 0 errors, 0 warnings.
+
+**Tests:** 3/3 passed — `selectPost`, `goBack`, and initial state.
