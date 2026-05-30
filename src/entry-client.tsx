@@ -7,13 +7,25 @@ import { reactive } from 'reactx';
 import { AppState } from './state/AppState.ts';
 import type { Services } from './services/index.ts';
 import { LocalStorageService } from './services/client/StorageService.ts';
+import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
+
+declare global {
+  interface Window {
+    __INITIAL_DATA__?: InitialData;
+  }
+}
+
+const initialData: InitialData = window.__INITIAL_DATA__ ?? { dbEnabled: false, user: null, todos: [] };
 
 const services: Services = {
   storage: new LocalStorageService(),
+  // Only wire up ApiDatabaseService when the server had DATABASE_URL configured.
+  // Without this guard, mutations would hit /api/* routes that immediately 500.
+  db: initialData.dbEnabled ? new ApiDatabaseService(initialData) : undefined,
 };
 
-const app = reactive(new AppState(services));
+const app = reactive(new AppState(services, initialData.user, initialData.todos));
 
 hydrateRoot(
   document.getElementById('root')!,

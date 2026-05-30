@@ -55,11 +55,11 @@ describe("AppState", () => {
     expect(state.todos).toHaveLength(0);
   });
 
-  it("sets and submits new todo text", () => {
+  it("sets and submits new todo text", async () => {
     const state = createAppState();
     state.setNewTodoText("Buy oat milk");
     expect(state.newTodoText).toBe("Buy oat milk");
-    state.submitNewTodo();
+    await state.submitNewTodo();
     expect(state.todos).toHaveLength(1);
     expect(state.todos[0].text).toBe("Buy oat milk");
     expect(state.newTodoText).toBe("");
@@ -81,13 +81,13 @@ describe("AppState", () => {
     expect(state.editText).toBe("Buy milk");
   });
 
-  it("commitEdit saves the edit and clears editing state", () => {
+  it("commitEdit saves the edit and clears editing state", async () => {
     const state = createAppState();
-    state.addTodo("Buy milk");
+    await state.addTodo("Buy milk");
     const id = state.todos[0].id;
     state.startEdit(id);
     state.setEditText("Buy oat milk");
-    state.commitEdit();
+    await state.commitEdit();
     expect(state.todos[0].text).toBe("Buy oat milk");
     expect(state.editingId).toBeNull();
     expect(state.editText).toBe("");

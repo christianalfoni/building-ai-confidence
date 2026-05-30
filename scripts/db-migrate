@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+// Run with: node scripts/db-migrate
+// Requires DATABASE_URL in environment (or .env file)
+
+import { readFileSync } from 'fs';
+import { neon } from '@neondatabase/serverless';
+
+const envPath = new URL('../.env', import.meta.url).pathname;
+try {
+  const env = readFileSync(envPath, 'utf8');
+  for (const line of env.split('\n')) {
+    const [key, ...rest] = line.split('=');
+    if (key && rest.length) process.env[key.trim()] = rest.join('=').trim();
+  }
+} catch {}
+
+const url = process.env.DATABASE_URL;
+if (!url) {
+  console.error('DATABASE_URL is not set');
+  process.exit(1);
+}
+
+const sql = neon(url);
+
+// Ensure pgcrypto is available for gen_random_uuid() on older Postgres versions
+await sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`;
+
+await sql`
+  CREATE TABLE IF NOT EXISTS users (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    github_id  BIGINT UNIQUE NOT NULL,
+    name       TEXT NOT NULL,
+    avatar_url TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`;
+
+await sql`
+  CREATE TABLE IF NOT EXISTS sessions (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL
+  )
+`;
+
+await sql`
+  CREATE TABLE IF NOT EXISTS todos (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
+    text       TEXT NOT NULL,
+    completed  BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`;
+
+console.log('Migration complete');
