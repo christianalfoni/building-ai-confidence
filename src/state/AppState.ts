@@ -10,10 +10,12 @@ export class AppState {
   editingId: string | null = null;
   editText = "";
   user: User | null;
+  isPreview: boolean;
 
-  constructor(services: Services, user: User | null = null, todos: Todo[] = []) {
+  constructor(services: Services, user: User | null = null, todos: Todo[] = [], isPreview = false) {
     this.services = services;
     this.user = user;
+    this.isPreview = isPreview;
     if (services.db) {
       this.todos = todos;
     } else {

@@ -10,13 +10,10 @@ import { LocalStorageService } from './services/client/StorageService.ts';
 import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
 
-declare global {
-  interface Window {
-    __INITIAL_DATA__?: InitialData;
-  }
-}
-
-const initialData: InitialData = window.__INITIAL_DATA__ ?? { dbEnabled: false, user: null, todos: [] };
+const dataEl = document.getElementById('__initial_data__');
+const initialData: InitialData = dataEl
+  ? (JSON.parse(dataEl.textContent!) as InitialData)
+  : { dbEnabled: false, isPreview: false, user: null, todos: [] };
 
 const services: Services = {
   storage: new LocalStorageService(),
@@ -25,15 +22,20 @@ const services: Services = {
   db: initialData.dbEnabled ? new ApiDatabaseService(initialData) : undefined,
 };
 
-const app = reactive(new AppState(services, initialData.user, initialData.todos));
+const app = reactive(new AppState(services, initialData.user, initialData.todos, initialData.isPreview));
 
 hydrateRoot(
   document.getElementById('root')!,
   <StrictMode>
-    <AppContext value={app}>
-      <Suspense fallback={null}>
-        <PlatformApp />
-      </Suspense>
-    </AppContext>
+    <>
+      <div id="__initial_data__" style={{ display: 'none' }}>
+        {JSON.stringify(initialData)}
+      </div>
+      <AppContext value={app}>
+        <Suspense fallback={null}>
+          <PlatformApp />
+        </Suspense>
+      </AppContext>
+    </>
   </StrictMode>,
 );

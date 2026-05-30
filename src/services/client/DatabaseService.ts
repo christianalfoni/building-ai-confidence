@@ -2,6 +2,7 @@ import type { DatabaseService, User, Todo } from '../index.ts';
 
 export type InitialData = {
   dbEnabled: boolean;
+  isPreview: boolean;
   user: User | null;
   todos: Todo[];
 };

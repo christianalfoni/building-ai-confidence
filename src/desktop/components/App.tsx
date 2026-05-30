@@ -74,6 +74,15 @@ export function App() {
                 Sign out
               </button>
             </span>
+          ) : app.isPreview ? (
+            <form method="post" action="/auth/test-login">
+              <button
+                type="submit"
+                className="text-xs bg-navy text-white px-3 py-1.5 rounded-md hover:bg-navy/80 cursor-pointer"
+              >
+                Sign in as test user
+              </button>
+            </form>
           ) : (
             <a
               href="/auth/github"
