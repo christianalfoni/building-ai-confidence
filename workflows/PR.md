@@ -74,13 +74,13 @@ Submit completed work as a pull request on GitHub.
 
    The `Current behavior` and `New behavior` sections must visually represent the change — not prose. For UI changes, embed before/after screenshots using uploaded image URLs (see below). For non-UI changes, use ASCII diagrams with boxes, arrows, and flow notation.
 
-   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`, then generate the embed markup with:
+   **Including screenshots in a PR:** If the change touches UI, take before/after screenshots using `./scripts/screenshot`, then generate links with:
    ```bash
    ./scripts/screenshot-url <before-name> <after-name>
    ```
-   This prints an `<a>/<img>` block for each name. Paste the output directly into the PR body — do NOT wrap it in backticks or a code block. Screenshot names may include or omit the `.png` extension.
+   This prints a `[name](/path)` link for each screenshot. Paste the output directly into the PR body. Screenshot names may include or omit the `.png` extension.
 
-   > **Known limitation:** The MCP GitHub tools wrap long `https://` URLs in backticks before sending to GitHub, which breaks image rendering. If screenshots do not appear in the PR, note their path in `work/YYYY_MM_DD_<branch>/screenshots/` and rely on the Vercel preview deployment for visual review instead.
+   > **Note:** The Anthropic MCP proxy mangles `https://` URLs and HTML image tags in PR bodies, so screenshots are linked rather than inlined. Clicking a link opens the raw image on GitHub.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 9. Report the PR URL to the user.
