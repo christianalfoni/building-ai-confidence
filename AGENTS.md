@@ -117,11 +117,30 @@ The four layers flow in one direction: `services → state → contexts → comp
 - **components** — Live under `desktop/components/` or `mobile/components/`. Derive UI from state via the hooks in `contexts/`. They re-render only when the specific properties they read change. You need no selectors or subscription hooks.
 - **ui-components** — Live under `desktop/ui-components/` or `mobile/ui-components/`. `<Tooltip>`, `<Input>`, `<Dropdown>` and similar generic building blocks with no knowledge of the app. The only place you should use `useState`.
 
+## Nitro
+
+[Nitro](https://nitro.build) is the server framework that powers this app. It handles:
+
+- **File-based server routes** — files in `server/routes/` become HTTP endpoints, compiled into the production build
+- **SSR catch-all** — `src/entry-server.tsx` is registered as a `/**` handler that renders the React app for every unmatched request
+- **Auto-imports** — h3 helpers (`defineEventHandler`, `getCookie`, `setCookie`, `readBody`, `getRouterParam`, `createError`, etc.) are injected at build time; no explicit imports needed in route files
+- **Runtime config** — `nitro.config.ts` exposes typed server-side config accessible via `useRuntimeConfig()` in route handlers
+- **Build output** — produces `.output/` which is a self-contained Node.js server; Vercel Functions are generated from this when deploying
+
+**Critical:** `nitro.config.ts` must include `serverDir: 'server'`. Without it, Nitro's default `serverDir` is `false` and the entire `server/routes/` directory is silently excluded from the build — every request falls through to the SSR renderer and returns 200.
+
+**Redirects in route handlers:** do NOT use `sendRedirect()`. In h3 v2, `sendRedirect` returns a custom `HTTPResponse` class that is not `instanceof Response`, so Nitro serialises it as a 200. Use this pattern instead:
+```ts
+setResponseStatus(event, 302);
+setHeader(event, 'location', '/target');
+return null;
+```
+
 ## Server routes
 
 Nitro server-only routes live in `server/routes/`. The filename maps directly to the URL path — `server/routes/auth/github.ts` handles `GET /auth/github`. Dynamic segments use `[param]` syntax (e.g. `server/routes/api/todos/[id].ts` → `/api/todos/:id`).
 
-Route handlers use Nitro's auto-imported helpers (`defineEventHandler`, `getCookie`, `setCookie`, `readBody`, `sendRedirect`, `getRouterParam`, etc.) — no explicit imports needed.
+Route handlers use Nitro's auto-imported helpers — no explicit imports needed.
 
 Route handlers that talk to the database instantiate `NeonDatabaseService` directly. They never import from `src/services/client/`.
 
