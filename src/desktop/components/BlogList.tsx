@@ -41,8 +41,8 @@ export function BlogList() {
       <div className="border-t border-border" />
       <div className="space-y-4">
         {app.isAuthor && (
-          <div
-            className="group cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
+          <button
+            className="group w-full text-left opacity-50 hover:opacity-100 transition-opacity"
             onClick={handleNewPost}
           >
             <div className="flex items-center gap-3 mb-1">
@@ -51,7 +51,7 @@ export function BlogList() {
                 new post...
               </span>
             </div>
-          </div>
+          </button>
         )}
         {allPosts.map((post, i) => (
           <div

@@ -9,6 +9,7 @@ export function BlogEditor() {
   const post = app.dbPosts.find((p) => p.id === app.draftPostId);
   const bodyRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingFields = useRef<Partial<Pick<DbPost, "title" | "body" | "published">>>({});
 
   const initialBody = useRef(post?.body ?? "");
   useEffect(() => {
@@ -23,8 +24,12 @@ export function BlogEditor() {
   if (!post) return null;
 
   function scheduleSave(fields: Partial<Pick<DbPost, "title" | "body" | "published">>) {
+    pendingFields.current = { ...pendingFields.current, ...fields };
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { app.savePost(fields); }, DEBOUNCE_MS);
+    saveTimer.current = setTimeout(() => {
+      app.savePost(pendingFields.current);
+      pendingFields.current = {};
+    }, DEBOUNCE_MS);
   }
 
   function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {

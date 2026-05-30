@@ -31,9 +31,6 @@ export async function render(req: Request, res: Response) {
 
     const App = isMobileUA(req.headers['user-agent'] ?? '') ? MobileApp : DesktopApp;
 
-    res.setHeader('Content-Type', 'text/html;charset=utf-8');
-    res.write(htmlStart);
-
     const appendEnd = new Transform({
       transform(chunk, _enc, cb) { cb(null, chunk); },
       flush(cb) { this.push(htmlEnd); cb(); },
@@ -54,7 +51,13 @@ export async function render(req: Request, res: Response) {
       </StrictMode>,
       {
         onShellReady() {
+          res.setHeader('Content-Type', 'text/html;charset=utf-8');
+          res.write(htmlStart);
           pipe(appendEnd).pipe(res);
+        },
+        onShellError(err) {
+          console.error('[SSR] shell error:', err);
+          if (!res.headersSent) res.status(500).end('Internal server error');
         },
         onError(err) {
           console.error('[SSR] render error:', err);
