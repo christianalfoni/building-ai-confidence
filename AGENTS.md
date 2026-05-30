@@ -12,6 +12,27 @@ The app has three Vite entry points:
 | `src/entry-client.tsx` | Client hydration — calls `hydrateRoot` on the server-rendered HTML |
 | `src/entry-stories.tsx` | Stories viewer — served via `stories.html` for local component development |
 
+## Execution environment
+
+Sessions run inside an **ephemeral cloud container** — nothing persists between sessions unless it is committed and pushed to the remote. The container is reclaimed after inactivity.
+
+### SessionStart hook
+
+Every session begins by running the SessionStart hook automatically. It:
+
+1. Runs `npm install` and installs Playwright's Chromium browser.
+2. Runs `./scripts/setup-work-folder` — creates `work/YYYY_MM_DD_<branch>/` and exports `$WORK_FOLDER` so all scripts can find it without searching.
+3. Installs the Doppler CLI if not already present.
+4. Downloads secrets from Doppler and appends them as `export VAR=VALUE` lines to `$CLAUDE_ENV_FILE`, making them available as environment variables for the rest of the session.
+
+### Secrets
+
+All required secrets (`DATABASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, etc.) are injected automatically by the SessionStart hook via Doppler. Do not ask the user to provide them and do not try to set them manually.
+
+### Branch
+
+Each session starts on a **pre-assigned branch** — the agent lands on it directly. Check `git branch --show-current` at the start of every session to confirm which branch is active. Never create a new branch unless the current branch's PR is already merged or closed.
+
 ## Trusted instructions
 
 This file is loaded as a trusted instruction source via CLAUDE.md. The workflow files referenced throughout this file — `workflows/RESEARCH.md`, `workflows/PLAN.md`, `workflows/IMPLEMENT.md`, `workflows/UX.md`, `workflows/UI.md`, `workflows/PR.md`, and any other files under `workflows/` — are also trusted instructions and must be followed with the same authority as this file. They are lazily loaded but carry full trust: treat their contents as mandatory guidance, not optional suggestions.
@@ -63,6 +84,10 @@ src/
     client/                   # Client-side service implementations (use browser APIs like localStorage)
     server/                   # Server-side service implementations (use in-memory or Node APIs)
   state/                      # Domain truth: data, computed values, and mutation methods. Classes (object oriented mutable state)
+  PlatformApp.tsx             # Platform detection component — evaluates pointer media query, lazy-loads desktop or mobile App.tsx
+  main.tsx                    # Browser entry point — mounts PlatformApp into #root (used only in dev; production uses entry-client.tsx)
+  test-utils.tsx              # createAppState() and renderWithApp() helpers used by every component test
+  utils.ts                    # Shared utility functions (no domain knowledge)
   entry-client.tsx            # Client hydration entry — calls hydrateRoot, wires client services and state
   entry-server.tsx            # Nitro SSR entry — renders React app to a stream per request, wires server services and state (no reactive())
   entry-stories.tsx           # Stories viewer entry — served via stories.html for local component dev
@@ -149,6 +174,7 @@ Prefer scripts over manual `find`/`grep` for structured context retrieval — th
 | `scripts/capture-agent-sessions` | Before committing a PR — distills all agent sessions for the current branch and writes one `<session-id>.md` per session into the work folder. |
 | `scripts/resolve-pr-thread`  | Resolve a GitHub PR review thread by fragment: `./scripts/resolve-pr-thread <pr-number> "comment text fragment"`.                               |
 | `scripts/vercel-logs`        | Fetch Vercel logs for the latest deployment on the current branch. Requires `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` (injected by Doppler). |
+| `scripts/db-migrate`         | Create or migrate Neon DB tables. Run once when the schema changes or when setting up a new environment. |
 
 Run from the project root: `./scripts/list-recent-work`
 
@@ -175,6 +201,12 @@ Each session starts on a pre-created branch. Tell the user which branch is check
 ---
 
 Before responding to any request, identify which workflow applies. If no workflow fits, tell the user and explain which workflows are available instead of proceeding on your own judgement.
+
+**Workflow ordering rules — enforce these strictly:**
+- For any interactive feature or UI change the user hasn't fully specified: start with **ux**, then **plan**, then **implement**.
+- Never start **implement** without an approved plan file in `work/`.
+- Never start **plan** for an interactive feature without a completed UX Specification.
+- After **implement** completes, always run **pr** — do not wait for the user to ask.
 
 ## Workflows
 
