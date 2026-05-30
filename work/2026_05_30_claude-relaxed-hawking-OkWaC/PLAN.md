@@ -1,8 +1,10 @@
-# Blog Post Authoring
+# Blog Post Authoring + Nitro → Express Migration
 
 ## Summary
 
 Add the ability for authorized users (GitHub logins `christianalfoni` and `test`) to create and edit blog posts. Posts are stored in a new `posts` DB table. The existing hardcoded post in `src/data/posts.ts` stays as-is; DB posts are listed alongside it. The editor page is minimal: a styled `contenteditable` body and a plain `<input>` title, both debounce-saving to the DB. A publish toggle controls visibility to non-authors.
+
+Additionally, migrate the server from Nitro to a plain Express app to eliminate the file-based routing magic, auto-import footguns, and broken redirect behaviour discovered during implementation.
 
 ## Considerations
 
@@ -20,6 +22,14 @@ Add the ability for authorized users (GitHub logins `christianalfoni` and `test`
 
 **Slug generation:** Derived from the title on save (server-side, slugified). If title is empty, slug defaults to the post id.
 
+**Express migration rationale:** Nitro caused three separate production bugs — `serverDir` defaulting to `false` (all routes silently dropped), `sendRedirect` returning a non-standard class that serialises as 200, and `useRuntimeConfig()` not picking up `VERCEL_ENV`. Plain Express puts all routes in one file with no magic: `app.post('/auth/test-login', ...)` is explicit and debuggable.
+
+**Express on Vercel:** Vercel supports a Node.js serverless function as a catch-all. We export the Express app from `api/index.ts` and add a `vercel.json` that rewrites all traffic to it. Static assets (Vite client build) go to `public/` and are served by Vercel's CDN before the function is reached — so the function only handles API routes and SSR.
+
+**SSR in Express:** `entry-server.tsx` currently exports a Nitro-style `{ fetch(request) }` handler. We'll change it to export a plain `render(req, res)` Express middleware that uses `renderToPipeableStream` (Node.js streams) instead of `renderToReadableStream` (Web streams). This avoids stream conversion hacks.
+
+**Build:** Remove the `nitro()` Vite plugin. The build becomes: `vite build` (client → `dist/client/`) + `vite build --ssr src/entry-server.tsx` (server bundle → `dist/server/`). A `vercel-build` script copies `dist/client/` to `public/` so Vercel serves it as static. The Vercel function in `api/index.ts` imports the SSR bundle at runtime.
+
 ## Tasks
 
 - [x] Add `githubLogin` to the `User` type in `src/services/index.ts` and persist it in `NeonDatabaseService.upsertUser` + the `users` table schema
@@ -27,27 +37,21 @@ Add the ability for authorized users (GitHub logins `christianalfoni` and `test`
 - [x] Extend `DatabaseService` interface with `getPosts`, `getPost`, `createPost`, `updatePost`
 - [x] Implement the new methods in `NeonDatabaseService` (server)
 - [x] Add `ApiDatabaseService` client stubs that call the new API routes
-- [x] Add Nitro routes: `POST /api/posts`, `PATCH /api/posts/:id`, `GET /api/posts`
 - [x] Extend `AppState`: add `isAuthor` getter, `view` discriminant (`'list' | 'post' | 'editor'`), `draftPostId`, `openEditor(id)`, `createPost()` action
 - [x] Update `entry-server.tsx` and `entry-client.tsx` to pass posts initial data through the hidden div
 - [x] Desktop `BlogList`: show "+ new post" entry at top when `app.isAuthor`; merge hardcoded + DB posts
 - [x] Desktop `BlogEditor`: title `<input>`, `contenteditable` body, publish toggle in footer, debounce saving
 - [x] Desktop `App.tsx`: render `BlogEditor` when `app.view === 'editor'`
 - [x] Mobile: mirror the same changes in `mobile/components/`
+- [ ] Install Express (`express`, `@types/express`); remove `nitro` from dependencies
+- [ ] Remove `nitro.config.ts` and the `nitro()` plugin from `vite.config.ts`
+- [ ] Rewrite `src/entry-server.tsx` to export an Express middleware using `renderToPipeableStream`
+- [ ] Create `server/index.ts` — Express app with all routes wired explicitly (auth, API, SSR catch-all)
+- [ ] Create `api/index.ts` — Vercel function entry that imports and exports the Express app
+- [ ] Add `vercel.json` — rewrite all traffic to `/api/index`
+- [ ] Update `vite.config.ts` — remove Nitro plugin, add SSR build entry for `src/entry-server.tsx`
+- [ ] Update `package.json` build scripts — client build + SSR build + copy to `public/`
+- [ ] Delete `server/routes/` directory (all routes now in `server/index.ts`)
+- [ ] Verify local build and smoke-test SSR + auth routes
 
 ## Report
-
-All tasks completed. The implementation adds full blog post authoring for `christianalfoni` and `test` users:
-
-- `github_login` column added to `users` table; `posts` table created via `scripts/db-migrate`
-- `DatabaseService` interface extended with `getPosts`, `createPost`, `updatePost`; implemented in `NeonDatabaseService` with slug auto-generation from title
-- `ApiDatabaseService` client stubs call `/api/posts` and `/api/posts/:id`
-- Nitro routes `GET/POST /api/posts` and `PATCH /api/posts/:id` enforce the author allowlist server-side
-- `AppState` extended with `isAuthor` getter, `view` discriminant, `draftTitle`/`draftPublished` with setter methods, `openEditor`, `updateDbPost`
-- SSR and client hydration both pass `posts` through the `__initial_data__` hidden div
-- Desktop and mobile `BlogList` show a "+ new post" entry for authors and merge DB posts with the hardcoded post
-- Desktop and mobile `BlogEditor` provide a title input and `contenteditable` body that debounce-save at 800ms, plus a publish toggle in the footer
-- `BlogPost` updated on both platforms to resolve DB posts by slug/id alongside hardcoded posts
-- One deviation: `draftTitle` and `draftPublished` were moved into `AppState` (not local `useState`) to comply with the `no-restricted-imports` lint rule banning `useState` in `components/`
-
-**Lint:** 0 errors · **Tests:** 3/3 passed
