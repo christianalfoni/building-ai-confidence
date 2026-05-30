@@ -10,16 +10,6 @@ import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import { useRuntimeConfig } from 'nitro/runtime-config';
 
-function safeJsonSerialize(data: unknown): string {
-  // Escape characters that can break an inline <script> tag or cause XSS.
-  // U+2028/2029 are line terminators that cannot appear in regex literals,
-  // so they are expressed as unicode escape sequences in the RegExp constructor.
-  return JSON.stringify(data)
-    .replace(/</g, '\\u003c')
-    .replace(new RegExp(' ', 'g'), '\\u2028')
-    .replace(new RegExp(' ', 'g'), '\\u2029');
-}
-
 export default {
   async fetch(request: Request) {
     const dbUrl = process.env.DATABASE_URL;
@@ -40,20 +30,24 @@ export default {
       ? (await import('./mobile/App.tsx')).default
       : (await import('./desktop/App.tsx')).default;
 
-    // bootstrapScriptContent appends an inline <script> at the end of the stream,
-    // after all React-rendered content. React skips trailing script nodes during
-    // hydration, so this avoids any mismatch with the client tree.
+    // Use a non-executable script tag to carry initialData into the DOM so the
+    // client can read it before hydrateRoot. Both server and client render the
+    // same element with the same JSON, avoiding any hydration mismatch.
     const stream = await renderToReadableStream(
       <StrictMode>
-        <AppContext value={app}>
-          <Suspense fallback={null}>
-            <App />
-          </Suspense>
-        </AppContext>
+        <>
+          <script
+            type="application/json"
+            data-id="initial-data"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(initialData) }}
+          />
+          <AppContext value={app}>
+            <Suspense fallback={null}>
+              <App />
+            </Suspense>
+          </AppContext>
+        </>
       </StrictMode>,
-      {
-        bootstrapScriptContent: `window.__INITIAL_DATA__ = ${safeJsonSerialize(initialData)}`,
-      },
     );
 
     await stream.allReady;
