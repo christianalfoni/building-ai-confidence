@@ -1,6 +1,7 @@
 import type { DatabaseService, User, Todo } from '../index.ts';
 
 export type InitialData = {
+  dbEnabled: boolean;
   user: User | null;
   todos: Todo[];
 };

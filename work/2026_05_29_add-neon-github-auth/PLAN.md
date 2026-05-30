@@ -2,7 +2,7 @@
 
 ## Summary
 
-Add persistent storage via Neon (serverless Postgres) and user identity via GitHub OAuth. Users sign in with GitHub; their identity maps to a `user_id` foreign key on all user-owned data. Some data is user-private (filtered by `user_id`), other data is public (no filter). Sessions are stored in a `sessions` table in Neon and carried by a signed cookie.
+Add persistent storage via Neon (serverless Postgres) and user identity via GitHub OAuth. Users sign in with GitHub; their identity maps to a `user_id` foreign key on all user-owned data. Some data is user-private (filtered by `user_id`), other data is public (no filter). Sessions are stored in a `sessions` table in Neon and carried by an opaque UUID session cookie (httpOnly, not signed — the UUID is the secret).
 
 The current `StorageService` (localStorage / in-memory) is replaced by a `DatabaseService` that talks to Neon. The `AppState` is extended to hold the authenticated user and expose sign-in/sign-out. Two new Nitro server routes handle the OAuth flow.
 
@@ -22,7 +22,7 @@ The current `StorageService` (localStorage / in-memory) is replaced by a `Databa
 
 ### Infrastructure
 - [x] Install `@neondatabase/serverless` package
-- [x] Add `DATABASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `SESSION_SECRET` to `.env` (document in `.env.example`)
+- [x] Add `DATABASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `APP_URL` to `.env` (document in `.env.example`). `SESSION_SECRET` was omitted — sessions use an opaque UUID stored server-side, no signing required.
 - [x] Add `DatabaseService` interface to `src/services/index.ts` with typed query methods (alongside existing `StorageService`)
 - [x] Create `NeonDatabaseService` in `src/services/server/DatabaseService.ts` — queries Neon directly
 - [x] Create `ApiDatabaseService` in `src/services/client/DatabaseService.ts` — calls Nitro API routes; initialized from `window.__INITIAL_DATA__`

@@ -1,6 +1,12 @@
 import { NeonDatabaseService } from '../../../src/services/server/DatabaseService.ts';
 
 export default defineEventHandler(async (event) => {
+  const clientId = process.env.GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const dbUrl = process.env.DATABASE_URL;
+  if (!clientId || !clientSecret) throw createError({ statusCode: 500, message: 'GitHub OAuth env vars are not configured' });
+  if (!dbUrl) throw createError({ statusCode: 500, message: 'DATABASE_URL is not configured' });
+
   const query = getQuery(event);
   const code = query.code as string;
   const state = query.state as string;
@@ -18,11 +24,7 @@ export default defineEventHandler(async (event) => {
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      client_id: process.env.GITHUB_CLIENT_ID,
-      client_secret: process.env.GITHUB_CLIENT_SECRET,
-      code,
-    }),
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
   });
   if (!tokenRes.ok) {
     throw createError({ statusCode: 502, message: 'Failed to exchange GitHub OAuth code' });
@@ -42,9 +44,6 @@ export default defineEventHandler(async (event) => {
   const ghUser = await userRes.json() as { id: number; name: string | null; avatar_url: string; login: string };
 
   // Persist user + session
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl) throw createError({ statusCode: 500, message: 'DATABASE_URL is not configured' });
-
   const db = new NeonDatabaseService(dbUrl);
   const user = await db.upsertUser(ghUser.id, ghUser.name ?? ghUser.login, ghUser.avatar_url);
   const sessionId = await db.createSession(user.id);

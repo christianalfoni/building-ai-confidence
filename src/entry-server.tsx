@@ -10,14 +10,13 @@ import { isMobileUA } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 
 function safeJsonSerialize(data: unknown): string {
-  // Escape characters that can break an inline <script> tag or cause XSS:
-  // < (closes </script>), U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR
-  // U+2028/2029 cannot appear in regex literals (they are line terminators),
-  // so we use split/join for those two.
+  // Escape characters that can break an inline <script> tag or cause XSS.
+  // U+2028/2029 are line terminators that cannot appear in regex literals,
+  // so they are expressed as unicode escape sequences in the RegExp constructor.
   return JSON.stringify(data)
     .replace(/</g, '\\u003c')
-    .split(' ').join('\\u2028')
-    .split(' ').join('\\u2029');
+    .replace(new RegExp(' ', 'g'), '\\u2028')
+    .replace(new RegExp(' ', 'g'), '\\u2029');
 }
 
 function InitialDataScript({ data }: { data: InitialData }) {
@@ -40,7 +39,7 @@ export default {
     const user = db && sessionId ? await db.getUser(sessionId) : null;
     const todos = db ? await db.getTodos(user?.id ?? null) : [];
 
-    const initialData: InitialData = { user, todos };
+    const initialData: InitialData = { dbEnabled: !!db, user, todos };
     const services: Services = { storage: new MemoryStorageService(), db };
     const app = new AppState(services, user, todos);
 

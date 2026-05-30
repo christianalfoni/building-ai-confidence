@@ -14,10 +14,33 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!;
 
   if (event.method === 'DELETE') {
-    await db.deleteTodo(id, user?.id ?? null);
+    try {
+      await db.deleteTodo(id, user?.id ?? null);
+    } catch {
+      throw createError({ statusCode: 404, message: 'Todo not found or permission denied' });
+    }
     return null;
   }
 
-  const body = await readBody(event) as { text?: string; completed?: boolean };
-  return db.updateTodo(id, body, user?.id ?? null);
+  // PATCH — validate body fields before touching the DB
+  const raw = await readBody(event) as Record<string, unknown>;
+  const patch: { text?: string; completed?: boolean } = {};
+  if ('text' in raw) {
+    if (typeof raw.text !== 'string' || !raw.text.trim()) {
+      throw createError({ statusCode: 400, message: 'text must be a non-empty string' });
+    }
+    patch.text = raw.text.trim();
+  }
+  if ('completed' in raw) {
+    if (typeof raw.completed !== 'boolean') {
+      throw createError({ statusCode: 400, message: 'completed must be a boolean' });
+    }
+    patch.completed = raw.completed;
+  }
+
+  try {
+    return await db.updateTodo(id, patch, user?.id ?? null);
+  } catch {
+    throw createError({ statusCode: 404, message: 'Todo not found or permission denied' });
+  }
 });

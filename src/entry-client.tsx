@@ -16,11 +16,13 @@ declare global {
   }
 }
 
-const initialData: InitialData = window.__INITIAL_DATA__ ?? { user: null, todos: [] };
+const initialData: InitialData = window.__INITIAL_DATA__ ?? { dbEnabled: false, user: null, todos: [] };
 
 const services: Services = {
   storage: new LocalStorageService(),
-  db: new ApiDatabaseService(initialData),
+  // Only wire up ApiDatabaseService when the server had DATABASE_URL configured.
+  // Without this guard, mutations would hit /api/* routes that immediately 500.
+  db: initialData.dbEnabled ? new ApiDatabaseService(initialData) : undefined,
 };
 
 const app = reactive(new AppState(services, initialData.user, initialData.todos));
