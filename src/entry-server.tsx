@@ -12,6 +12,17 @@ import { useRuntimeConfig } from 'nitro/runtime-config';
 
 export default {
   async fetch(request: Request) {
+    try {
+      return await render(request);
+    } catch (err) {
+      console.error('[SSR] render error:', err);
+      // Return an empty shell so the client can still hydrate
+      return new Response('', { status: 500, headers: { 'Content-Type': 'text/html;charset=utf-8' } });
+    }
+  },
+};
+
+async function render(request: Request) {
     const dbUrl = process.env.DATABASE_URL;
     const db = dbUrl ? new NeonDatabaseService(dbUrl) : undefined;
 
@@ -50,8 +61,7 @@ export default {
     return new Response(stream, {
       headers: { 'Content-Type': 'text/html;charset=utf-8' },
     });
-  },
-};
+}
 
 function parseCookie(header: string, name: string): string | null {
   const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
