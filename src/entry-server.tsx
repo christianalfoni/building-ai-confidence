@@ -30,17 +30,12 @@ export default {
       ? (await import('./mobile/App.tsx')).default
       : (await import('./desktop/App.tsx')).default;
 
-    // Use a non-executable script tag to carry initialData into the DOM so the
-    // client can read it before hydrateRoot. Both server and client render the
-    // same element with the same JSON, avoiding any hydration mismatch.
     const stream = await renderToReadableStream(
       <StrictMode>
         <>
-          <script
-            type="application/json"
-            data-id="initial-data"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(initialData) }}
-          />
+          <div id="__initial_data__" style={{ display: 'none' }}>
+            {JSON.stringify(initialData)}
+          </div>
           <AppContext value={app}>
             <Suspense fallback={null}>
               <App />

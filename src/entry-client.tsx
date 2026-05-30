@@ -10,7 +10,7 @@ import { LocalStorageService } from './services/client/StorageService.ts';
 import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
 
-const dataEl = document.querySelector('script[type="application/json"][data-id="initial-data"]');
+const dataEl = document.getElementById('__initial_data__');
 const initialData: InitialData = dataEl
   ? (JSON.parse(dataEl.textContent!) as InitialData)
   : { dbEnabled: false, isPreview: false, user: null, todos: [] };
@@ -28,11 +28,9 @@ hydrateRoot(
   document.getElementById('root')!,
   <StrictMode>
     <>
-      <script
-        type="application/json"
-        data-id="initial-data"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(initialData) }}
-      />
+      <div id="__initial_data__" style={{ display: 'none' }}>
+        {JSON.stringify(initialData)}
+      </div>
       <AppContext value={app}>
         <Suspense fallback={null}>
           <PlatformApp />
