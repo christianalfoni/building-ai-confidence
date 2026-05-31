@@ -12,6 +12,7 @@ function dbPostToPost(p: DbPost): Post {
     tags: [],
     excerpt: p.body.slice(0, 120),
     body: p.body.split("\n\n").filter(Boolean),
+    draft: !p.published,
   };
 }
 
@@ -58,7 +59,14 @@ export function BlogList() {
                 {post.readTime}
               </span>
             </div>
-            <div className="text-xs text-muted font-mono mb-2">{post.date}</div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-muted font-mono">{post.date}</span>
+              {post.draft && (
+                <span className="text-xs px-1.5 py-0.5 rounded border border-dashed border-mauve/50 text-mauve/80 bg-mauve/5 font-mono">
+                  draft
+                </span>
+              )}
+            </div>
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {post.tags.map((t) => (

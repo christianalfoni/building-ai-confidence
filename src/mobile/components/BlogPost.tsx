@@ -12,6 +12,7 @@ function dbPostToPost(p: DbPost): Post {
     tags: [],
     excerpt: p.body.slice(0, 120),
     body: p.body.split("\n\n").filter(Boolean),
+    draft: !p.published,
   };
 }
 
@@ -27,12 +28,22 @@ export function BlogPost() {
 
   return (
     <div className="px-4 py-6 space-y-4">
-      <button
-        onClick={() => app.goBack()}
-        className="flex items-center gap-2 text-sm text-muted font-mono active:text-text"
-      >
-        ← back
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => app.goBack()}
+          className="flex items-center gap-2 text-sm text-muted font-mono active:text-text"
+        >
+          ← back
+        </button>
+        {app.isAuthor && dbMatch && (
+          <button
+            onClick={() => app.openEditor(dbMatch.id)}
+            className="text-sm text-muted font-mono active:text-mauve"
+          >
+            edit
+          </button>
+        )}
+      </div>
       <div className="space-y-2">
         <h1 className="text-xl font-bold text-teal font-mono leading-snug">{post.title}</h1>
         <div className="flex items-center gap-2 text-xs text-muted font-mono">
