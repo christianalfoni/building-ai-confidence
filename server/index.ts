@@ -159,7 +159,7 @@ app.patch('/api/posts/:id', async (req, res) => {
   }
 });
 
-app.get('/{*path}', render);
+app.get('/{*path}', (req, res) => render(req, res));
 
 export default app;
 
