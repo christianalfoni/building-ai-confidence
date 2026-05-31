@@ -4,26 +4,14 @@ Submit completed work as a pull request on GitHub.
 
 ## Steps
 
-1. Confirm the current branch with `git branch --show-current`. Sessions start on a pre-assigned branch — use it as-is unless it is already merged or closed.
+1. Check for unstaged changes with `git status`. If any exist, stage and commit them before continuing.
 
-   Check whether the current branch already has a PR using the `mcp__github__list_pull_requests` tool
-   (`owner=christianalfoni`, `repo=building-ai-confidence`, `head=<branch>`).
-   - If the result is `MERGED` or `CLOSED`, stop and create a new branch instead:
-     ```bash
-     git checkout main && git pull && git checkout -b <new-branch-name>
-     ```
-   - Otherwise, continue on the current branch. Do not create a new branch.
-
-2. _(Skip — the branch is pre-assigned. Only create a new branch if step 1 required it.)_
-
-3. _(Skip — already on the correct branch.)_
-
-4. If a work folder exists for this branch (`work/YYYY_MM_DD_<branch-name>/`), capture agent sessions so they are included in the commit:
+2. If a work folder exists for this branch (`work/YYYY_MM_DD_<branch-name>/`), capture agent sessions so they are included in the commit:
    ```bash
    ./scripts/capture-agent-sessions
    ```
    This writes one Markdown file per agent session into the branch work folder. If no work folder exists, skip this step.
-5. Stage and commit changes using the conventional commit prefix that best fits:
+3. Stage and commit changes using the conventional commit prefix that best fits:
    - `feat:` — new feature
    - `fix:` — bug fix
    - `chore:` — tooling, deps, config, scripts
@@ -31,17 +19,17 @@ Submit completed work as a pull request on GitHub.
    - `docs:` — documentation only
    - `test:` — tests only
    - `style:` — formatting, whitespace
-6. Push the branch:
+4. Push the branch:
    ```bash
    git push -u origin <branch-name>
    ```
-7. Run typecheck and lint before submitting:
+5. Run typecheck and lint before submitting:
    ```bash
    npx tsc -b && npm run lint
    ```
    Fix any errors before continuing. Both must pass — `tsc -b` catches type errors that ESLint misses (e.g. unused private fields, type mismatches).
 
-8. Create or update the PR using MCP tools:
+6. Create or update the PR using MCP tools:
    - **No open PR exists:** call `mcp__github__create_pull_request` with `owner=christianalfoni`,
      `repo=building-ai-confidence`, `head=<branch>`, `base=main`, `title`, and `body`.
    - **Open PR exists:** call `mcp__github__update_pull_request` with `owner=christianalfoni`,
@@ -83,8 +71,8 @@ Submit completed work as a pull request on GitHub.
    > **Note:** The Anthropic MCP proxy mangles `https://` URLs and HTML image tags in PR bodies, so screenshots are linked rather than inlined. Clicking a link opens the raw image on GitHub.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
-9. Report the PR URL to the user.
-10. After the PR is reviewed, use `./scripts/resolve-pr-thread <pr-number> "comment fragment"` to resolve addressed threads. Use the **review** workflow to apply feedback.
+7. Report the PR URL to the user.
+8. After the PR is reviewed, use `./scripts/resolve-pr-thread <pr-number> "comment fragment"` to resolve addressed threads. Use the **review** workflow to apply feedback.
 
 ## Rules
 

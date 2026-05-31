@@ -12,6 +12,7 @@ function dbPostToPost(p: DbPost): Post {
     tags: [],
     excerpt: p.body.slice(0, 120),
     body: p.body.split("\n\n").filter(Boolean),
+    draft: !p.published,
   };
 }
 
@@ -64,7 +65,17 @@ export function BlogPost() {
         >
           ← cd ..
         </button>
-        <span className="text-dim">q to go back</span>
+        <div className="flex items-center gap-4">
+          {app.isAuthor && dbMatch && (
+            <button
+              onClick={() => app.openEditor(dbMatch.id)}
+              className="text-muted hover:text-mauve transition-colors cursor-pointer"
+            >
+              edit
+            </button>
+          )}
+          <span className="text-dim">q to go back</span>
+        </div>
       </div>
     </div>
   );

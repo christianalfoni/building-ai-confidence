@@ -81,16 +81,23 @@ export function BlogEditor() {
         >
           ← cd ..
         </button>
-        <button
-          onClick={handlePublishToggle}
-          className={`px-3 py-1 rounded border transition-colors cursor-pointer ${
-            app.draftPublished
-              ? "border-green text-green bg-green/10 hover:bg-green/20"
-              : "border-border text-muted hover:text-text hover:border-muted"
-          }`}
-        >
-          {app.draftPublished ? "published" : "draft"}
-        </button>
+        <div className="flex items-center gap-3">
+          <span
+            className={`px-2 py-0.5 rounded border font-mono text-xs ${
+              app.draftPublished
+                ? "border-green/50 text-green bg-green/10"
+                : "border-dashed border-mauve/50 text-mauve/80 bg-mauve/5"
+            }`}
+          >
+            {app.draftPublished ? "live" : "draft"}
+          </span>
+          <button
+            onClick={handlePublishToggle}
+            className="text-dim hover:text-muted transition-colors cursor-pointer underline underline-offset-2"
+          >
+            {app.draftPublished ? "unpublish" : "publish"}
+          </button>
+        </div>
       </div>
     </div>
   );

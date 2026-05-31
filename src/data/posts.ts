@@ -6,6 +6,7 @@ export type Post = {
   tags: string[];
   excerpt: string;
   body: string[];
+  draft?: boolean;
 };
 
 export const posts: Post[] = [
