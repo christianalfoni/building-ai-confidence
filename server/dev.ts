@@ -1,12 +1,19 @@
 import express from 'express';
+import { createServer as createViteServer } from 'vite';
 import { randomBytes } from 'node:crypto';
 import { NeonDatabaseService } from '../src/services/server/DatabaseService.js';
-import { render } from '../src/entry-server.tsx';
 
 const ALLOWED_LOGINS = ['christianalfoni', 'test'];
 
 const app = express();
 app.use(express.json());
+
+const vite = await createViteServer({
+  server: { middlewareMode: true },
+  appType: 'custom',
+});
+
+app.use(vite.middlewares);
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -15,7 +22,7 @@ app.get('/auth/github', (_req, res) => {
   if (!clientId) { res.status(500).send('GITHUB_CLIENT_ID is not configured'); return; }
 
   const state = randomBytes(16).toString('hex');
-  res.cookie('oauth_state', state, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 10 * 60 * 1000, path: '/' });
+  res.cookie('oauth_state', state, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 10 * 60 * 1000, path: '/' });
 
   const redirectUri = `${process.env.APP_URL ?? 'http://localhost:5173'}/auth/callback`;
   const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
@@ -56,7 +63,7 @@ app.get('/auth/callback', async (req, res) => {
     const user = await db.upsertUser(ghUser.id, ghUser.login, ghUser.name ?? ghUser.login, ghUser.avatar_url);
     const sessionId = await db.createSession(user.id);
 
-    res.cookie('session', sessionId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+    res.cookie('session', sessionId, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
     res.redirect(302, '/');
   } catch (err) {
     console.error('[auth/callback]', err);
@@ -81,8 +88,6 @@ app.post('/auth/logout', async (req, res) => {
 
 app.post('/auth/test-login', async (_req, res) => {
   try {
-    if (process.env.VERCEL_ENV !== 'preview') { res.status(403).send('Test login is only available in preview environments'); return; }
-
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) { res.status(500).send('DATABASE_URL is not configured'); return; }
 
@@ -90,7 +95,7 @@ app.post('/auth/test-login', async (_req, res) => {
     const user = await db.upsertUser(0, 'test', 'Test User', 'https://avatars.githubusercontent.com/u/0');
     const sessionId = await db.createSession(user.id);
 
-    res.cookie('session', sessionId, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+    res.cookie('session', sessionId, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
     res.redirect(302, '/');
   } catch (err) {
     console.error('[auth/test-login]', err);
@@ -159,9 +164,37 @@ app.patch('/api/posts/:id', async (req, res) => {
   }
 });
 
-app.get('/{*path}', (req, res) => render(req, res));
+// ── SSR catch-all ─────────────────────────────────────────────────────────────
 
-export default app;
+app.get('/{*path}', async (req, res) => {
+  try {
+    const rawHtml = await vite.transformIndexHtml(req.originalUrl, `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ai-driven</title>
+    <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/src/index.css" />
+  </head>
+  <body>
+    <div id="root"><!--ssr-outlet--></div>
+    <script type="module" src="/src/entry-client.tsx"></script>
+  </body>
+</html>`);
+
+    const { render } = await vite.ssrLoadModule('/src/entry-server.tsx');
+    await render(req, res, rawHtml);
+  } catch (err) {
+    if (err instanceof Error) vite.ssrFixStacktrace(err);
+    console.error('[dev-ssr]', err);
+    res.status(500).end('Internal server error');
+  }
+});
+
+const port = parseInt(process.env.PORT ?? '5173', 10);
+app.listen(port, () => console.log(`dev server running at http://localhost:${port}`));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

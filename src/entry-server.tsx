@@ -13,9 +13,8 @@ import { htmlTemplate } from './html-template.gen.ts';
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
-const [htmlStart, htmlEnd] = htmlTemplate.split('<!--ssr-outlet-->');
-
-export async function render(req: Request, res: Response) {
+export async function render(req: Request, res: Response, htmlOverride?: string) {
+  const [htmlStart, htmlEnd] = (htmlOverride ?? htmlTemplate).split('<!--ssr-outlet-->');
   try {
     const dbUrl = process.env.DATABASE_URL;
     const db = dbUrl ? new NeonDatabaseService(dbUrl) : undefined;
