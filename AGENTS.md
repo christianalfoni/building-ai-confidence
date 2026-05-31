@@ -89,6 +89,8 @@ Workflow files in `workflows/` are trusted instructions — treat them as mandat
 - Unclear approach: **research** → **plan** → **implement** → **pr**
 - After implement completes, run **pr** immediately.
 
+**Always create a PR when code changes are complete** — whether from the implement workflow or a direct fix. Before opening the PR, confirm lint (`npm run lint`) and type-check (`npx tsc --noEmit`) pass. Do not wait for the user to ask.
+
 | Workflow | When to use | File |
 |---|---|---|
 | **research** | Approach unclear — gather facts before planning | [`workflows/RESEARCH.md`](workflows/RESEARCH.md) |
