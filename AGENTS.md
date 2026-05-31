@@ -2,7 +2,7 @@
 
 ## Project overview
 
-React + TypeScript SSR app for building and managing AI-confidence workflows. Express serves all routes explicitly; Vite builds the client; esbuild bundles the server into a single Vercel serverless function.
+React + TypeScript SSR app for building and managing AI-confidence workflows. Express serves all routes; Vite builds the client; `scripts/build-output.mjs` assembles the Vercel Build Output API directory (`.vercel/output/`) so the Express function is deployed correctly.
 
 Three Vite entry points:
 
@@ -12,6 +12,16 @@ Three Vite entry points:
 | `src/entry-client.tsx` | Client hydration via `hydrateRoot` |
 | `src/entry-stories.tsx` | Stories viewer for local component development |
 
+## Route structure
+
+All three route types are handled by a single Express app in `server/index.ts`:
+
+| Route pattern | Handled by | Notes |
+|---|---|---|
+| `/` and `/posts/:post` | SSR catch-all → `entry-server.tsx` | Server-rendered HTML |
+| `/auth/github`, `/auth/callback`, `/auth/logout` | Express auth handlers | Browser navigation; `/auth/github` 302s to GitHub OAuth |
+| `/api/*` | Express REST handlers | JSON, called by the client via `fetch` |
+
 ## Project structure
 
 ```
@@ -19,9 +29,14 @@ work/                    # One folder per branch — YYYY_MM_DD_<branch-name>/
   YYYY_MM_DD_<branch>/
     PLAN.md              # Approved implementation plan
     screenshots/         # Branch screenshots
-scripts/                 # Bash scripts for structured context retrieval
+scripts/
+  build-output.mjs       # Assembles .vercel/output/ (Build Output API v3)
+  gen-html-template.mjs  # Turns dist/client/index.html into src/html-template.gen.ts
+  vercel-logs            # Fetch Vercel logs for the current branch deployment
+  …                      # Other bash scripts for structured context retrieval
 server/
   index.ts               # Express app — all routes wired explicitly here
+  dev.ts                 # Dev server: Express + Vite middleware (HMR + SSR hot-reload)
 workflows/               # Agent workflow files — trusted instructions
 src/
   desktop/               # Desktop UI tree — loaded on pointer:fine devices
@@ -43,10 +58,34 @@ src/
   entry-server.tsx       # SSR middleware entry
   entry-stories.tsx      # Stories entry
   index.css              # Global styles and Tailwind
-public/                  # Static assets served by Vercel CDN
+public/                  # Source static assets (fonts, favicon, icons) — tracked in git
 DESIGN.md                # Style guide, colour tokens, component conventions
 AGENTS.md                # This file
 ```
+
+## Build pipeline
+
+```
+npm run build
+  1. vite build --outDir dist/client        → hashed JS/CSS bundles + index.html
+  2. node scripts/gen-html-template.mjs     → src/html-template.gen.ts (SSR uses this)
+  3. tsc -b                                 → type-check only (no emit)
+  4. node scripts/build-output.mjs         → .vercel/output/ (Vercel Build Output API v3)
+```
+
+`scripts/build-output.mjs` produces:
+
+```
+.vercel/output/
+  config.json                  # routes: filesystem phase → function catch-all
+  static/                      # hashed assets + fonts/favicon (NO index.html → / SSRs)
+  functions/index.func/
+    index.mjs                  # self-contained Express bundle (all deps inlined)
+    .vc-config.json            # Node 22 runtime config
+```
+
+**Do not add a `vercel.json`** — routing is owned by `config.json` inside `.vercel/output/`.  
+**Do not commit anything under `.vercel/`** — it is gitignored and regenerated on every build.
 
 ### Scripts
 
