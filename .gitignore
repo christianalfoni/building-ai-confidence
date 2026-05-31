@@ -13,10 +13,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-public/assets
-public/index.html
-public/stories.html
-api/index.js
+.vercel
 src/html-template.gen.ts
 
 *.local
