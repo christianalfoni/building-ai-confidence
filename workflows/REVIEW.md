@@ -17,7 +17,7 @@ Address feedback from a PR review — inline comments and overall reviewer notes
 
    ```
    [1] workflows/PR.md — add a note that capture-agent-sessions requires a work folder to exist
-       → Add a prerequisite sentence to step 4.
+       → Add a prerequisite sentence to the capture-agent-sessions step.
 
    [2] scripts/capture-agent-sessions — exit gracefully if no sessions are found instead of erroring
        → Change the empty-sessions check to print a warning and exit 0.
@@ -29,7 +29,7 @@ Address feedback from a PR review — inline comments and overall reviewer notes
 
 6. Apply only the approved fixes, one at a time. After each fix, briefly state what changed.
 
-7. Once all fixes are applied, run the capture and commit steps from the [PR workflow](PR.md) (starting at step 4) to update the PR with the new changes.
+7. Once all fixes are applied, run the capture-sessions, commit, push, and typecheck/lint steps from the [PR workflow](PR.md) to update the PR with the new changes.
 
 ## Rules
 
