@@ -5,7 +5,7 @@ import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
-import { isMobileUA } from './utils.ts';
+import { isMobileUA, parseRoute } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import DesktopApp from './desktop/App.tsx';
 import MobileApp from './mobile/App.tsx';
@@ -26,7 +26,8 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
       (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
     ) : [];
     const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
-    const app = new AppState(user, initialData.isPreview, posts);
+    const route = parseRoute(req.path);
+    const app = new AppState(user, initialData.isPreview, posts, null, route);
 
     const isMobile = isMobileUA(req.headers['user-agent'] ?? '');
     const App = isMobile ? MobileApp : DesktopApp;
@@ -58,6 +59,7 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
       </StrictMode>,
       {
         onShellReady() {
+          res.statusCode = app.postNotFound ? 404 : 200;
           res.setHeader('Content-Type', 'text/html;charset=utf-8');
           res.write(htmlHead);
           pipe(appendEnd).pipe(res);

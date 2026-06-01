@@ -57,18 +57,37 @@ inline in each platform's `BlogPost`/editor rather than becoming shared
 
 ## Tasks
 
-- [ ] Add `parseRoute(pathname): { view: 'list' | 'post'; postId: string | null }` to `src/utils.ts` (matches `/posts/:id`; `/`, `/posts`, `/posts/` → list).
-- [ ] `AppState`: replace `selectedPostSlug` with `selectedPostId`; accept an initial route in the constructor; init `view`/`selectedPostId` from it; add `selectedPost` and `postNotFound` getters; remove `selectPost`; replace `goBack()` with `closeEditor()` (returns to post or list based on `selectedPostId`).
-- [ ] `entry-server.tsx`: parse the route from `req.path`, construct `AppState` with it, and set `res.statusCode = 404` in `onShellReady` when the route is a post that isn't in the visible `posts`.
-- [ ] `entry-client.tsx`: parse the route from `window.location.pathname` and pass it to `AppState`.
-- [ ] Desktop `BlogList`: render each row as `<a href={`/posts/${id}`}>` (carry `id` through `dbPostToPost`); keep the "new post…" button calling `createPost()`.
-- [ ] Desktop `BlogPost`: match by `selectedPostId`; render the in-page 404 block when `postNotFound`; turn "cd .." into a link to `/`; keep "edit" → `openEditor`.
-- [ ] Desktop `App.tsx`: derive the title-bar text from the selected post (id/title) instead of `selectedPostSlug`.
-- [ ] Desktop `BlogEditor`: change "cd .." from `goBack()` to `closeEditor()`.
-- [ ] Mobile `BlogList`, `BlogPost`, `BlogEditor`: mirror the desktop changes (anchors, `selectedPostId`, in-page 404, `closeEditor`).
-- [ ] Update `AppState.test.ts` for the renamed field/methods; add tests for route-driven init and the `selectedPost` / `postNotFound` getters.
-- [ ] Run `npm run lint` and `npx tsc --noEmit`; verify SSR for `/`, `/posts/:id`, and an unknown id (expect 404) via the dev server.
+- [x] Add `parseRoute(pathname): { view: 'list' | 'post'; postId: string | null }` to `src/utils.ts` (matches `/posts/:id`; `/`, `/posts`, `/posts/` → list).
+- [x] `AppState`: replace `selectedPostSlug` with `selectedPostId`; accept an initial route in the constructor; init `view`/`selectedPostId` from it; add `selectedPost` and `postNotFound` getters; remove `selectPost`; replace `goBack()` with `closeEditor()` (returns to post or list based on `selectedPostId`).
+- [x] `entry-server.tsx`: parse the route from `req.path`, construct `AppState` with it, and set `res.statusCode = 404` in `onShellReady` when the route is a post that isn't in the visible `posts`.
+- [x] `entry-client.tsx`: parse the route from `window.location.pathname` and pass it to `AppState`.
+- [x] Desktop `BlogList`: render each row as `<a href={`/posts/${id}`}>` (carry `id` through `dbPostToPost`); keep the "new post…" button calling `createPost()`.
+- [x] Desktop `BlogPost`: match by `selectedPostId`; render the in-page 404 block when `postNotFound`; turn "cd .." into a link to `/`; keep "edit" → `openEditor`.
+- [x] Desktop `App.tsx`: derive the title-bar text from the selected post (id/title) instead of `selectedPostSlug`.
+- [x] Desktop `BlogEditor`: change "cd .." from `goBack()` to `closeEditor()`.
+- [x] Mobile `BlogList`, `BlogPost`, `BlogEditor`: mirror the desktop changes (anchors, `selectedPostId`, in-page 404, `closeEditor`).
+- [x] Update `AppState.test.ts` for the renamed field/methods; add tests for route-driven init and the `selectedPost` / `postNotFound` getters.
+- [x] Run `npm run lint` and `npx tsc --noEmit`; verify SSR for `/`, `/posts/:id`, and an unknown id (expect 404) via the dev server.
 
 ## Report
+
+All ten tasks completed as planned, with no scope changes.
+
+**What was done**
+- `parseRoute` added to `src/utils.ts` as the single source of route truth, used by both SSR (`req.path`) and client (`window.location.pathname`) entries.
+- `AppState` now takes an initial `route`, initialises `view`/`selectedPostId` from it, exposes `selectedPost` and `postNotFound` getters, and replaces `goBack()` with `closeEditor()` (returns to the post on `/posts/:id`, the list on `/`). `selectPost` removed.
+- `entry-server.tsx` sets `res.statusCode` to 404 vs 200 in `onShellReady` based on `app.postNotFound`.
+- List rows (desktop + mobile) are now real `<a href="/posts/:id">` anchors carrying the post `id`; post-page "back" is a link to `/`; editor "back" calls `closeEditor()`.
+- Both `BlogPost` components render an in-page "404 — not found" block when the post isn't in the visible set. Desktop title bar derives from the selected post (or "404").
+- Stories and `AppState.test.ts` updated for the new API; added tests for route-driven init and the `selectedPost` / `postNotFound` getters.
+
+**Deviations**
+- One test initially used `toBe` (referential identity) on `selectedPost`; since `reactive()` proxies objects, switched to asserting `selectedPost?.id`. No behaviour change.
+
+**Validation**
+- `npm run lint` — clean.
+- `npx tsc --noEmit` — clean.
+- `npm test -- --run` — 15/15 passing.
+- Dev-server SSR check: `/` → HTTP 200 (renders the list), `/posts/nonexistent` → HTTP 404 (renders the in-page 404 block). (A pre-existing quirk: the dev server needs the build-generated `src/html-template.gen.ts`, which is gitignored; a temporary stub was used for the check and then removed.)
 ```
 ```

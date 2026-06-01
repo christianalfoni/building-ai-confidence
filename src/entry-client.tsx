@@ -7,6 +7,7 @@ import { reactive } from 'reactx';
 import { AppState } from './state/AppState.ts';
 import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
+import { parseRoute } from './utils.ts';
 
 const dataEl = document.getElementById('__initial_data__');
 const initialData: InitialData = dataEl
@@ -14,7 +15,8 @@ const initialData: InitialData = dataEl
   : { dbEnabled: false, isPreview: false, user: null, posts: [] };
 
 const db = new ApiDatabaseService(initialData);
-const app = reactive(new AppState(initialData.user, initialData.isPreview, initialData.posts, db));
+const route = parseRoute(window.location.pathname);
+const app = reactive(new AppState(initialData.user, initialData.isPreview, initialData.posts, db, route));
 
 hydrateRoot(
   document.getElementById('root')!,

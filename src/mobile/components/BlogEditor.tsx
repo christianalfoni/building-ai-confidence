@@ -68,7 +68,7 @@ export function BlogEditor() {
       />
       <div className="border-t border-border pt-4 flex items-center justify-between">
         <button
-          onClick={() => app.goBack()}
+          onClick={() => app.closeEditor()}
           className="text-xs text-muted font-mono"
         >
           ← cd ..
