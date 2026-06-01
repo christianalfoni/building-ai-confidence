@@ -1,9 +1,8 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import type { Post } from "../../data/posts";
 import type { DbPost } from "../../services";
 
-function dbPostToPost(p: DbPost): Post {
+function dbPostToPost(p: DbPost) {
   return {
     slug: p.slug || p.id,
     title: p.title || "Untitled",
