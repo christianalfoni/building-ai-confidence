@@ -96,7 +96,6 @@ Run all scripts from the project root.
 | `./scripts/screenshot <platform/App> <story>` | Screenshot a story into the work folder |
 | `./scripts/screenshot-url <name> [<name>…]` | Generate embed markup for PR bodies |
 | `./scripts/capture-agent-sessions` | Distil session logs into the work folder before a PR |
-| `./scripts/resolve-pr-thread <pr> "<fragment>"` | Resolve a PR review thread |
 | `./scripts/vercel-logs` | Fetch Vercel logs for the current branch's latest deployment |
 | `./scripts/db-migrate` | Create or migrate Neon DB tables |
 

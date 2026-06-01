@@ -1,4 +1,5 @@
 ---
+name: claude-review
 description: Review CLAUDE.md and all skills under .claude/skills/ for accuracy, clarity, and consistency with the codebase.
 ---
 

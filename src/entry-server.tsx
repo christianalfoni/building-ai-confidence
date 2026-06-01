@@ -28,7 +28,15 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
     const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
     const app = new AppState(user, initialData.isPreview, posts);
 
-    const App = isMobileUA(req.headers['user-agent'] ?? '') ? MobileApp : DesktopApp;
+    const isMobile = isMobileUA(req.headers['user-agent'] ?? '');
+    const App = isMobile ? MobileApp : DesktopApp;
+
+    // Tag <html> so the desktop tree renders at a larger base size (see index.css).
+    // Match the opening <html> tag generically and append the class, so the
+    // injection survives changes to the tag's attributes or whitespace.
+    const htmlHead = isMobile
+      ? htmlStart
+      : htmlStart.replace(/<html\b([^>]*)>/, '<html$1 class="ui-desktop">');
 
     const appendEnd = new Transform({
       transform(chunk, _enc, cb) { cb(null, chunk); },
@@ -51,7 +59,7 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
       {
         onShellReady() {
           res.setHeader('Content-Type', 'text/html;charset=utf-8');
-          res.write(htmlStart);
+          res.write(htmlHead);
           pipe(appendEnd).pipe(res);
         },
         onShellError(err) {

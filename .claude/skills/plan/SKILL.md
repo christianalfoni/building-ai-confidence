@@ -1,4 +1,5 @@
 ---
+name: plan
 description: Produce an approved implementation plan before writing any code. Creates a PLAN.md in the work/ folder and waits for explicit approval.
 ---
 

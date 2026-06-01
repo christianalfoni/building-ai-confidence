@@ -34,3 +34,13 @@
   --color-teal: #89DCEB;
   --color-green: #A6E3A1;
 }
+
+/* Desktop renders at a larger base size so the UI reads comfortably on
+   high-resolution displays. Every spacing/type utility is rem-based, so
+   bumping the root font-size scales the whole tree proportionally —
+   equivalent to ~150% browser zoom, without actually zooming. The
+   `ui-desktop` class is added to <html> for desktop user agents only
+   (see entry-server.tsx), leaving the mobile tree untouched. */
+html.ui-desktop {
+  font-size: 150%;
+}
