@@ -1,3 +1,7 @@
+---
+description: Produce an approved implementation plan before writing any code. Creates a PLAN.md in the work/ folder and waits for explicit approval.
+---
+
 # Planning Workflow
 
 Before writing any code, the agent must produce a plan and get it approved.

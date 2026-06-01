@@ -1,3 +1,7 @@
+---
+description: Investigate an open question before committing to a plan. Use when the right approach is unclear — gather facts, read code, consult docs, evaluate tradeoffs.
+---
+
 # Research Workflow
 
 Investigate an open question before committing to a plan. Use this when the right approach is unclear — the codebase needs to be understood, external documentation consulted, or tradeoffs evaluated before it makes sense to write a plan.
@@ -17,7 +21,7 @@ Investigate an open question before committing to a plan. Use this when the righ
    - The recommended approach and why.
    - Alternatives considered and why they were ruled out.
    - Any open questions or risks.
-4. Present the report to the user and ask whether to proceed to the **plan** workflow.
+4. Present the report to the user and ask whether to proceed to the `/plan` skill.
 
 ## Rules
 

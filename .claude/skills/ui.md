@@ -1,8 +1,12 @@
+---
+description: Iterate on component appearance using stories and screenshots. Use after implementation to refine how something looks.
+---
+
 # UI Iteration Workflow
 
 Iterate on the visual appearance of a component using stories and screenshots. Use this after code has been written — when the goal is to refine how something looks, not to define what it does.
 
-This workflow is distinct from the **ux** workflow, which defines interaction design and states before implementation. The **ui** workflow polishes appearance after implementation.
+This workflow is distinct from the `/ux` skill, which defines interaction design and states before implementation. The `/ui` skill polishes appearance after implementation.
 
 ## When to use
 
@@ -61,7 +65,7 @@ Stories are also imported by tests — they are the single source of truth for c
    ```
 6. Ask the user if the result looks right or if further changes are needed.
 7. Repeat from step 3 until the user approves.
-8. Run `npm test -- --run` to confirm no regressions before handing off to the **pr** workflow.
+8. Run `npm test -- --run` to confirm no regressions before handing off to the `/pr` skill.
 
 ## Rules
 

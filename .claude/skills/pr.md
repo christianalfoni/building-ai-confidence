@@ -1,3 +1,7 @@
+---
+description: Submit completed work as a pull request on GitHub. Captures sessions, commits, pushes, runs checks, and creates or updates the PR.
+---
+
 # PR Workflow
 
 Submit completed work as a pull request on GitHub.
@@ -54,7 +58,7 @@ Submit completed work as a pull request on GitHub.
    How the change was verified — tests run, manual steps taken, or edge cases checked.
 
    ## Instructions followed
-   Bullet list of the specific agent instructions (from AGENTS.md or workflow files) that governed this change — so the reviewer can verify compliance.
+   Bullet list of the specific agent instructions (from CLAUDE.md or skills) that governed this change — so the reviewer can verify compliance.
 
    ## Work session
    This branch's plan and session artifacts are in `work/YYYY_MM_DD_<branch-name>/`. The plan documents the approach taken, tasks completed, and any deviations. GitHub Copilot can use this folder for context about the work session.
@@ -72,7 +76,7 @@ Submit completed work as a pull request on GitHub.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 7. Report the PR URL to the user.
-8. After the PR is reviewed, use `./scripts/resolve-pr-thread <pr-number> "comment fragment"` to resolve addressed threads. Use the **review** workflow to apply feedback.
+8. After the PR is reviewed, use `./scripts/resolve-pr-thread <pr-number> "comment fragment"` to resolve addressed threads. Use the `/review` skill to apply feedback.
 
 ## Rules
 
