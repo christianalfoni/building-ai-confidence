@@ -1,3 +1,7 @@
+---
+description: Define the full user experience before any planning or implementation begins. Use when adding or changing anything a user interacts with.
+---
+
 # User Experience Workflow
 
 Define the full user experience before any planning or implementation begins. Use this when the user wants to create or change something a user interacts with — a form, a flow, a screen, a modal, or any interactive feature.
@@ -14,7 +18,7 @@ Define the full user experience before any planning or implementation begins. Us
 2. Ask clarifying questions in a single message, grouped by topic. Cover all of the areas below that are not already answered by the request. Do not ask about things that are obvious or already decided.
 3. Once the user has answered, produce a **UX Specification** (see format below).
 4. Present the spec to the user and iterate until they approve it.
-5. Tell the user to proceed with the **plan** workflow when they are ready to implement.
+5. Tell the user to proceed with the `/plan` skill when they are ready to implement.
 
 ## Clarifying question areas
 
