@@ -18,7 +18,7 @@ mkdir -p "$WORK_FOLDER"
 export WORK_FOLDER
 
 if [[ -n "${CLAUDE_ENV_FILE:-}" ]]; then
-  echo "export WORK_FOLDER=$WORK_FOLDER" >> "$CLAUDE_ENV_FILE"
+  printf 'export WORK_FOLDER=%q\n' "$WORK_FOLDER" >> "$CLAUDE_ENV_FILE"
 fi
 
 echo "Work folder: $WORK_FOLDER"

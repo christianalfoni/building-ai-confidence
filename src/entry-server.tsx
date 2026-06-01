@@ -32,9 +32,11 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
     const App = isMobile ? MobileApp : DesktopApp;
 
     // Tag <html> so the desktop tree renders at a larger base size (see index.css).
+    // Match the opening <html> tag generically and append the class, so the
+    // injection survives changes to the tag's attributes or whitespace.
     const htmlHead = isMobile
       ? htmlStart
-      : htmlStart.replace('<html lang="en">', '<html lang="en" class="ui-desktop">');
+      : htmlStart.replace(/<html\b([^>]*)>/, '<html$1 class="ui-desktop">');
 
     const appendEnd = new Transform({
       transform(chunk, _enc, cb) { cb(null, chunk); },
