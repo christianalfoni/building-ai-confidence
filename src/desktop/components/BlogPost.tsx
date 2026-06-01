@@ -1,9 +1,8 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import { posts as hardcodedPosts, type Post } from "../../data/posts";
 import type { DbPost } from "../../services";
 
-function dbPostToPost(p: DbPost): Post {
+function dbPostToPost(p: DbPost) {
   return {
     slug: p.slug || p.id,
     title: p.title || "Untitled",
@@ -21,9 +20,7 @@ export function BlogPost() {
   const dbMatch = app.dbPosts.find(
     (p) => (p.slug || p.id) === app.selectedPostSlug
   );
-  const post = dbMatch
-    ? dbPostToPost(dbMatch)
-    : hardcodedPosts.find((p) => p.slug === app.selectedPostSlug);
+  const post = dbMatch ? dbPostToPost(dbMatch) : null;
   if (!post) return null;
 
   return (
@@ -66,7 +63,7 @@ export function BlogPost() {
           ← cd ..
         </button>
         <div className="flex items-center gap-4">
-          {app.isAuthor && dbMatch && (
+          {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
             <button
               onClick={() => app.openEditor(dbMatch.id)}
               className="text-muted hover:text-mauve transition-colors cursor-pointer"
