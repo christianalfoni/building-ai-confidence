@@ -5,6 +5,7 @@ import type { DbPost } from "../../services";
 function dbPostToPost(p: DbPost) {
   return {
     slug: p.slug || p.id,
+    id: p.id,
     title: p.title || "Untitled",
     date: p.createdAt.slice(0, 10),
     readTime: "?m",
@@ -17,11 +18,32 @@ function dbPostToPost(p: DbPost) {
 
 export function BlogPost() {
   const app = useApp();
-  const dbMatch = app.dbPosts.find(
-    (p) => (p.slug || p.id) === app.selectedPostSlug
-  );
-  const post = dbMatch ? dbPostToPost(dbMatch) : null;
-  if (!post) return null;
+  const dbMatch = app.selectedPost;
+
+  if (!dbMatch) {
+    return (
+      <div className="space-y-4 font-mono text-sm">
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span className="text-mauve">❯</span>
+          <span>cat {app.selectedPostId}.md</span>
+        </div>
+        <div className="rounded p-8 text-center space-y-3 bg-surface border border-border">
+          <div className="text-5xl font-bold text-mauve">404</div>
+          <div className="text-sm text-muted">no such post</div>
+        </div>
+        <div className="border-t border-border pt-3">
+          <a
+            href="/"
+            className="text-muted hover:text-text transition-colors cursor-pointer"
+          >
+            ← cd ..
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const post = dbPostToPost(dbMatch);
 
   return (
     <div className="space-y-4 font-mono text-sm">
@@ -56,12 +78,12 @@ export function BlogPost() {
         ))}
       </div>
       <div className="border-t border-border pt-3 flex items-center justify-between text-xs">
-        <button
-          onClick={() => app.goBack()}
+        <a
+          href="/"
           className="text-muted hover:text-text transition-colors cursor-pointer"
         >
           ← cd ..
-        </button>
+        </a>
         <div className="flex items-center gap-4">
           {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
             <button

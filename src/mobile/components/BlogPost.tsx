@@ -17,21 +17,36 @@ function dbPostToPost(p: DbPost) {
 
 export function BlogPost() {
   const app = useApp();
-  const dbMatch = app.dbPosts.find(
-    (p) => (p.slug || p.id) === app.selectedPostSlug
-  );
-  const post = dbMatch ? dbPostToPost(dbMatch) : null;
-  if (!post) return null;
+  const dbMatch = app.selectedPost;
+
+  if (!dbMatch) {
+    return (
+      <div className="px-4 py-6 space-y-4">
+        <a
+          href="/"
+          className="flex items-center gap-2 text-sm text-muted font-mono active:text-text"
+        >
+          ← back
+        </a>
+        <div className="rounded-lg p-8 text-center space-y-3 bg-surface border border-border">
+          <div className="text-5xl font-bold text-mauve font-mono">404</div>
+          <div className="text-sm text-muted font-mono">no such post</div>
+        </div>
+      </div>
+    );
+  }
+
+  const post = dbPostToPost(dbMatch);
 
   return (
     <div className="px-4 py-6 space-y-4">
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => app.goBack()}
+        <a
+          href="/"
           className="flex items-center gap-2 text-sm text-muted font-mono active:text-text"
         >
           ← back
-        </button>
+        </a>
         {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
           <button
             onClick={() => app.openEditor(dbMatch.id)}

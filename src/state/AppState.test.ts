@@ -21,24 +21,64 @@ function makePost(overrides: Partial<DbPost> = {}): DbPost {
 }
 
 describe("AppState", () => {
-  it("starts with no selected post", () => {
+  it("defaults to the list view with no selected post", () => {
     const state = reactive(new AppState());
-    expect(state.selectedPostSlug).toBeNull();
-  });
-
-  it("selectPost sets the selected slug and view", () => {
-    const state = reactive(new AppState());
-    state.selectPost("building-confidence-with-ai");
-    expect(state.selectedPostSlug).toBe("building-confidence-with-ai");
-    expect(state.view).toBe("post");
-  });
-
-  it("goBack clears the selected slug and returns to list", () => {
-    const state = reactive(new AppState());
-    state.selectPost("building-confidence-with-ai");
-    state.goBack();
-    expect(state.selectedPostSlug).toBeNull();
     expect(state.view).toBe("list");
+    expect(state.selectedPostId).toBeNull();
+  });
+
+  describe("route-driven init", () => {
+    it("starts on the post view for a post route", () => {
+      const state = reactive(new AppState(null, false, [], null, { view: "post", postId: "p1" }));
+      expect(state.view).toBe("post");
+      expect(state.selectedPostId).toBe("p1");
+    });
+
+    it("starts on the list view for a list route", () => {
+      const state = reactive(new AppState(null, false, [], null, { view: "list", postId: null }));
+      expect(state.view).toBe("list");
+      expect(state.selectedPostId).toBeNull();
+    });
+  });
+
+  describe("selectedPost / postNotFound", () => {
+    it("resolves the selected post by id", () => {
+      const post = makePost({ id: "p1", published: true });
+      const state = reactive(new AppState(null, false, [post], null, { view: "post", postId: "p1" }));
+      expect(state.selectedPost?.id).toBe("p1");
+      expect(state.postNotFound).toBe(false);
+    });
+
+    it("flags postNotFound when the post is missing from the visible set", () => {
+      const state = reactive(new AppState(null, false, [], null, { view: "post", postId: "missing" }));
+      expect(state.selectedPost).toBeNull();
+      expect(state.postNotFound).toBe(true);
+    });
+
+    it("never flags postNotFound on the list view", () => {
+      const state = reactive(new AppState(null, false, [], null, { view: "list", postId: null }));
+      expect(state.postNotFound).toBe(false);
+    });
+  });
+
+  describe("closeEditor", () => {
+    it("returns to the post view when a post is selected", () => {
+      const post = makePost({ id: "p1", published: true });
+      const state = reactive(new AppState(makeUser("test"), false, [post], null, { view: "post", postId: "p1" }));
+      state.openEditor("p1");
+      expect(state.view).toBe("editor");
+      state.closeEditor();
+      expect(state.view).toBe("post");
+      expect(state.draftPostId).toBeNull();
+    });
+
+    it("returns to the list view when no post is selected", () => {
+      const state = reactive(new AppState(makeUser("test"), false, []));
+      state.openEditor("unknown");
+      state.closeEditor();
+      expect(state.view).toBe("list");
+      expect(state.draftPostId).toBeNull();
+    });
   });
 
   describe("isAuthor", () => {

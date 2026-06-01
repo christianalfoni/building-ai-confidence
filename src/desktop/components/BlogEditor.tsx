@@ -76,7 +76,7 @@ export function BlogEditor() {
       />
       <div className="border-t border-border pt-3 flex items-center justify-between text-xs">
         <button
-          onClick={() => app.goBack()}
+          onClick={() => app.closeEditor()}
           className="text-muted hover:text-text transition-colors cursor-pointer"
         >
           ← cd ..

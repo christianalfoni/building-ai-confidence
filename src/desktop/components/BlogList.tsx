@@ -4,7 +4,7 @@ import type { DbPost } from "../../services";
 
 function dbPostToPost(p: DbPost) {
   return {
-    slug: p.slug || p.id,
+    id: p.id,
     title: p.title || "Untitled",
     date: p.createdAt.slice(0, 10),
     readTime: "?m",
@@ -51,10 +51,10 @@ export function BlogList() {
           </button>
         )}
         {allPosts.map((post, i) => (
-          <div
-            key={post.slug}
-            className="group cursor-pointer"
-            onClick={() => app.selectPost(post.slug)}
+          <a
+            key={post.id}
+            href={`/posts/${post.id}`}
+            className="group cursor-pointer block"
           >
             <div className="flex items-center gap-3 mb-1">
               <span className="text-xs text-dim w-4 text-right shrink-0">
@@ -88,7 +88,7 @@ export function BlogList() {
             <div className="text-xs text-dim mt-1.5 ml-7 leading-relaxed line-clamp-1">
               {post.excerpt}
             </div>
-          </div>
+          </a>
         ))}
       </div>
       <div className="border-t border-border pt-4">

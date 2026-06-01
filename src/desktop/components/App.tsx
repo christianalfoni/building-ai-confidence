@@ -8,8 +8,10 @@ export function App() {
   const title =
     app.view === "editor"
       ? `new post — blog`
-      : app.selectedPostSlug
-      ? `${app.selectedPostSlug}.md — blog`
+      : app.view === "post"
+      ? app.selectedPost
+        ? `${app.selectedPost.title || "Untitled"} — blog`
+        : `404 — blog`
       : "christian alfoni — blog";
 
   return (
