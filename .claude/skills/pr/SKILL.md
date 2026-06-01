@@ -77,7 +77,7 @@ Submit completed work as a pull request on GitHub.
 
    Omit any section that has nothing meaningful to say (e.g. a brand-new feature has no "Current behavior").
 7. Report the PR URL to the user.
-8. After the PR is reviewed, use `./scripts/resolve-pr-thread <pr-number> "comment fragment"` to resolve addressed threads. Use the `/review` skill to apply feedback.
+8. After the PR is reviewed, resolve addressed threads with the `mcp__github__resolve_review_thread` MCP tool: fetch the thread node IDs via `mcp__github__pull_request_read` (`method: get_review_comments`), then call `resolve_review_thread` with `owner=christianalfoni`, `repo=building-ai-confidence`, and each `threadId`. Use the `/review` skill to apply feedback.
 
 ## Rules
 
