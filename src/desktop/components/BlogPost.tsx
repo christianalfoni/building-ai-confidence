@@ -1,6 +1,6 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import { posts as hardcodedPosts, type Post } from "../../data/posts";
+import type { Post } from "../../data/posts";
 import type { DbPost } from "../../services";
 
 function dbPostToPost(p: DbPost): Post {
@@ -21,9 +21,7 @@ export function BlogPost() {
   const dbMatch = app.dbPosts.find(
     (p) => (p.slug || p.id) === app.selectedPostSlug
   );
-  const post = dbMatch
-    ? dbPostToPost(dbMatch)
-    : hardcodedPosts.find((p) => p.slug === app.selectedPostSlug);
+  const post = dbMatch ? dbPostToPost(dbMatch) : null;
   if (!post) return null;
 
   return (

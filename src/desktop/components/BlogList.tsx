@@ -1,6 +1,6 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import { posts as hardcodedPosts, type Post } from "../../data/posts";
+import type { Post } from "../../data/posts";
 import type { DbPost } from "../../services";
 
 function dbPostToPost(p: DbPost): Post {
@@ -22,10 +22,7 @@ export function BlogList() {
   const visibleDbPosts = app.dbPosts.filter(
     (p) => p.published || (app.isAuthor && p.authorId === app.user?.id)
   );
-  const allPosts: Post[] = [
-    ...visibleDbPosts.map(dbPostToPost),
-    ...hardcodedPosts,
-  ].sort((a, b) => b.date.localeCompare(a.date));
+  const allPosts: Post[] = visibleDbPosts.map(dbPostToPost).sort((a, b) => b.date.localeCompare(a.date));
 
   function handleNewPost() {
     app.createPost();
