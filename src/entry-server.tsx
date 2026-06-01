@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
+import { hiddenAuthorLogins } from './services/server/postVisibility.ts';
 import { isMobileUA, parseRoute } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import DesktopApp from './desktop/App.tsx';
@@ -22,7 +23,7 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
     const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
     const user = db && sessionId ? await db.getUser(sessionId) : null;
 
-    const posts = db ? (await db.getPosts()).filter(
+    const posts = db ? (await db.getPosts({ hideAuthorLogins: hiddenAuthorLogins() })).filter(
       (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
     ) : [];
     const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };

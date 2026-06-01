@@ -1,5 +1,6 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
+import { DeleteConfirm } from "../ui-components/DeleteConfirm";
 import type { DbPost } from "../../services";
 
 function dbPostToPost(p: DbPost) {
@@ -48,12 +49,18 @@ export function BlogPost() {
           ← back
         </a>
         {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
-          <button
-            onClick={() => app.openEditor(dbMatch.id)}
-            className="text-sm text-muted font-mono active:text-mauve"
-          >
-            edit
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => app.openEditor(dbMatch.id)}
+              className="text-sm text-muted font-mono active:text-mauve"
+            >
+              edit
+            </button>
+            <DeleteConfirm
+              confirmMessage="delete this post?"
+              onConfirm={() => app.deletePost(dbMatch.id)}
+            />
+          </div>
         )}
       </div>
       <div className="space-y-2">

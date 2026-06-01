@@ -18,6 +18,7 @@ Terminal dark theme inspired by Catppuccin Mocha.
 | `mauve` | `#CBA6F7` | Headings, prompt symbol, interactive accents |
 | `teal` | `#89DCEB` | Post titles, highlighted values |
 | `green` | `#A6E3A1` | Tags, success states |
+| `red` | `#FF5F57` | Destructive actions (delete), error states |
 
 ## Theme Tokens
 

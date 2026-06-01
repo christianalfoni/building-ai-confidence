@@ -1,5 +1,6 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
+import { DeleteConfirm } from "../ui-components/DeleteConfirm";
 import type { DbPost } from "../../services";
 
 function dbPostToPost(p: DbPost) {
@@ -86,12 +87,18 @@ export function BlogPost() {
         </a>
         <div className="flex items-center gap-4">
           {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
-            <button
-              onClick={() => app.openEditor(dbMatch.id)}
-              className="text-muted hover:text-mauve transition-colors cursor-pointer"
-            >
-              edit
-            </button>
+            <>
+              <button
+                onClick={() => app.openEditor(dbMatch.id)}
+                className="text-muted hover:text-mauve transition-colors cursor-pointer"
+              >
+                edit
+              </button>
+              <DeleteConfirm
+                confirmMessage="delete this post?"
+                onConfirm={() => app.deletePost(dbMatch.id)}
+              />
+            </>
           )}
           <span className="text-dim">q to go back</span>
         </div>

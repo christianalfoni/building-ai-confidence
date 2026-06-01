@@ -51,4 +51,11 @@ export class ApiDatabaseService implements DatabaseService {
     if (!res.ok) throw new Error('Failed to update post');
     return res.json() as Promise<DbPost>;
   }
+
+  async deletePost(id: string): Promise<void> {
+    const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+    // A 404 means the post is already gone — the end state is identical, so
+    // treat it as success rather than surfacing an error to the user.
+    if (!res.ok && res.status !== 404) throw new Error('Failed to delete post');
+  }
 }

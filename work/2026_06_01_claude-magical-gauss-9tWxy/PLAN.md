@@ -67,19 +67,58 @@ No DB migration: the `posts` row is hard-deleted via `DELETE FROM posts`,
 matching the existing `deleteSession` pattern.
 
 ## Tasks
-- [ ] `src/services/index.ts`: add `deletePost(id: string): Promise<void>` to the `DatabaseService` interface.
-- [ ] `src/services/server/DatabaseService.ts`: add `deletePost` (`DELETE FROM posts WHERE id = ${id}`); change `getPosts` to accept `{ hideAuthorLogins?: string[] }`, join `users`, and exclude posts whose author login is in the list (`u.github_login <> ALL(${hide}::text[])`, empty list = return all).
-- [ ] `src/services/server/postVisibility.ts`: new server-only helper `hiddenAuthorLogins()` returning `['test']` when `VERCEL_ENV === 'production'`, else `[]`.
-- [ ] `src/services/client/DatabaseService.ts`: implement `deletePost` calling `DELETE /api/posts/:id`; treat `404` as success, throw on other non-ok responses.
-- [ ] `server/index.ts`: add `DELETE /api/posts/:id` mirroring the `PATCH` auth + ownership guard, calling `db.deletePost`; in `GET /api/posts` pass `{ hideAuthorLogins: hiddenAuthorLogins() }` to `getPosts`.
-- [ ] `src/entry-server.tsx`: pass `{ hideAuthorLogins: hiddenAuthorLogins() }` to `getPosts` in the SSR render path (remove the now-redundant local `AUTHOR_LOGINS` only if unused afterwards — it is still used for the draft-visibility filter, so keep it).
-- [ ] `src/state/AppState.ts`: add `async deletePost(id)` — calls `db.deletePost`, splices the post from `dbPosts`, then `window.location.href = '/'`; throws on failure.
-- [ ] `src/desktop/ui-components/DeleteConfirm.tsx`: new primitive with `idle → confirm → deleting → error` states, props `{ confirmMessage, onConfirm }`, terminal-styled, red accent on `yes`.
-- [ ] `src/mobile/ui-components/DeleteConfirm.tsx`: mobile-styled equivalent (touch targets, card-friendly).
-- [ ] `src/desktop/components/BlogPost.tsx`: render `DeleteConfirm` next to `edit` in the footer action row, gated by `app.isAuthor && dbMatch.authorId === app.user?.id`.
-- [ ] `src/mobile/components/BlogPost.tsx`: render `DeleteConfirm` next to `edit`, same gate.
-- [ ] Add stories for `DeleteConfirm` (desktop + mobile) covering idle/confirm/deleting/error so it can be screenshotted via `./scripts/screenshot`.
-- [ ] Verify: `npm run lint` and `npx tsc --noEmit` pass.
+- [x] `src/services/index.ts`: add `deletePost(id: string): Promise<void>` to the `DatabaseService` interface.
+- [x] `src/services/server/DatabaseService.ts`: add `deletePost` (`DELETE FROM posts WHERE id = ${id}`); change `getPosts` to accept `{ hideAuthorLogins?: string[] }`, join `users`, and exclude posts whose author login is in the list (`u.github_login <> ALL(${hide}::text[])`, empty list = return all).
+- [x] `src/services/server/postVisibility.ts`: new server-only helper `hiddenAuthorLogins()` returning `['test']` when `VERCEL_ENV === 'production'`, else `[]`.
+- [x] `src/services/client/DatabaseService.ts`: implement `deletePost` calling `DELETE /api/posts/:id`; treat `404` as success, throw on other non-ok responses.
+- [x] `server/index.ts`: add `DELETE /api/posts/:id` mirroring the `PATCH` auth + ownership guard, calling `db.deletePost`; in `GET /api/posts` pass `{ hideAuthorLogins: hiddenAuthorLogins() }` to `getPosts`.
+- [x] `src/entry-server.tsx`: pass `{ hideAuthorLogins: hiddenAuthorLogins() }` to `getPosts` in the SSR render path (kept local `AUTHOR_LOGINS` — still used for the draft-visibility filter).
+- [x] `src/state/AppState.ts`: add `async deletePost(id)` — calls `db.deletePost`, splices the post from `dbPosts`, then `window.location.href = '/'`; throws on failure.
+- [x] `src/desktop/ui-components/DeleteConfirm.tsx`: new primitive with `idle → confirm → deleting → error` states, props `{ confirmMessage, onConfirm }`, terminal-styled, red accent on `yes`.
+- [x] `src/mobile/ui-components/DeleteConfirm.tsx`: mobile-styled equivalent (touch targets, card-friendly).
+- [x] `src/desktop/components/BlogPost.tsx`: render `DeleteConfirm` next to `edit` in the footer action row, gated by `app.isAuthor && dbMatch.authorId === app.user?.id`.
+- [x] `src/mobile/components/BlogPost.tsx`: render `DeleteConfirm` next to `edit`, same gate.
+- [x] Add stories for `DeleteConfirm` (desktop + mobile) covering idle/confirm/deleting/error so it can be screenshotted via `./scripts/screenshot`.
+- [x] Verify: `npm run lint` and `npx tsc --noEmit` pass.
 
 ## Report
+
+### What was done
+Post deletion was threaded end-to-end through the existing layers:
+- **Service interface** (`services/index.ts`): added `deletePost(id)` and an optional
+  `{ hideAuthorLogins? }` arg on `getPosts`.
+- **Server DB** (`services/server/DatabaseService.ts`): `deletePost` runs
+  `DELETE FROM posts WHERE id = ${id}` (mirrors `deleteSession`); `getPosts` now
+  joins `users` and filters out authors via `u.github_login <> ALL(${hide}::text[])`
+  (empty list returns everything, so ownership lookups are unaffected).
+- **Test filter** (`services/server/postVisibility.ts`): `hiddenAuthorLogins()`
+  returns `['test']` only on `VERCEL_ENV === 'production'`. Both read paths
+  (`GET /api/posts` and the SSR render in `entry-server.tsx`) call it — the
+  `'production'`/`'test'` decision lives in one place.
+- **Client DB** (`services/client/DatabaseService.ts`): `deletePost` issues
+  `DELETE /api/posts/:id`; a `404` is treated as success.
+- **Server route** (`server/index.ts`): new `DELETE /api/posts/:id` mirroring the
+  `PATCH` auth + ownership guard, returning `204`.
+- **State** (`state/AppState.ts`): `deletePost(id)` calls the service, splices the
+  post out of `dbPosts`, then navigates home with `window.location.href = '/'`
+  (full SSR re-render of the list). Throws on failure so the UI can show an error.
+- **UI**: new per-platform `DeleteConfirm` ui-component (`idle → confirm →
+  deleting → error`), wired next to `edit` in both desktop and mobile `BlogPost`,
+  gated to the post's author. Added a `red` theme token (`#FF5F57`, already the
+  traffic-light red) + DESIGN.md row for the destructive accent.
+
+### Deviations from the plan
+- Added an optional `initialStatus` prop to `DeleteConfirm` so each visual state
+  could be rendered in isolation for stories/tests (defaults to `idle`; no impact
+  on normal use).
+- Added a `red` design token + DESIGN.md entry (not in the original task list) so
+  the destructive `yes` accent uses a named token rather than an arbitrary value.
+- Added two `deletePost` unit tests to `AppState.test.ts` (success + failure).
+
+### Validation
+- `npm run lint` — clean.
+- `npx tsc --noEmit` — clean.
+- `npm test -- --run` — 23 passed (2 new).
+- Screenshots of all four states captured under `screenshots/` for desktop, plus
+  confirm/error for mobile.
 ```
