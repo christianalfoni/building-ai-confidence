@@ -113,7 +113,7 @@ app.get('/api/posts', async (req, res) => {
     const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
     const user = sessionId ? await db.getUser(sessionId) : null;
     const all = await db.getPosts();
-    res.json(all.filter((p) => p.published || (user && ALLOWED_LOGINS.includes(user.githubLogin))));
+    res.json(all.filter((p) => p.published || (user && ALLOWED_LOGINS.includes(user.githubLogin) && p.authorId === user.id)));
   } catch (err) {
     console.error('[GET /api/posts]', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -150,6 +150,7 @@ app.patch('/api/posts/:id', async (req, res) => {
     const posts = await db.getPosts();
     const post = posts.find((p) => p.id === id);
     if (!post) { res.status(404).json({ error: 'Not found' }); return; }
+    if (post.authorId !== user.id) { res.status(403).json({ error: 'Forbidden' }); return; }
 
     const fields: { title?: string; body?: string; published?: boolean } = {};
     if (typeof req.body.title === 'string') fields.title = req.body.title;
