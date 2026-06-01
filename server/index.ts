@@ -1,6 +1,7 @@
 import express from 'express';
 import { randomBytes } from 'node:crypto';
 import { NeonDatabaseService } from '../src/services/server/DatabaseService.js';
+import { hiddenAuthorLogins } from '../src/services/server/postVisibility.js';
 import { render } from '../src/entry-server.tsx';
 
 const ALLOWED_LOGINS = ['christianalfoni', 'test'];
@@ -107,7 +108,7 @@ app.get('/api/posts', async (req, res) => {
     const db = new NeonDatabaseService(dbUrl);
     const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
     const user = sessionId ? await db.getUser(sessionId) : null;
-    const all = await db.getPosts();
+    const all = await db.getPosts({ hideAuthorLogins: hiddenAuthorLogins() });
     res.json(all.filter((p) => p.published || (user && ALLOWED_LOGINS.includes(user.githubLogin) && p.authorId === user.id)));
   } catch (err) {
     console.error('[GET /api/posts]', err);
@@ -142,8 +143,7 @@ app.patch('/api/posts/:id', async (req, res) => {
     if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
 
     const { id } = req.params;
-    const posts = await db.getPosts();
-    const post = posts.find((p) => p.id === id);
+    const post = await db.getPost(id);
     if (!post) { res.status(404).json({ error: 'Not found' }); return; }
     if (post.authorId !== user.id) { res.status(403).json({ error: 'Forbidden' }); return; }
 
@@ -155,6 +155,29 @@ app.patch('/api/posts/:id', async (req, res) => {
     res.json(await db.updatePost(id, fields));
   } catch (err) {
     console.error('[PATCH /api/posts/:id]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/posts/:id', async (req, res) => {
+  try {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) { res.status(500).json({ error: 'DATABASE_URL is not configured' }); return; }
+    const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
+    if (!sessionId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+    const db = new NeonDatabaseService(dbUrl);
+    const user = await db.getUser(sessionId);
+    if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
+
+    const { id } = req.params;
+    const post = await db.getPost(id);
+    if (!post) { res.status(404).json({ error: 'Not found' }); return; }
+    if (post.authorId !== user.id) { res.status(403).json({ error: 'Forbidden' }); return; }
+
+    await db.deletePost(id);
+    res.status(204).end();
+  } catch (err) {
+    console.error('[DELETE /api/posts/:id]', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

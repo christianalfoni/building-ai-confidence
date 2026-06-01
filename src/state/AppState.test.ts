@@ -1,6 +1,6 @@
 import { reactive } from "reactx";
 import { AppState } from "./AppState";
-import type { DbPost, User } from "../services";
+import type { DatabaseService, DbPost, User } from "../services";
 
 function makeUser(githubLogin: string): User {
   return { id: "u1", githubId: 1, githubLogin, name: "Test", avatarUrl: "" };
@@ -130,6 +130,41 @@ describe("AppState", () => {
       state.updateDbPost(makePost());
       expect(state.dbPosts).toHaveLength(1);
       expect(state.dbPosts[0].id).toBe("p1");
+    });
+  });
+
+  describe("deletePost", () => {
+    async function withStubbedLocation(run: (loc: { href: string }) => Promise<void>): Promise<void> {
+      const original = window.location;
+      const loc = { href: "" };
+      Object.defineProperty(window, "location", { configurable: true, value: loc });
+      try {
+        await run(loc);
+      } finally {
+        Object.defineProperty(window, "location", { configurable: true, value: original });
+      }
+    }
+
+    it("calls db.deletePost, removes the post, and navigates home", async () => {
+      const deleted: string[] = [];
+      const db = { deletePost: async (id: string) => { deleted.push(id); } } as unknown as DatabaseService;
+      const state = reactive(new AppState(makeUser("test"), false, [makePost({ id: "p1" })], db, { view: "post", postId: "p1" }));
+
+      await withStubbedLocation(async (loc) => {
+        await state.deletePost("p1");
+        expect(loc.href).toBe("/");
+      });
+
+      expect(deleted).toEqual(["p1"]);
+      expect(state.dbPosts).toHaveLength(0);
+    });
+
+    it("throws and keeps the post when the delete fails", async () => {
+      const db = { deletePost: async () => { throw new Error("boom"); } } as unknown as DatabaseService;
+      const state = reactive(new AppState(makeUser("test"), false, [makePost({ id: "p1" })], db, { view: "post", postId: "p1" }));
+
+      await expect(state.deletePost("p1")).rejects.toThrow("boom");
+      expect(state.dbPosts).toHaveLength(1);
     });
   });
 });

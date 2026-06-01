@@ -33,6 +33,7 @@
   --color-mauve: #CBA6F7;
   --color-teal: #89DCEB;
   --color-green: #A6E3A1;
+  --color-red: #FF5F57;
 }
 
 /* Desktop renders at a larger base size so the UI reads comfortably on

@@ -1,7 +1,15 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { NeonDatabaseService } from '../src/services/server/DatabaseService.js';
+
+// The single authored HTML shell. Dev reads it from disk and runs it through
+// vite.transformIndexHtml (rewriting /src/* to dev-server URLs); the production
+// build rewrites the same file into dist/client/index.html, which the gen
+// script inlines as src/html-template.gen.ts. One source, two consumers.
+const indexHtmlPath = resolve(import.meta.dirname, '..', 'index.html');
 
 const ALLOWED_LOGINS = ['christianalfoni', 'test'];
 
@@ -168,21 +176,9 @@ app.patch('/api/posts/:id', async (req, res) => {
 
 app.get('/{*path}', async (req, res) => {
   try {
-    const rawHtml = await vite.transformIndexHtml(req.originalUrl, `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ai-driven</title>
-    <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/src/index.css" />
-  </head>
-  <body>
-    <div id="root"><!--ssr-outlet--></div>
-    <script type="module" src="/src/entry-client.tsx"></script>
-  </body>
-</html>`);
+    // Read fresh each request so edits to index.html are picked up without a restart.
+    const template = readFileSync(indexHtmlPath, 'utf-8');
+    const rawHtml = await vite.transformIndexHtml(req.originalUrl, template);
 
     const { render } = await vite.ssrLoadModule('/src/entry-server.tsx');
     await render(req, res, rawHtml);

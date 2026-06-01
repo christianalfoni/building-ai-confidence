@@ -45,13 +45,25 @@ export class NeonDatabaseService implements DatabaseService {
     await this.sql`DELETE FROM sessions WHERE id = ${sessionId}`;
   }
 
-  async getPosts(): Promise<DbPost[]> {
+  async getPosts(opts: { hideAuthorLogins?: string[] } = {}): Promise<DbPost[]> {
+    const hide = opts.hideAuthorLogins ?? [];
+    const rows = await this.sql`
+      SELECT p.id, p.author_id, p.slug, p.title, p.body, p.published, p.created_at, p.updated_at
+      FROM posts p
+      JOIN users u ON u.id = p.author_id
+      WHERE u.github_login <> ALL(${hide}::text[])
+      ORDER BY p.created_at DESC
+    `;
+    return rows.map(toDbPost);
+  }
+
+  async getPost(id: string): Promise<DbPost | null> {
     const rows = await this.sql`
       SELECT id, author_id, slug, title, body, published, created_at, updated_at
       FROM posts
-      ORDER BY created_at DESC
+      WHERE id = ${id}
     `;
-    return rows.map(toDbPost);
+    return rows[0] ? toDbPost(rows[0]) : null;
   }
 
   async createPost(authorId: string): Promise<DbPost> {
@@ -79,6 +91,10 @@ export class NeonDatabaseService implements DatabaseService {
       RETURNING id, author_id, slug, title, body, published, created_at, updated_at
     `;
     return toDbPost(rows[0]);
+  }
+
+  async deletePost(id: string): Promise<void> {
+    await this.sql`DELETE FROM posts WHERE id = ${id}`;
   }
 }
 

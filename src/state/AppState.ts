@@ -92,6 +92,17 @@ export class AppState {
     this.updateDbPost(post);
   }
 
+  // Permanently deletes a post and returns to the list. Throws on failure so the
+  // caller can surface an error; a full-page navigation gives a fresh SSR render
+  // of the list without the deleted post.
+  async deletePost(id: string) {
+    if (!this.db) throw new Error('Database is not available');
+    await this.db.deletePost(id);
+    const idx = this.dbPosts.findIndex((p) => p.id === id);
+    if (idx >= 0) this.dbPosts.splice(idx, 1);
+    window.location.href = '/';
+  }
+
   signOut() {
     fetch('/auth/logout', { method: 'POST' }).then(() => {
       window.location.href = '/';
