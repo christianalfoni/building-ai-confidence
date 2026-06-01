@@ -1,4 +1,5 @@
 ---
+name: pr
 description: Submit completed work as a pull request on GitHub. Captures sessions, commits, pushes, runs checks, and creates or updates the PR.
 ---
 

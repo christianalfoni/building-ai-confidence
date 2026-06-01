@@ -1,4 +1,5 @@
 ---
+name: ui
 description: Iterate on component appearance using stories and screenshots. Use after implementation to refine how something looks.
 ---
 

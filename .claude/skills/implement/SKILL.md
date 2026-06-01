@@ -1,4 +1,5 @@
 ---
+name: implement
 description: Execute an approved plan from the work/ folder, task by task, then hand off to /pr.
 ---
 

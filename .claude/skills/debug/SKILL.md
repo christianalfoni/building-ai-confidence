@@ -1,4 +1,5 @@
 ---
+name: debug
 description: Diagnose a production or preview error by reading Vercel deployment logs. Investigation only — no code changes.
 ---
 

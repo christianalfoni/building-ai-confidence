@@ -1,4 +1,5 @@
 ---
+name: review
 description: Address feedback from a PR review — fetch inline comments and reviewer notes, propose fixes, apply only approved ones.
 ---
 

@@ -1,4 +1,5 @@
 ---
+name: research
 description: Investigate an open question before committing to a plan. Use when the right approach is unclear — gather facts, read code, consult docs, evaluate tradeoffs.
 ---
 

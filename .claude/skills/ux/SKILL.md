@@ -1,4 +1,5 @@
 ---
+name: ux
 description: Define the full user experience before any planning or implementation begins. Use when adding or changing anything a user interacts with.
 ---
 
