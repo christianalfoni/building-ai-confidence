@@ -9,8 +9,19 @@ export type Route = { view: 'list' | 'post'; postId: string | null };
 // entries so both derive the same view from the same URL.
 export function parseRoute(pathname: string): Route {
   const match = pathname.match(/^\/posts\/([^/]+)\/?$/);
-  if (match) return { view: 'post', postId: decodeURIComponent(match[1]) };
+  if (match) return { view: 'post', postId: safeDecode(match[1]) };
   return { view: 'list', postId: null };
+}
+
+// decodeURIComponent throws on malformed percent-encoding (e.g. `%E0%A4%A`).
+// The segment is user-controlled, so fall back to the raw value — it simply
+// won't match any post id and resolves to the in-page 404.
+function safeDecode(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 }
 
 export function invariant<T>(
