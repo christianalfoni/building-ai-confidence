@@ -19,7 +19,7 @@ export function BlogList() {
   const app = useApp();
 
   const visibleDbPosts = app.dbPosts.filter(
-    (p) => p.published || (app.isAuthor && p.authorId === app.user?.id)
+    (p) => p.published || app.isAuthor
   );
   const allPosts = visibleDbPosts.map(dbPostToPost).sort((a, b) => b.date.localeCompare(a.date));
 

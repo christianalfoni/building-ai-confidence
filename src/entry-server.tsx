@@ -23,7 +23,7 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
     const user = db && sessionId ? await db.getUser(sessionId) : null;
 
     const posts = db ? (await db.getPosts()).filter(
-      (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
+      (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin))
     ) : [];
     const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
     const app = new AppState(user, initialData.isPreview, posts);

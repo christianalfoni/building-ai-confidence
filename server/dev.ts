@@ -24,7 +24,7 @@ app.get('/auth/github', (_req, res) => {
   const state = randomBytes(16).toString('hex');
   res.cookie('oauth_state', state, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 10 * 60 * 1000, path: '/' });
 
-  const redirectUri = `${(process.env.APP_URL ?? 'http://localhost:5173').replace(/\/$/, '')}/auth/callback`;
+  const redirectUri = `${process.env.APP_URL ?? 'http://localhost:5173'}/auth/callback`;
   const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
   res.redirect(302, url);
 });
@@ -113,7 +113,7 @@ app.get('/api/posts', async (req, res) => {
     const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
     const user = sessionId ? await db.getUser(sessionId) : null;
     const all = await db.getPosts();
-    res.json(all.filter((p) => p.published || (user && ALLOWED_LOGINS.includes(user.githubLogin) && p.authorId === user.id)));
+    res.json(all.filter((p) => p.published || (user && ALLOWED_LOGINS.includes(user.githubLogin))));
   } catch (err) {
     console.error('[GET /api/posts]', err);
     res.status(500).json({ error: 'Internal server error' });
