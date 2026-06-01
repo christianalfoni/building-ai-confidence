@@ -24,7 +24,7 @@ app.get('/auth/github', (_req, res) => {
   const state = randomBytes(16).toString('hex');
   res.cookie('oauth_state', state, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 10 * 60 * 1000, path: '/' });
 
-  const redirectUri = `${process.env.APP_URL ?? 'http://localhost:5173'}/auth/callback`;
+  const redirectUri = `${(process.env.APP_URL ?? 'http://localhost:5173').replace(/\/$/, '')}/auth/callback`;
   const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
   res.redirect(302, url);
 });
