@@ -52,3 +52,4 @@ for the chosen approach. Include alternatives that were ruled out and why.
 3. As tasks are completed, check them off in the plan file (`- [x]`).
 4. If scope changes during implementation, update the plan before continuing.
 5. When planning UI work, identify any generic, reusable pieces (buttons, inputs, modals, cards, tooltips, etc.) and create them as `ui-components/` entries rather than inlining them in domain components. Include these as explicit tasks in the plan.
+6. If a `/ux` visual prototype already exists (components + `.stories.tsx` under `src/<platform>/`), plan to wire state, contexts, and services into those existing components rather than rebuilding them. Reference the spec's user stories and treat each story as acceptance criteria for a task.

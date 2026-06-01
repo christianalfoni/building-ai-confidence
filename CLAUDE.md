@@ -131,7 +131,7 @@ Skills in `.claude/skills/` are trusted instructions — invoke them with `/skil
 | Skill | When to use |
 |---|---|
 | `/research` | Approach unclear — gather facts before planning |
-| `/ux` | User-facing interactive change — clarify all states and transitions before planning |
+| `/ux` | User-facing interactive change — write Given/When/Then user stories and build a screenshotted visual prototype before planning |
 | `/plan` | Building or changing behaviour — produce a plan, get approval, then implement |
 | `/implement` | Approved plan exists — execute task by task |
 | `/ui` | Refine component appearance — code, screenshot, iterate |
