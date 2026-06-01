@@ -36,6 +36,10 @@ export class ApiDatabaseService implements DatabaseService {
     return this.posts;
   }
 
+  async getPost(_id: string): Promise<DbPost | null> {
+    throw new Error('getPost is server-only');
+  }
+
   async createPost(_authorId: string): Promise<DbPost> {
     const res = await fetch('/api/posts', { method: 'POST' });
     if (!res.ok) throw new Error('Failed to create post');

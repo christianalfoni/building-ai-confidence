@@ -143,8 +143,7 @@ app.patch('/api/posts/:id', async (req, res) => {
     if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
 
     const { id } = req.params;
-    const posts = await db.getPosts();
-    const post = posts.find((p) => p.id === id);
+    const post = await db.getPost(id);
     if (!post) { res.status(404).json({ error: 'Not found' }); return; }
     if (post.authorId !== user.id) { res.status(403).json({ error: 'Forbidden' }); return; }
 
@@ -171,8 +170,7 @@ app.delete('/api/posts/:id', async (req, res) => {
     if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
 
     const { id } = req.params;
-    const posts = await db.getPosts();
-    const post = posts.find((p) => p.id === id);
+    const post = await db.getPost(id);
     if (!post) { res.status(404).json({ error: 'Not found' }); return; }
     if (post.authorId !== user.id) { res.status(403).json({ error: 'Forbidden' }); return; }
 

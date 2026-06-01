@@ -28,6 +28,7 @@ export interface DatabaseService {
   createSession(userId: string): Promise<string>;
   deleteSession(sessionId: string): Promise<void>;
   getPosts(opts?: { hideAuthorLogins?: string[] }): Promise<DbPost[]>;
+  getPost(id: string): Promise<DbPost | null>;
   createPost(authorId: string): Promise<DbPost>;
   updatePost(id: string, fields: Partial<Pick<DbPost, 'title' | 'body' | 'published' | 'slug'>>): Promise<DbPost>;
   deletePost(id: string): Promise<void>;

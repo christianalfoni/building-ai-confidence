@@ -31,6 +31,7 @@ export function DeleteConfirm({
   if (status === "idle") {
     return (
       <button
+        type="button"
         onClick={() => setStatus("confirm")}
         className="text-sm text-muted font-mono active:text-red"
       >
@@ -48,10 +49,10 @@ export function DeleteConfirm({
       <span className={status === "error" ? "text-red" : "text-muted"}>
         {status === "error" ? "delete failed" : confirmMessage}
       </span>
-      <button onClick={handleConfirm} className="text-red active:text-red/70">
+      <button type="button" onClick={handleConfirm} className="text-red active:text-red/70">
         yes
       </button>
-      <button onClick={() => setStatus("idle")} className="text-muted active:text-text">
+      <button type="button" onClick={() => setStatus("idle")} className="text-muted active:text-text">
         no
       </button>
     </div>

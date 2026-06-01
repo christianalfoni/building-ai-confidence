@@ -57,6 +57,15 @@ export class NeonDatabaseService implements DatabaseService {
     return rows.map(toDbPost);
   }
 
+  async getPost(id: string): Promise<DbPost | null> {
+    const rows = await this.sql`
+      SELECT id, author_id, slug, title, body, published, created_at, updated_at
+      FROM posts
+      WHERE id = ${id}
+    `;
+    return rows[0] ? toDbPost(rows[0]) : null;
+  }
+
   async createPost(authorId: string): Promise<DbPost> {
     const rows = await this.sql`
       INSERT INTO posts (author_id) VALUES (${authorId})

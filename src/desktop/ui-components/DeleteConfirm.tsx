@@ -31,6 +31,7 @@ export function DeleteConfirm({
   if (status === "idle") {
     return (
       <button
+        type="button"
         onClick={() => setStatus("confirm")}
         className="text-muted hover:text-red transition-colors cursor-pointer"
       >
@@ -49,12 +50,14 @@ export function DeleteConfirm({
         {status === "error" ? "delete failed — try again" : confirmMessage}
       </span>
       <button
+        type="button"
         onClick={handleConfirm}
         className="text-red hover:text-red/80 transition-colors cursor-pointer underline underline-offset-2"
       >
         yes
       </button>
       <button
+        type="button"
         onClick={() => setStatus("idle")}
         className="text-muted hover:text-text transition-colors cursor-pointer underline underline-offset-2"
       >
