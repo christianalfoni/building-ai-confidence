@@ -64,7 +64,7 @@ export function BlogPost() {
           ← cd ..
         </button>
         <div className="flex items-center gap-4">
-          {app.isAuthor && dbMatch && (
+          {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
             <button
               onClick={() => app.openEditor(dbMatch.id)}
               className="text-muted hover:text-mauve transition-colors cursor-pointer"

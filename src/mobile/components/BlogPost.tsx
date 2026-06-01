@@ -33,7 +33,7 @@ export function BlogPost() {
         >
           ← back
         </button>
-        {app.isAuthor && dbMatch && (
+        {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
           <button
             onClick={() => app.openEditor(dbMatch.id)}
             className="text-sm text-muted font-mono active:text-mauve"
