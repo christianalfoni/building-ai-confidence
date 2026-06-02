@@ -1,5 +1,7 @@
 import type { DatabaseService, DbPost, User } from '../index.ts';
 
+// The SSR → client hydration payload, embedded as JSON in the rendered HTML and
+// read back by the browser services so they start already-loaded.
 export type InitialData = {
   dbEnabled: boolean;
   isPreview: boolean;
@@ -7,38 +9,16 @@ export type InitialData = {
   posts: DbPost[];
 };
 
+// Browser-side database service. Constructed already-loaded from the embedded
+// initial data, so `preload()` is a no-op; mutations go over the REST API.
 export class ApiDatabaseService implements DatabaseService {
-  private user: User | null;
-  private posts: DbPost[];
+  posts: DbPost[];
 
   constructor(initial: InitialData) {
-    this.user = initial.user;
     this.posts = initial.posts;
   }
 
-  async getUser(_sessionId: string): Promise<User | null> {
-    return this.user;
-  }
-
-  async upsertUser(_githubId: number, _githubLogin: string, _name: string, _avatarUrl: string): Promise<User> {
-    throw new Error('upsertUser is server-only');
-  }
-
-  async createSession(_userId: string): Promise<string> {
-    throw new Error('createSession is server-only');
-  }
-
-  async deleteSession(_sessionId: string): Promise<void> {
-    throw new Error('deleteSession is server-only');
-  }
-
-  async getPosts(): Promise<DbPost[]> {
-    return this.posts;
-  }
-
-  async getPost(_id: string): Promise<DbPost | null> {
-    throw new Error('getPost is server-only');
-  }
+  async preload(): Promise<void> {}
 
   async createPost(_authorId: string): Promise<DbPost> {
     const res = await fetch('/api/posts', { method: 'POST' });

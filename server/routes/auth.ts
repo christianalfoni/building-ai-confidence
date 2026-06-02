@@ -1,6 +1,6 @@
 import type { Application } from 'express';
 import { randomBytes } from 'node:crypto';
-import { NeonDatabaseService } from '../../src/services/server/DatabaseService.js';
+import { NeonDatabase } from '../neon.js';
 import { parseCookie } from '../utils.js';
 
 export function registerAuthRoutes(app: Application) {
@@ -48,7 +48,7 @@ export function registerAuthRoutes(app: Application) {
       if (!userRes.ok) { res.status(502).send('Failed to fetch GitHub user'); return; }
       const ghUser = await userRes.json() as { id: number; name: string | null; avatar_url: string; login: string };
 
-      const db = new NeonDatabaseService(dbUrl);
+      const db = new NeonDatabase(dbUrl);
       const user = await db.upsertUser(ghUser.id, ghUser.login, ghUser.name ?? ghUser.login, ghUser.avatar_url);
       const sessionId = await db.createSession(user.id);
 
@@ -64,7 +64,7 @@ export function registerAuthRoutes(app: Application) {
     try {
       const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
       if (sessionId && process.env.DATABASE_URL) {
-        const db = new NeonDatabaseService(process.env.DATABASE_URL);
+        const db = new NeonDatabase(process.env.DATABASE_URL);
         await db.deleteSession(sessionId);
       }
       res.clearCookie('session', { path: '/' });
@@ -83,7 +83,7 @@ export function registerAuthRoutes(app: Application) {
       const dbUrl = process.env.DATABASE_URL;
       if (!dbUrl) { res.status(500).send('DATABASE_URL is not configured'); return; }
 
-      const db = new NeonDatabaseService(dbUrl);
+      const db = new NeonDatabase(dbUrl);
       const user = await db.upsertUser(0, 'test', 'Test User', 'https://avatars.githubusercontent.com/u/0');
       const sessionId = await db.createSession(user.id);
 

@@ -4,31 +4,41 @@ import { Transform } from 'node:stream';
 import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
-import { NeonDatabaseService } from './services/server/DatabaseService.ts';
-import { hiddenAuthorLogins } from '../server/utils.ts';
+import { NeonDatabase } from '../server/neon.ts';
+import { ServerSessionService } from './services/server/SessionService.ts';
+import { ServerDatabaseService } from './services/server/DatabaseService.ts';
+import { ServerNavigationService } from './services/server/NavigationService.ts';
+import { hiddenAuthorLogins, parseCookie } from '../server/utils.ts';
 import { isMobileUA, parseRoute } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import DesktopApp from './desktop/App.tsx';
 import MobileApp from './mobile/App.tsx';
 import { htmlTemplate } from './html-template.gen.ts';
 
-const AUTHOR_LOGINS = ['christianalfoni', 'test'];
-
 export async function render(req: Request, res: Response, htmlOverride?: string) {
   const [htmlStart, htmlEnd] = (htmlOverride ?? htmlTemplate).split('<!--ssr-outlet-->');
   try {
     const dbUrl = process.env.DATABASE_URL;
-    const db = dbUrl ? new NeonDatabaseService(dbUrl) : undefined;
+    const db = dbUrl ? new NeonDatabase(dbUrl) : null;
+    const isPreview = process.env.VERCEL_ENV === 'preview';
 
     const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
-    const user = db && sessionId ? await db.getUser(sessionId) : null;
+    const session = new ServerSessionService(db, sessionId, isPreview);
+    const database = new ServerDatabaseService(db, session, hiddenAuthorLogins());
+    const navigation = new ServerNavigationService(parseRoute(req.path));
 
-    const posts = db ? (await db.getPosts({ hideAuthorLogins: hiddenAuthorLogins() })).filter(
-      (p) => p.published || (user && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id)
-    ) : [];
-    const initialData: InitialData = { dbEnabled: !!db, isPreview: process.env.VERCEL_ENV === 'preview', user, posts };
-    const route = parseRoute(req.path);
-    const app = new AppState(user, initialData.isPreview, posts, null, route);
+    // Resolve the user first so the database can filter the author's own
+    // unpublished posts.
+    await session.preload();
+    await database.preload();
+
+    const app = new AppState({ session, database, navigation });
+    const initialData: InitialData = {
+      dbEnabled: !!db,
+      isPreview,
+      user: session.user,
+      posts: database.posts,
+    };
 
     const isMobile = isMobileUA(req.headers['user-agent'] ?? '');
     const App = isMobile ? MobileApp : DesktopApp;
@@ -78,9 +88,4 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
     console.error('[SSR] render error:', err);
     res.status(500).end();
   }
-}
-
-function parseCookie(header: string, name: string): string | null {
-  const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
 }
