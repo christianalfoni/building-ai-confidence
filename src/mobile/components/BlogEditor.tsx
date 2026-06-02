@@ -1,52 +1,9 @@
-import { useEffect, useRef } from "react";
-import { useApp } from "../../contexts/AppContext";
-import type { DbPost } from "../../services";
-
-const DEBOUNCE_MS = 800;
+import { useBlogEditor } from "../../common/hooks/useBlogEditor";
 
 export function BlogEditor() {
-  const app = useApp();
-  const post = app.dbPosts.find((p) => p.id === app.draftPostId);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingFields = useRef<Partial<Pick<DbPost, "title" | "body" | "published">>>({});
-
-  const initialBody = useRef(post?.body ?? "");
-  useEffect(() => {
-    if (bodyRef.current) {
-      bodyRef.current.textContent = initialBody.current;
-    }
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, []);
+  const { app, post, bodyRef, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
 
   if (!post) return null;
-
-  function scheduleSave(fields: Partial<Pick<DbPost, "title" | "body" | "published">>) {
-    pendingFields.current = { ...pendingFields.current, ...fields };
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      app.savePost(pendingFields.current);
-      pendingFields.current = {};
-    }, DEBOUNCE_MS);
-  }
-
-  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    app.setDraftTitle(e.target.value);
-    scheduleSave({ title: e.target.value });
-  }
-
-  function handleBodyInput() {
-    const body = bodyRef.current?.textContent ?? "";
-    scheduleSave({ body });
-  }
-
-  function handlePublishToggle() {
-    const next = !app.draftPublished;
-    app.setDraftPublished(next);
-    scheduleSave({ published: next });
-  }
 
   return (
     <div className="px-4 py-6 space-y-4 font-mono text-sm">
