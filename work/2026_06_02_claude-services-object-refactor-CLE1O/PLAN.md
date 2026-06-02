@@ -19,15 +19,24 @@ just loaded differently."
 
 ## Considerations
 
-**Two layers, kept separate.** `NeonDatabaseService` is used directly by the
-auth and API route handlers (`upsertUser`, `createSession`, `deleteSession`,
-`getUser`, posts CRUD), so it stays as the **low-level Neon gateway** and the
-route layer is left untouched. The new server-side, app-facing services *wrap*
-this gateway. As a result the app-facing `DatabaseService` interface that
-`AppState` consumes shrinks to what the app actually needs — a loaded `posts`
-snapshot, a `preload()`, and the three mutations (`createPost`, `updatePost`,
-`deletePost`). The raw user/session/getPost methods leave that interface and
-remain on the concrete `NeonDatabaseService` gateway.
+**The Neon gateway is server plumbing, not a service.** `NeonDatabaseService`
+is the raw SQL gateway (`upsertUser`, `createSession`, `deleteSession`,
+`getUser`, posts CRUD) and is used only on the server — by the auth/API route
+handlers and by SSR. It does not belong in the shared `src/services/` tree
+(which `state` imports on both client and server). It moves to
+**`server/neon.ts`**, renamed `NeonDatabase`, as a plain concrete class (no
+`implements DatabaseService`). The route handlers import it from there; the
+route layer is otherwise untouched.
+
+**App-facing services wrap an injected gateway.** The server-side
+`SessionService`/`DatabaseService` implementations receive a `NeonDatabase`
+instance (or `null`) from the composition root (`entry-server.tsx`) rather than
+constructing one, so `src/services/server/` depends on the gateway only as a
+type. As a result the app-facing `DatabaseService` interface that `AppState`
+consumes shrinks to what the app actually needs — a loaded `posts` snapshot, a
+`preload()`, and the three mutations (`createPost`, `updatePost`,
+`deletePost`). The raw user/session/getPost methods stay on the `NeonDatabase`
+gateway only.
 
 **`preload()` is the loading seam.** Both `SessionService` and
 `DatabaseService` expose `preload(): Promise<void>`. The server implementations
@@ -68,13 +77,18 @@ under the new signature.
       `readonly isPreview`, `preload()`, `signOut()`), `NavigationService`
       (`readonly route`, `navigate(path)`), and a `Services` type
       (`{ session; database; navigation }`).
-- [ ] Server gateway + services in `src/services/server/`: keep
-      `NeonDatabaseService` as the concrete Neon gateway (drop its
-      `implements DatabaseService`, signatures unchanged so routes still work);
-      add `ServerDatabaseService` (wraps the gateway + session, `preload()`
-      loads & filters posts, mutations delegate to the gateway) and
-      `ServerSessionService` (wraps the gateway, `preload()` resolves the user
-      from the session cookie, `signOut()` throws).
+- [ ] Move the Neon gateway out of the services tree: create `server/neon.ts`
+      exporting `NeonDatabase` (the existing SQL class, sans
+      `implements DatabaseService`, signatures unchanged), delete the gateway
+      from `src/services/server/DatabaseService.ts`, and update the imports in
+      `server/routes/auth.ts` and `server/routes/api.ts` to
+      `../neon.js` / `NeonDatabase`.
+- [ ] Server services in `src/services/server/`: `ServerDatabaseService`
+      (constructed with an injected `NeonDatabase | null` + the session +
+      `hideAuthorLogins`; `preload()` loads & filters posts; mutations delegate
+      to the gateway) and `ServerSessionService` (injected `NeonDatabase | null`
+      + session cookie + `isPreview`; `preload()` resolves the user; `signOut()`
+      throws).
 - [ ] Add `src/services/server/NavigationService.ts` —
       `ServerNavigationService(route)`, `navigate()` throws.
 - [ ] Client services in `src/services/client/`: reshape `ApiDatabaseService`
@@ -90,10 +104,11 @@ under the new signature.
       `database`, `view`/`selectedPostId` from `navigation.route`; route the
       mutations through `services.database`; replace `window.location` usage in
       `deletePost`/`signOut` with `services.navigation.navigate('/')`.
-- [ ] Update `src/entry-server.tsx`: build the gateway (or `null`), construct
-      the three server services, `await session.preload()` then
-      `await database.preload()`, construct `AppState({ ... })`, and build the
-      embedded `InitialData` from `session.user` / `database.posts`.
+- [ ] Update `src/entry-server.tsx`: build the `NeonDatabase` gateway (or
+      `null`) from `server/neon.ts`, inject it into the three server services,
+      `await session.preload()` then `await database.preload()`, construct
+      `AppState({ ... })`, and build the embedded `InitialData` from
+      `session.user` / `database.posts`.
 - [ ] Update `src/entry-client.tsx`: construct the three browser services from
       `InitialData` and pass `AppState({ session, database, navigation })`
       (synchronous hydration, no await).
