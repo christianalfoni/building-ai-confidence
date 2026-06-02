@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm install && npx playwright install chromium && ./scripts/setup-work-folder && node scripts/gen-html-template.mjs && if [ -x \"$HOME/.agent-review/bin/agent-review\" ] && [ -n \"$CLAUDE_ENV_FILE\" ]; then echo 'export PATH=\"$HOME/.agent-review/bin:$PATH\"' >> \"$CLAUDE_ENV_FILE\"; fi && if ! command -v doppler &>/dev/null; then curl -Ls --tlsv1.2 --proto '=https' --retry 3 https://cli.doppler.com/install.sh | sh; fi && if [ -n \"$DOPPLER_TOKEN\" ] && [ -n \"$CLAUDE_ENV_FILE\" ]; then doppler secrets download --no-file --format env-no-quotes --token \"$DOPPLER_TOKEN\" | sed 's/^/export /' >> \"$CLAUDE_ENV_FILE\"; fi"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && ./scripts/session-start"
           }
         ]
       }

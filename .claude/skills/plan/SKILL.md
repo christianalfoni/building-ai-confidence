@@ -47,7 +47,7 @@ for the chosen approach. Include alternatives that were ruled out and why.
 
 ## Rules
 
-1. Create the `work/YYYY_MM_DD_<branch-name>/` folder and write `PLAN.md` first — do not write application code before the plan exists.
+1. Write `PLAN.md` into the work folder created by the session start hook (`work/YYYY_MM_DD_<branch-name>/`) — do not write application code before the plan exists.
 2. Present the plan to the user, include the local file path to `PLAN.md` (e.g. `work/YYYY_MM_DD_<branch-name>/PLAN.md`), and wait for explicit approval before starting tasks.
 3. As tasks are completed, check them off in the plan file (`- [x]`).
 4. If scope changes during implementation, update the plan before continuing.

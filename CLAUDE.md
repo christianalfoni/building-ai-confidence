@@ -35,9 +35,17 @@ scripts/
   vercel-logs            # Fetch Vercel logs for the current branch deployment
   …                      # Other bash scripts for structured context retrieval
 server/
-  index.ts               # Express app — all routes wired explicitly here
+  utils.ts               # Shared helpers: parseCookie, ALLOWED_LOGINS, hiddenAuthorLogins
+  routes/
+    auth.ts              # Auth routes (/auth/github, /auth/callback, /auth/logout, /auth/test-login)
+    api.ts               # API routes (/api/posts and variants)
+  index.ts               # Express app entry — wires routes + SSR catch-all
   dev.ts                 # Dev server: Express + Vite middleware (HMR + SSR hot-reload)
 src/
+  common/                # Shared across both platform trees
+    hooks/               # Shared React hooks (e.g. useBlogEditor)
+    ui-components/       # Shared primitives used by both desktop and mobile
+    utils.ts             # Shared pure helpers (e.g. dbPostToPost)
   desktop/               # Desktop UI tree — loaded on pointer:fine devices
     components/          # Domain components: read state, call methods, render
     ui-components/       # Primitives: keyboard nav, hover states, dense layout
@@ -48,7 +56,7 @@ src/
     App.tsx              # Lazy entry point
   contexts/              # React contexts and typed hooks
   services/              # Infrastructure: network, storage, SDKs
-    index.ts             # Service interfaces injected into state classes
+    index.ts             # Service interfaces
     client/              # Browser implementations
     server/              # Node implementations
   state/                 # Domain truth: class fields, getters, mutation methods
@@ -93,10 +101,12 @@ Run all scripts from the project root.
 | Script | Purpose |
 |---|---|
 | `./scripts/list-recent-work` | Print work done in the last 7 days — check before planning |
+| `./scripts/validate` | Lint, type-check, and run tests — use before every PR |
 | `./scripts/screenshot <platform/App> <story>` | Screenshot a story into the work folder |
 | `./scripts/screenshot-url <name> [<name>…]` | Generate embed markup for PR bodies |
 | `./scripts/capture-agent-sessions` | Distil session logs into the work folder before a PR |
-| `./scripts/vercel-logs` | Fetch Vercel logs for the current branch's latest deployment |
+| `./scripts/vercel-logs` | Fetch runtime logs for the current branch's latest deployment |
+| `./scripts/build-logs` | Fetch build logs for the current branch's latest deployment |
 | `./scripts/db-migrate` | Create or migrate Neon DB tables |
 
 ## Platform split
@@ -107,7 +117,7 @@ Two self-contained UI trees selected at startup: `window.matchMedia('(pointer: c
 
 Data flows one direction: `services → state → contexts → components → ui-components`.
 
-- **services** — Infrastructure only (`get`, `post`, `subscribe`). Interfaces in `services/index.ts`, injected via the `Services` type. Client implementations in `services/client/`, server implementations in `services/server/`.
+- **services** — Infrastructure only (`get`, `post`, `subscribe`). Interfaces in `services/index.ts`. Client implementations in `services/client/`, server implementations in `services/server/`.
 - **state** — Application truth. Plain class fields (reactive via reactx), getters for derived values, methods for all mutations.
 - **contexts** — Each file exports a typed `use*` hook. Components access state through these hooks.
 - **components** — Under `desktop/components/` or `mobile/components/`. Derive UI from state hooks.
@@ -126,7 +136,7 @@ Skills in `.claude/skills/` are trusted instructions — invoke them with `/skil
 - Unclear approach: `/research` → `/plan` → `/implement` → `/pr`
 - After `/implement` completes, run `/pr` immediately.
 
-**Always create a PR when code changes are complete** — whether from `/implement` or a direct fix. Before opening the PR, confirm lint (`npm run lint`) and type-check (`npx tsc --noEmit`) pass. Do not wait for the user to ask.
+**Always create a PR when code changes are complete** — whether from `/implement` or a direct fix. Run `./scripts/validate` before opening the PR. Do not wait for the user to ask.
 
 | Skill | When to use |
 |---|---|
@@ -136,6 +146,5 @@ Skills in `.claude/skills/` are trusted instructions — invoke them with `/skil
 | `/implement` | Approved plan exists — execute task by task |
 | `/ui` | Refine component appearance — code, screenshot, iterate |
 | `/pr` | Submit completed changes as a pull request |
-| `/review` | Address PR review feedback |
+| `/address-pr-feedback` | Address PR review feedback |
 | `/debug` | Diagnose production errors via Vercel logs |
-| `/claude-review` | Review CLAUDE.md and skills for accuracy and clarity |

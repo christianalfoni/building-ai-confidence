@@ -15,10 +15,9 @@ Diagnose a production or preview error by reading Vercel deployment logs. Use th
 
 ## Steps
 
-1. Fetch logs for the current branch's latest deployment:
-   ```bash
-   ./scripts/vercel-logs
-   ```
+1. Fetch the appropriate logs for the current branch's latest deployment:
+   - For runtime errors (crashes, unexpected responses): `./scripts/vercel-logs`
+   - For build failures (compilation errors, missing modules): `./scripts/build-logs`
 2. Identify the error — look for stack traces, unhandled exceptions, or unexpected status codes.
 3. Summarise the finding to the user:
    - What the error is and where it originates.

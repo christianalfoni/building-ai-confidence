@@ -1,9 +1,9 @@
 ---
-name: review
+name: address-pr-feedback
 description: Address feedback from a PR review — fetch inline comments and reviewer notes, propose fixes, apply only approved ones.
 ---
 
-# Review Workflow
+# Address PR Feedback Workflow
 
 Address feedback from a PR review — inline comments and overall reviewer notes.
 
@@ -34,7 +34,7 @@ Address feedback from a PR review — inline comments and overall reviewer notes
 
 6. Apply only the approved fixes, one at a time. After each fix, briefly state what changed.
 
-7. Once all fixes are applied, run the capture-sessions, commit, push, and typecheck/lint steps from the `/pr` skill to update the PR with the new changes.
+7. Once all fixes are applied, run the `/pr` skill to commit, validate, push, and update the PR.
 
 ## Rules
 

@@ -42,7 +42,7 @@ export function someState() {
 }
 ```
 
-Stories are also imported by tests — they are the single source of truth for component state setup. When adding a new story, verify that `npm test -- --run` still passes.
+Stories are also imported by tests — they are the single source of truth for component state setup. When adding a new story, verify that `./scripts/validate` still passes.
 
 ## Steps
 
@@ -66,7 +66,7 @@ Stories are also imported by tests — they are the single source of truth for c
    ```
 6. Ask the user if the result looks right or if further changes are needed.
 7. Repeat from step 3 until the user approves.
-8. Run `npm test -- --run` to confirm no regressions before handing off to the `/pr` skill.
+8. Run `./scripts/validate` to confirm no regressions before handing off to the `/pr` skill.
 
 ## Rules
 

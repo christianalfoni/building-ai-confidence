@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Validates the project: lint, type-check, and tests must all pass.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+npm run lint
+npx tsc -b
+npm test -- --run

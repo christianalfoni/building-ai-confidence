@@ -1,18 +1,20 @@
 import { useApp } from "../../contexts/AppContext";
+import type { AppState } from "../../state/AppState";
 import { BlogList } from "./BlogList";
 import { BlogPost } from "./BlogPost";
 import { BlogEditor } from "./BlogEditor";
 
+function getPageTitle(app: AppState): string {
+  if (app.view === "editor") return "new post — blog";
+  if (app.view === "post") {
+    return app.selectedPost ? `${app.selectedPost.title || "Untitled"} — blog` : "404 — blog";
+  }
+  return "christian alfoni — blog";
+}
+
 export function App() {
   const app = useApp();
-  const title =
-    app.view === "editor"
-      ? `new post — blog`
-      : app.view === "post"
-      ? app.selectedPost
-        ? `${app.selectedPost.title || "Untitled"} — blog`
-        : `404 — blog`
-      : "christian alfoni — blog";
+  const title = getPageTitle(app);
 
   return (
     <div className="min-h-screen bg-base flex items-start justify-center p-8">

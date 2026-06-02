@@ -1,19 +1,6 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
-import type { DbPost } from "../../services";
-
-function dbPostToPost(p: DbPost) {
-  return {
-    id: p.id,
-    title: p.title || "Untitled",
-    date: p.createdAt.slice(0, 10),
-    readTime: "?m",
-    tags: [],
-    excerpt: p.body.slice(0, 120),
-    body: p.body.split("\n\n").filter(Boolean),
-    draft: !p.published,
-  };
-}
+import { dbPostToPost } from "../../common/utils";
 
 export function BlogList() {
   const app = useApp();

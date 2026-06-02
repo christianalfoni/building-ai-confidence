@@ -5,7 +5,7 @@ import type { Request, Response } from 'express';
 import { AppContext } from './contexts/AppContext.ts';
 import { AppState } from './state/AppState.ts';
 import { NeonDatabaseService } from './services/server/DatabaseService.ts';
-import { hiddenAuthorLogins } from './services/server/postVisibility.ts';
+import { hiddenAuthorLogins } from '../server/utils.ts';
 import { isMobileUA, parseRoute } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import DesktopApp from './desktop/App.tsx';

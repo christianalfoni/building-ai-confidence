@@ -1,8 +1,3 @@
-export interface StorageService {
-  get<T>(key: string): T | null;
-  set<T>(key: string, value: T): void;
-}
-
 export type User = {
   id: string;
   githubId: number;
@@ -32,9 +27,4 @@ export interface DatabaseService {
   createPost(authorId: string): Promise<DbPost>;
   updatePost(id: string, fields: Partial<Pick<DbPost, 'title' | 'body' | 'published' | 'slug'>>): Promise<DbPost>;
   deletePost(id: string): Promise<void>;
-}
-
-export interface Services {
-  storage: StorageService;
-  db?: DatabaseService;
 }

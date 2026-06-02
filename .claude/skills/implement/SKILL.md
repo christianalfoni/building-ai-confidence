@@ -15,8 +15,10 @@ Execute an approved plan from the `work/` folder.
 4. Check off the completed task in the plan file (`- [ ]` → `- [x]`).
 5. Repeat from step 2 until all tasks are checked off.
 6. Validate the implementation:
-   - Run `npm run lint` and fix any errors before continuing.
-   - Run `npm test -- --run` and fix any failures before continuing.
+   ```bash
+   ./scripts/validate
+   ```
+   Fix any lint, type, or test failures before continuing.
 7. Write a brief report under the `## Report` section of the plan file summarising what was done, any deviations from the plan, and the outcomes of lint and tests.
 8. Tell the user that implementation is complete and paste the report.
 9. Always conclude by running the `/pr` skill to commit and submit the changes as a pull request. Do not wait for the user to ask.
@@ -61,7 +63,7 @@ describe("Counter", () => {
 **Verify tests pass:**
 
 ```bash
-npm test
+./scripts/validate
 ```
 
-Run in watch mode during development (`npm test` starts vitest in watch mode by default). For a single CI-style run: `npm test -- --run`.
+Run `npm test` in watch mode during development. `./scripts/validate` does a single CI-style run with lint, type-check, and tests.
