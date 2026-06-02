@@ -1,93 +1,108 @@
-# Services object refactor: SessionService + NavigationService
+# Services object refactor: preloaded session + database services
 
 ## Summary
 
-`AppState` is currently constructed with positional arguments
-`(user, isPreview, dbPosts, db, route)`, which mixes infrastructure (the
-`db` service) with raw data and with concerns that are really infrastructure
-in disguise: the **user/session** (`signOut()` does `fetch('/auth/logout')`
-then `window.location.href = '/'`) and the **route/navigation** (the route is
-parsed and injected, and `deletePost`/`signOut` redirect via
-`window.location.href`).
+`AppState` is constructed with positional args `(user, isPreview, dbPosts,
+db, route)`. The server (`entry-server.tsx`) manually resolves the user and
+posts from Neon, filters them, and passes plain data plus `db: null` into
+`AppState`. The client (`entry-client.tsx`) reads the same data from the
+embedded `__initial_data__` JSON and passes a live `ApiDatabaseService`.
 
-This plan introduces two new services — a `SessionService` (owns the user,
-the preview flag, and sign-out) and a `NavigationService` (owns the route and
-navigation/redirects) — alongside the existing `DatabaseService`, and changes
-`AppState` to receive all three as a single `services` object. This follows
-the project's `services → state` layering: infrastructure lives behind service
-interfaces in `services/index.ts`, with browser implementations in
-`services/client/` and Node implementations in `services/server/`.
+This plan makes the two paths symmetric. `AppState` receives a single
+`services` object — `{ session, database, navigation }` — and reads
+everything (`user`, `isPreview`, `posts`, `route`) from those services. The
+server builds **real** session and database services that talk to Neon via a
+`preload()` step; the client builds the same-shaped services already hydrated
+from the embedded JSON. The React render path is then identical on both sides —
+"the app renders with a session and database service with state intact, it was
+just loaded differently."
 
 ## Considerations
 
-**Single services object vs. positional args.** The whole point of the
-request is to stop threading individual dependencies positionally. The new
-constructor becomes `constructor(services: Services, init: { dbPosts? })`,
-where `Services = { database, session, navigation }`. `user`, `isPreview` and
-`route` are no longer constructor data — they are read from the session and
-navigation services at construction time.
+**Two layers, kept separate.** `NeonDatabaseService` is used directly by the
+auth and API route handlers (`upsertUser`, `createSession`, `deleteSession`,
+`getUser`, posts CRUD), so it stays as the **low-level Neon gateway** and the
+route layer is left untouched. The new server-side, app-facing services *wrap*
+this gateway. As a result the app-facing `DatabaseService` interface that
+`AppState` consumes shrinks to what the app actually needs — a loaded `posts`
+snapshot, a `preload()`, and the three mutations (`createPost`, `updatePost`,
+`deletePost`). The raw user/session/getPost methods leave that interface and
+remain on the concrete `NeonDatabaseService` gateway.
 
-**Where `user`/`isPreview`/`route` live.** `user` and `isPreview` both drive
-the auth/sign-in UI, so they belong together on `SessionService`. `route`
-belongs on `NavigationService`. `AppState` copies the initial `view` /
-`selectedPostId` / `user` / `isPreview` into reactive fields (as today) so
-reactivity semantics are unchanged — `view` is still mutated by
-`openEditor`/`closeEditor`.
+**`preload()` is the loading seam.** Both `SessionService` and
+`DatabaseService` expose `preload(): Promise<void>`. The server implementations
+query Neon (session resolves the user from the cookie; database loads the
+visible/filtered posts using the resolved user). The client implementations are
+constructed already-loaded from `InitialData`, so their `preload()` is a no-op —
+the client hydrates synchronously and never awaits. This is what makes the data
+"loaded differently" while consumed identically.
 
-**`database` stays nullable.** The server intentionally passes `null` for the
-database because SSR is read-only, and `AppState`'s mutation methods guard on
-`if (!this.database)`. Keeping `database: DatabaseService | null` in the
-`Services` type preserves that behaviour with zero risk, rather than inventing
-a server-side null-object database. Session and navigation are always present
-(both client and server supply real implementations).
+**Load order on the server.** `session.preload()` runs first (resolves the
+user); `database.preload()` runs next and uses `session.user` to filter
+unpublished posts (current SSR behaviour). The server database service holds a
+reference to the session service for this.
 
-**Redirects move into navigation.** `signOut` becomes
-`await session.signOut(); navigation.navigate('/')` and `deletePost` uses
-`navigation.navigate('/')` instead of touching `window.location` directly.
-This makes `AppState` fully testable with fake services — the `deletePost`
-test no longer needs to monkey-patch `window.location`; it asserts on a fake
-navigation spy instead.
+**`AppState` constructor collapses to `(services)`.** `user`/`isPreview` come
+from `session`, `posts` from `database`, `route` from `navigation`. `AppState`
+still copies `posts` into its own reactive `dbPosts` array (copied, not
+aliased, so its optimistic `updateDbPost`/`splice` mutations don't reach into
+the service). `view` remains a mutable reactive field seeded from the route.
 
-**Server implementations throw on interactive methods.** `ServerSessionService`
-and `ServerNavigationService` provide the user/route for SSR but throw from
-`signOut()`/`navigate()`, mirroring the existing pattern where the client
-`DatabaseService` throws from server-only methods. These are never called
-during SSR.
+**Redirects move to navigation.** `signOut()` becomes `await
+session.signOut(); navigation.navigate('/')`; `deletePost` ends with
+`navigation.navigate('/')` instead of touching `window.location`. Server
+implementations of `signOut`/`navigate` throw (browser-only), mirroring how the
+client gateway throws on server-only methods; they are never called during SSR.
+This also lets the `deletePost` test assert on a fake navigation spy instead of
+monkey-patching `window.location`.
+
+**`main.tsx` is dead code** — not referenced by `index.html` or any import
+(the SSR entries replaced it). It will be removed rather than carried forward
+under the new signature.
 
 ## Tasks
 
-- [ ] Add `SessionService` + `NavigationService` interfaces and a `Services`
-      type (`{ database: DatabaseService | null; session: SessionService;
-      navigation: NavigationService }`) to `src/services/index.ts`.
-- [ ] Add browser implementations: `src/services/client/SessionService.ts`
-      (`BrowserSessionService` — user/isPreview from `InitialData`, `signOut()`
-      → `fetch('/auth/logout', { method: 'POST' })`) and
-      `src/services/client/NavigationService.ts` (`BrowserNavigationService` —
-      `route` from `parseRoute(window.location.pathname)`, `navigate(path)` →
-      `window.location.href = path`).
-- [ ] Add server implementations: `src/services/server/SessionService.ts`
-      (`ServerSessionService(user, isPreview)`) and
-      `src/services/server/NavigationService.ts`
-      (`ServerNavigationService(route)`), both throwing from the interactive
-      methods.
-- [ ] Refactor `src/state/AppState.ts`: constructor `(services: Services,
-      init: { dbPosts?: DbPost[] })`; read `user`/`isPreview` from
-      `services.session`, `view`/`selectedPostId` from
-      `services.navigation.route`; route `createPost`/`savePost`/`deletePost`
-      through `services.database`; replace `window.location` usage in
+- [ ] Reshape `src/services/index.ts`: repurpose `DatabaseService` to the
+      app-facing shape (`readonly posts`, `preload()`, `createPost`,
+      `updatePost`, `deletePost`); add `SessionService` (`readonly user`,
+      `readonly isPreview`, `preload()`, `signOut()`), `NavigationService`
+      (`readonly route`, `navigate(path)`), and a `Services` type
+      (`{ session; database; navigation }`).
+- [ ] Server gateway + services in `src/services/server/`: keep
+      `NeonDatabaseService` as the concrete Neon gateway (drop its
+      `implements DatabaseService`, signatures unchanged so routes still work);
+      add `ServerDatabaseService` (wraps the gateway + session, `preload()`
+      loads & filters posts, mutations delegate to the gateway) and
+      `ServerSessionService` (wraps the gateway, `preload()` resolves the user
+      from the session cookie, `signOut()` throws).
+- [ ] Add `src/services/server/NavigationService.ts` —
+      `ServerNavigationService(route)`, `navigate()` throws.
+- [ ] Client services in `src/services/client/`: reshape `ApiDatabaseService`
+      to the new interface (constructor takes `InitialData` → `posts`,
+      `preload()` no-op, fetch-based mutations; drop the server-only methods);
+      add `BrowserSessionService` (`user`/`isPreview` from `InitialData`,
+      `preload()` no-op, `signOut()` → POST `/auth/logout`) and
+      `BrowserNavigationService` (`route` from
+      `parseRoute(window.location.pathname)`, `navigate` →
+      `window.location.href`).
+- [ ] Refactor `src/state/AppState.ts`: constructor `(services: Services)`;
+      seed `user`/`isPreview` from `session`, `dbPosts` (copied) from
+      `database`, `view`/`selectedPostId` from `navigation.route`; route the
+      mutations through `services.database`; replace `window.location` usage in
       `deletePost`/`signOut` with `services.navigation.navigate('/')`.
-- [ ] Update `src/entry-client.tsx` to construct the three browser services and
-      pass `new AppState({ database, session, navigation }, { dbPosts })`.
-- [ ] Update `src/entry-server.tsx` to construct the server services
-      (`database: null`, `ServerSessionService`, `ServerNavigationService`) and
-      pass them.
-- [ ] Update `src/main.tsx` (standalone dev entry) to construct browser
-      services for the new signature.
-- [ ] Update `src/test-utils.tsx` with fake service factories and a flexible
-      `createAppState(opts)` helper for stories/tests.
-- [ ] Rewrite `src/state/AppState.test.ts` for the new constructor; replace the
-      `window.location` stubbing in the `deletePost` tests with assertions on a
-      fake navigation service.
+- [ ] Update `src/entry-server.tsx`: build the gateway (or `null`), construct
+      the three server services, `await session.preload()` then
+      `await database.preload()`, construct `AppState({ ... })`, and build the
+      embedded `InitialData` from `session.user` / `database.posts`.
+- [ ] Update `src/entry-client.tsx`: construct the three browser services from
+      `InitialData` and pass `AppState({ session, database, navigation })`
+      (synchronous hydration, no await).
+- [ ] Remove the unused `src/main.tsx`.
+- [ ] Update `src/test-utils.tsx` with fake session/database/navigation
+      services and a flexible `createAppState(opts)` helper.
+- [ ] Rewrite `src/state/AppState.test.ts` for the `services`-object
+      constructor; assert on a fake navigation service in the `deletePost`
+      tests instead of stubbing `window.location`.
 - [ ] Run `./scripts/validate` (lint, type-check, tests) and fix any fallout.
 
 ## Report
