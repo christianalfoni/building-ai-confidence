@@ -1,9 +1,6 @@
 import type { NeonDatabase } from '../../../server/neon.js';
+import { ALLOWED_LOGINS } from '../../../server/utils.ts';
 import type { DatabaseService, DbPost, SessionService } from '../index.ts';
-
-// Logins whose unpublished posts are visible to themselves. Mirrors the same
-// constant the API routes use to gate edits.
-const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
 // Server-side database service. Loads the posts visible to the current user
 // from the Neon gateway during `preload()`, then exposes them as a snapshot for
@@ -30,7 +27,7 @@ export class ServerDatabaseService implements DatabaseService {
     const all = await this.db.getPosts({ hideAuthorLogins: this.hideAuthorLogins });
     const user = this.session.user;
     this.posts = all.filter(
-      (p) => p.published || (user != null && AUTHOR_LOGINS.includes(user.githubLogin) && p.authorId === user.id),
+      (p) => p.published || (user != null && ALLOWED_LOGINS.includes(user.githubLogin) && p.authorId === user.id),
     );
   }
 
