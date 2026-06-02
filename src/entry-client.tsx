@@ -6,17 +6,21 @@ import { AppContext } from './contexts/AppContext.ts';
 import { reactive } from 'reactx';
 import { AppState } from './state/AppState.ts';
 import { ApiDatabaseService, type InitialData } from './services/client/DatabaseService.ts';
+import { BrowserSessionService } from './services/client/SessionService.ts';
+import { BrowserNavigationService } from './services/client/NavigationService.ts';
 import { PlatformApp } from './PlatformApp.tsx';
-import { parseRoute } from './utils.ts';
 
 const dataEl = document.getElementById('__initial_data__');
 const initialData: InitialData = dataEl
   ? (JSON.parse(dataEl.textContent!) as InitialData)
   : { dbEnabled: false, isPreview: false, user: null, posts: [] };
 
-const db = new ApiDatabaseService(initialData);
-const route = parseRoute(window.location.pathname);
-const app = reactive(new AppState(initialData.user, initialData.isPreview, initialData.posts, db, route));
+// The browser services are constructed already-loaded from the embedded data,
+// so hydration stays synchronous — no preload round-trip.
+const session = new BrowserSessionService(initialData);
+const database = new ApiDatabaseService(initialData);
+const navigation = new BrowserNavigationService();
+const app = reactive(new AppState({ session, database, navigation }));
 
 hydrateRoot(
   document.getElementById('root')!,

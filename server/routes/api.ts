@@ -1,5 +1,5 @@
 import type { Application } from 'express';
-import { NeonDatabaseService } from '../../src/services/server/DatabaseService.js';
+import { NeonDatabase } from '../neon.js';
 import { parseCookie, ALLOWED_LOGINS, hiddenAuthorLogins } from '../utils.js';
 
 export function registerApiRoutes(app: Application) {
@@ -7,7 +7,7 @@ export function registerApiRoutes(app: Application) {
     try {
       const dbUrl = process.env.DATABASE_URL;
       if (!dbUrl) { res.status(500).json({ error: 'DATABASE_URL is not configured' }); return; }
-      const db = new NeonDatabaseService(dbUrl);
+      const db = new NeonDatabase(dbUrl);
       const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
       const user = sessionId ? await db.getUser(sessionId) : null;
       const all = await db.getPosts({ hideAuthorLogins: hiddenAuthorLogins() });
@@ -24,7 +24,7 @@ export function registerApiRoutes(app: Application) {
       if (!dbUrl) { res.status(500).json({ error: 'DATABASE_URL is not configured' }); return; }
       const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
       if (!sessionId) { res.status(401).json({ error: 'Unauthorized' }); return; }
-      const db = new NeonDatabaseService(dbUrl);
+      const db = new NeonDatabase(dbUrl);
       const user = await db.getUser(sessionId);
       if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
       res.json(await db.createPost(user.id));
@@ -40,7 +40,7 @@ export function registerApiRoutes(app: Application) {
       if (!dbUrl) { res.status(500).json({ error: 'DATABASE_URL is not configured' }); return; }
       const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
       if (!sessionId) { res.status(401).json({ error: 'Unauthorized' }); return; }
-      const db = new NeonDatabaseService(dbUrl);
+      const db = new NeonDatabase(dbUrl);
       const user = await db.getUser(sessionId);
       if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
 
@@ -67,7 +67,7 @@ export function registerApiRoutes(app: Application) {
       if (!dbUrl) { res.status(500).json({ error: 'DATABASE_URL is not configured' }); return; }
       const sessionId = parseCookie(req.headers.cookie ?? '', 'session');
       if (!sessionId) { res.status(401).json({ error: 'Unauthorized' }); return; }
-      const db = new NeonDatabaseService(dbUrl);
+      const db = new NeonDatabase(dbUrl);
       const user = await db.getUser(sessionId);
       if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
 

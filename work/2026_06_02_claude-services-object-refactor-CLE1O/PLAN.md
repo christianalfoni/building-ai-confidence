@@ -71,27 +71,27 @@ under the new signature.
 
 ## Tasks
 
-- [ ] Reshape `src/services/index.ts`: repurpose `DatabaseService` to the
+- [x] Reshape `src/services/index.ts`: repurpose `DatabaseService` to the
       app-facing shape (`readonly posts`, `preload()`, `createPost`,
       `updatePost`, `deletePost`); add `SessionService` (`readonly user`,
       `readonly isPreview`, `preload()`, `signOut()`), `NavigationService`
       (`readonly route`, `navigate(path)`), and a `Services` type
       (`{ session; database; navigation }`).
-- [ ] Move the Neon gateway out of the services tree: create `server/neon.ts`
+- [x] Move the Neon gateway out of the services tree: create `server/neon.ts`
       exporting `NeonDatabase` (the existing SQL class, sans
       `implements DatabaseService`, signatures unchanged), delete the gateway
       from `src/services/server/DatabaseService.ts`, and update the imports in
       `server/routes/auth.ts` and `server/routes/api.ts` to
       `../neon.js` / `NeonDatabase`.
-- [ ] Server services in `src/services/server/`: `ServerDatabaseService`
+- [x] Server services in `src/services/server/`: `ServerDatabaseService`
       (constructed with an injected `NeonDatabase | null` + the session +
       `hideAuthorLogins`; `preload()` loads & filters posts; mutations delegate
       to the gateway) and `ServerSessionService` (injected `NeonDatabase | null`
       + session cookie + `isPreview`; `preload()` resolves the user; `signOut()`
       throws).
-- [ ] Add `src/services/server/NavigationService.ts` —
+- [x] Add `src/services/server/NavigationService.ts` —
       `ServerNavigationService(route)`, `navigate()` throws.
-- [ ] Client services in `src/services/client/`: reshape `ApiDatabaseService`
+- [x] Client services in `src/services/client/`: reshape `ApiDatabaseService`
       to the new interface (constructor takes `InitialData` → `posts`,
       `preload()` no-op, fetch-based mutations; drop the server-only methods);
       add `BrowserSessionService` (`user`/`isPreview` from `InitialData`,
@@ -99,25 +99,65 @@ under the new signature.
       `BrowserNavigationService` (`route` from
       `parseRoute(window.location.pathname)`, `navigate` →
       `window.location.href`).
-- [ ] Refactor `src/state/AppState.ts`: constructor `(services: Services)`;
+- [x] Refactor `src/state/AppState.ts`: constructor `(services: Services)`;
       seed `user`/`isPreview` from `session`, `dbPosts` (copied) from
       `database`, `view`/`selectedPostId` from `navigation.route`; route the
       mutations through `services.database`; replace `window.location` usage in
       `deletePost`/`signOut` with `services.navigation.navigate('/')`.
-- [ ] Update `src/entry-server.tsx`: build the `NeonDatabase` gateway (or
+- [x] Update `src/entry-server.tsx`: build the `NeonDatabase` gateway (or
       `null`) from `server/neon.ts`, inject it into the three server services,
       `await session.preload()` then `await database.preload()`, construct
       `AppState({ ... })`, and build the embedded `InitialData` from
       `session.user` / `database.posts`.
-- [ ] Update `src/entry-client.tsx`: construct the three browser services from
+- [x] Update `src/entry-client.tsx`: construct the three browser services from
       `InitialData` and pass `AppState({ session, database, navigation })`
       (synchronous hydration, no await).
-- [ ] Remove the unused `src/main.tsx`.
-- [ ] Update `src/test-utils.tsx` with fake session/database/navigation
+- [x] Remove the unused `src/main.tsx`.
+- [x] Update `src/test-utils.tsx` with fake session/database/navigation
       services and a flexible `createAppState(opts)` helper.
-- [ ] Rewrite `src/state/AppState.test.ts` for the `services`-object
+- [x] Rewrite `src/state/AppState.test.ts` for the `services`-object
       constructor; assert on a fake navigation service in the `deletePost`
       tests instead of stubbing `window.location`.
-- [ ] Run `./scripts/validate` (lint, type-check, tests) and fix any fallout.
+- [x] Run `./scripts/validate` (lint, type-check, tests) and fix any fallout.
 
 ## Report
+
+All tasks completed as planned, no scope deviations.
+
+**Service layer.** `src/services/index.ts` now defines three app-facing
+interfaces — `SessionService` (`user`, `isPreview`, `preload`, `signOut`),
+`DatabaseService` (`posts`, `preload`, `createPost`/`updatePost`/`deletePost`)
+and `NavigationService` (`route`, `navigate`) — plus the `Services` aggregate
+type. The raw Neon SQL gateway moved out of the services tree to
+`server/neon.ts` as a plain `NeonDatabase` class; the auth/API route handlers
+now import it from `../neon.js` (otherwise untouched).
+
+**Implementations.** Server: `ServerSessionService` and
+`ServerDatabaseService` take an injected `NeonDatabase | null` and load their
+state in `preload()` (session resolves the user from the cookie; database loads
+& filters the visible posts using the resolved user); `ServerNavigationService`
+carries the request route. `signOut`/`navigate` throw server-side. Browser:
+`BrowserSessionService`/`ApiDatabaseService` are constructed already-loaded from
+`InitialData` (no-op `preload()`); `BrowserNavigationService` reads the route
+from the URL and navigates via `window.location`.
+
+**State & entries.** `AppState`'s constructor collapsed to `(services)`,
+seeding `user`/`isPreview` from the session, a copied `dbPosts` from the
+database, and the route from navigation; mutations route through
+`services.database` and redirects through `services.navigation.navigate('/')`.
+`entry-server.tsx` builds the gateway, injects it, awaits
+`session.preload()` then `database.preload()`, renders, and derives the
+embedded `InitialData` from the loaded services. `entry-client.tsx` builds the
+three browser services and hydrates synchronously. The dead `src/main.tsx` was
+removed.
+
+**Tests.** `test-utils.tsx` gained `FakeSessionService`/`FakeDatabaseService`/
+`FakeNavigationService`, a `createServices`/`createAppState(opts)` helper, and a
+`renderWithApp` helper. `AppState.test.ts` was rewritten to the services-object
+constructor; the `deletePost` tests now assert on a fake navigation spy instead
+of monkey-patching `window.location`.
+
+**Outcomes.** `./scripts/validate` passes — ESLint clean, `tsc -b` clean,
+23/23 tests passing. A full `npm run build` also succeeds (the only output is a
+pre-existing `INVALID_ANNOTATION` warning from the `mobx` dependency, unrelated
+to this change).

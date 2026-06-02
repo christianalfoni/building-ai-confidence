@@ -1,6 +1,8 @@
 import { reactive } from "reactx";
 import { AppState } from "./AppState";
-import type { DatabaseService, DbPost, User } from "../services";
+import type { DbPost, User } from "../services";
+import { FakeDatabaseService, FakeNavigationService, FakeSessionService } from "../test-utils";
+import type { Route } from "../utils";
 
 function makeUser(githubLogin: string): User {
   return { id: "u1", githubId: 1, githubLogin, name: "Test", avatarUrl: "" };
@@ -20,22 +22,36 @@ function makePost(overrides: Partial<DbPost> = {}): DbPost {
   };
 }
 
+function makeState(opts: {
+  user?: User | null;
+  isPreview?: boolean;
+  posts?: DbPost[];
+  route?: Route;
+  database?: FakeDatabaseService;
+  navigation?: FakeNavigationService;
+} = {}): AppState {
+  const session = new FakeSessionService({ user: opts.user, isPreview: opts.isPreview });
+  const database = opts.database ?? new FakeDatabaseService({ posts: opts.posts });
+  const navigation = opts.navigation ?? new FakeNavigationService(opts.route);
+  return reactive(new AppState({ session, database, navigation }));
+}
+
 describe("AppState", () => {
   it("defaults to the list view with no selected post", () => {
-    const state = reactive(new AppState());
+    const state = makeState();
     expect(state.view).toBe("list");
     expect(state.selectedPostId).toBeNull();
   });
 
   describe("route-driven init", () => {
     it("starts on the post view for a post route", () => {
-      const state = reactive(new AppState(null, false, [], null, { view: "post", postId: "p1" }));
+      const state = makeState({ route: { view: "post", postId: "p1" } });
       expect(state.view).toBe("post");
       expect(state.selectedPostId).toBe("p1");
     });
 
     it("starts on the list view for a list route", () => {
-      const state = reactive(new AppState(null, false, [], null, { view: "list", postId: null }));
+      const state = makeState({ route: { view: "list", postId: null } });
       expect(state.view).toBe("list");
       expect(state.selectedPostId).toBeNull();
     });
@@ -44,19 +60,19 @@ describe("AppState", () => {
   describe("selectedPost / postNotFound", () => {
     it("resolves the selected post by id", () => {
       const post = makePost({ id: "p1", published: true });
-      const state = reactive(new AppState(null, false, [post], null, { view: "post", postId: "p1" }));
+      const state = makeState({ posts: [post], route: { view: "post", postId: "p1" } });
       expect(state.selectedPost?.id).toBe("p1");
       expect(state.postNotFound).toBe(false);
     });
 
     it("flags postNotFound when the post is missing from the visible set", () => {
-      const state = reactive(new AppState(null, false, [], null, { view: "post", postId: "missing" }));
+      const state = makeState({ route: { view: "post", postId: "missing" } });
       expect(state.selectedPost).toBeNull();
       expect(state.postNotFound).toBe(true);
     });
 
     it("never flags postNotFound on the list view", () => {
-      const state = reactive(new AppState(null, false, [], null, { view: "list", postId: null }));
+      const state = makeState({ route: { view: "list", postId: null } });
       expect(state.postNotFound).toBe(false);
     });
   });
@@ -64,7 +80,7 @@ describe("AppState", () => {
   describe("closeEditor", () => {
     it("returns to the post view when a post is selected", () => {
       const post = makePost({ id: "p1", published: true });
-      const state = reactive(new AppState(makeUser("test"), false, [post], null, { view: "post", postId: "p1" }));
+      const state = makeState({ user: makeUser("test"), posts: [post], route: { view: "post", postId: "p1" } });
       state.openEditor("p1");
       expect(state.view).toBe("editor");
       state.closeEditor();
@@ -73,7 +89,7 @@ describe("AppState", () => {
     });
 
     it("returns to the list view when no post is selected", () => {
-      const state = reactive(new AppState(makeUser("test"), false, []));
+      const state = makeState({ user: makeUser("test") });
       state.openEditor("unknown");
       state.closeEditor();
       expect(state.view).toBe("list");
@@ -83,23 +99,23 @@ describe("AppState", () => {
 
   describe("isAuthor", () => {
     it("returns true for allowed logins", () => {
-      expect(new AppState(makeUser("christianalfoni")).isAuthor).toBe(true);
-      expect(new AppState(makeUser("test")).isAuthor).toBe(true);
+      expect(makeState({ user: makeUser("christianalfoni") }).isAuthor).toBe(true);
+      expect(makeState({ user: makeUser("test") }).isAuthor).toBe(true);
     });
 
     it("returns false for disallowed logins", () => {
-      expect(new AppState(makeUser("someoneelse")).isAuthor).toBe(false);
+      expect(makeState({ user: makeUser("someoneelse") }).isAuthor).toBe(false);
     });
 
     it("returns false when not signed in", () => {
-      expect(new AppState(null).isAuthor).toBe(false);
+      expect(makeState({ user: null }).isAuthor).toBe(false);
     });
   });
 
   describe("openEditor", () => {
     it("sets view to editor and initializes draft fields from the post", () => {
       const post = makePost({ title: "Draft Title", published: true });
-      const state = reactive(new AppState(makeUser("test"), false, [post]));
+      const state = makeState({ user: makeUser("test"), posts: [post] });
       state.openEditor("p1");
       expect(state.view).toBe("editor");
       expect(state.draftPostId).toBe("p1");
@@ -108,7 +124,7 @@ describe("AppState", () => {
     });
 
     it("defaults draft fields when post not found", () => {
-      const state = reactive(new AppState(makeUser("test"), false, []));
+      const state = makeState({ user: makeUser("test") });
       state.openEditor("unknown");
       expect(state.draftTitle).toBe("");
       expect(state.draftPublished).toBe(false);
@@ -118,7 +134,7 @@ describe("AppState", () => {
   describe("updateDbPost", () => {
     it("updates an existing post in-place", () => {
       const post = makePost();
-      const state = reactive(new AppState(null, false, [post]));
+      const state = makeState({ posts: [post] });
       const updated = makePost({ title: "Updated" });
       state.updateDbPost(updated);
       expect(state.dbPosts[0].title).toBe("Updated");
@@ -126,7 +142,7 @@ describe("AppState", () => {
     });
 
     it("prepends a new post when not found", () => {
-      const state = reactive(new AppState(null, false, []));
+      const state = makeState();
       state.updateDbPost(makePost());
       expect(state.dbPosts).toHaveLength(1);
       expect(state.dbPosts[0].id).toBe("p1");
@@ -134,37 +150,29 @@ describe("AppState", () => {
   });
 
   describe("deletePost", () => {
-    async function withStubbedLocation(run: (loc: { href: string }) => Promise<void>): Promise<void> {
-      const original = window.location;
-      const loc = { href: "" };
-      Object.defineProperty(window, "location", { configurable: true, value: loc });
-      try {
-        await run(loc);
-      } finally {
-        Object.defineProperty(window, "location", { configurable: true, value: original });
-      }
-    }
+    it("calls database.deletePost, removes the post, and navigates home", async () => {
+      const database = new FakeDatabaseService({ posts: [makePost({ id: "p1" })] });
+      const navigation = new FakeNavigationService({ view: "post", postId: "p1" });
+      const state = makeState({ user: makeUser("test"), database, navigation });
 
-    it("calls db.deletePost, removes the post, and navigates home", async () => {
-      const deleted: string[] = [];
-      const db = { deletePost: async (id: string) => { deleted.push(id); } } as unknown as DatabaseService;
-      const state = reactive(new AppState(makeUser("test"), false, [makePost({ id: "p1" })], db, { view: "post", postId: "p1" }));
+      await state.deletePost("p1");
 
-      await withStubbedLocation(async (loc) => {
-        await state.deletePost("p1");
-        expect(loc.href).toBe("/");
-      });
-
-      expect(deleted).toEqual(["p1"]);
+      expect(database.deleted).toEqual(["p1"]);
       expect(state.dbPosts).toHaveLength(0);
+      expect(navigation.navigations).toEqual(["/"]);
     });
 
     it("throws and keeps the post when the delete fails", async () => {
-      const db = { deletePost: async () => { throw new Error("boom"); } } as unknown as DatabaseService;
-      const state = reactive(new AppState(makeUser("test"), false, [makePost({ id: "p1" })], db, { view: "post", postId: "p1" }));
+      const database = new FakeDatabaseService({
+        posts: [makePost({ id: "p1" })],
+        deletePost: async () => { throw new Error("boom"); },
+      });
+      const navigation = new FakeNavigationService({ view: "post", postId: "p1" });
+      const state = makeState({ user: makeUser("test"), database, navigation });
 
       await expect(state.deletePost("p1")).rejects.toThrow("boom");
       expect(state.dbPosts).toHaveLength(1);
+      expect(navigation.navigations).toEqual([]);
     });
   });
 });

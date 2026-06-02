@@ -1,5 +1,4 @@
-import type { DatabaseService, DbPost, User } from "../services";
-import type { Route } from "../utils";
+import type { DbPost, Services, User } from "../services";
 
 const AUTHOR_LOGINS = ['christianalfoni', 'test'];
 
@@ -14,21 +13,17 @@ export class AppState {
   draftTitle: string = "";
   draftPublished: boolean = false;
   dbPosts: DbPost[] = [];
-  private db: DatabaseService | null;
+  private services: Services;
 
-  constructor(
-    user: User | null = null,
-    isPreview = false,
-    dbPosts: DbPost[] = [],
-    db: DatabaseService | null = null,
-    route: Route = { view: 'list', postId: null },
-  ) {
-    this.user = user;
-    this.isPreview = isPreview;
-    this.dbPosts = dbPosts;
-    this.db = db;
-    this.view = route.view;
-    this.selectedPostId = route.postId;
+  constructor(services: Services) {
+    this.services = services;
+    this.user = services.session.user;
+    this.isPreview = services.session.isPreview;
+    // Copy, not alias — the optimistic mutations below must not reach back into
+    // the service's snapshot.
+    this.dbPosts = [...services.database.posts];
+    this.view = services.navigation.route.view;
+    this.selectedPostId = services.navigation.route.postId;
   }
 
   get isAuthor(): boolean {
@@ -80,15 +75,15 @@ export class AppState {
   }
 
   async createPost() {
-    if (!this.db || !this.user) return;
-    const post = await this.db.createPost(this.user.id);
+    if (!this.user) return;
+    const post = await this.services.database.createPost(this.user.id);
     this.updateDbPost(post);
     this.openEditor(post.id);
   }
 
   async savePost(fields: Partial<Pick<DbPost, 'title' | 'body' | 'published'>>) {
-    if (!this.db || !this.draftPostId) return;
-    const post = await this.db.updatePost(this.draftPostId, fields);
+    if (!this.draftPostId) return;
+    const post = await this.services.database.updatePost(this.draftPostId, fields);
     this.updateDbPost(post);
   }
 
@@ -96,16 +91,14 @@ export class AppState {
   // caller can surface an error; a full-page navigation gives a fresh SSR render
   // of the list without the deleted post.
   async deletePost(id: string) {
-    if (!this.db) throw new Error('Database is not available');
-    await this.db.deletePost(id);
+    await this.services.database.deletePost(id);
     const idx = this.dbPosts.findIndex((p) => p.id === id);
     if (idx >= 0) this.dbPosts.splice(idx, 1);
-    window.location.href = '/';
+    this.services.navigation.navigate('/');
   }
 
-  signOut() {
-    fetch('/auth/logout', { method: 'POST' }).then(() => {
-      window.location.href = '/';
-    });
+  async signOut() {
+    await this.services.session.signOut();
+    this.services.navigation.navigate('/');
   }
 }
