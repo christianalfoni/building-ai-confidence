@@ -54,8 +54,14 @@ export function BlogPost() {
         <h1 className="text-xl font-bold text-teal font-mono leading-snug">{post.title}</h1>
         <div className="flex items-center gap-2 text-xs text-muted font-mono">
           <span>{post.date}</span>
-          <span>·</span>
-          <span>{post.readTime} read</span>
+          {post.draft && (
+            <>
+              <span>·</span>
+              <span className="px-1.5 py-0.5 rounded border border-dashed border-mauve/50 text-mauve/80 bg-mauve/5">
+                draft
+              </span>
+            </>
+          )}
         </div>
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">

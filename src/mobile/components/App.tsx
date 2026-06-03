@@ -8,7 +8,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-terminal text-text font-mono">
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-chrome border-b border-border">
-        <span className="font-mono text-sm font-bold text-mauve">~/blog</span>
+        <span className="font-mono text-sm font-bold text-mauve">Claude in the Cloud</span>
         {app.user ? (
           <span className="flex items-center gap-2">
             <img src={app.user.avatarUrl} alt={app.user.name} className="w-7 h-7 rounded-full" />

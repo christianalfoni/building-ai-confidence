@@ -34,16 +34,38 @@ export function BlogPost() {
 
   return (
     <div className="space-y-4 font-mono text-sm">
-      <div className="flex items-center gap-2 text-xs text-muted">
-        <span className="text-mauve">❯</span>
-        <span>cat {post.slug}.md</span>
+      <div className="flex items-center justify-between text-xs text-muted">
+        <div className="flex items-center gap-2">
+          <span className="text-mauve">❯</span>
+          <span>cat {post.slug}.md</span>
+        </div>
+        {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => app.openEditor(dbMatch.id)}
+              className="text-muted hover:text-mauve transition-colors cursor-pointer"
+            >
+              edit
+            </button>
+            <DeleteConfirm
+              confirmMessage="delete this post?"
+              onConfirm={() => app.deletePost(dbMatch.id)}
+            />
+          </div>
+        )}
       </div>
       <div className="rounded p-4 space-y-2 bg-surface border border-border">
         <div className="text-xl font-bold text-teal leading-snug">{post.title}</div>
         <div className="flex items-center gap-3 text-xs text-muted">
           <span>{post.date}</span>
-          <span>·</span>
-          <span>{post.readTime} read</span>
+          {post.draft && (
+            <>
+              <span>·</span>
+              <span className="px-1.5 py-0.5 rounded border border-dashed border-mauve/50 text-mauve/80 bg-mauve/5 font-mono">
+                draft
+              </span>
+            </>
+          )}
           {post.tags.length > 0 && (
             <>
               <span>·</span>
@@ -64,30 +86,13 @@ export function BlogPost() {
           </p>
         ))}
       </div>
-      <div className="border-t border-border pt-3 flex items-center justify-between text-xs">
+      <div className="border-t border-border pt-3 flex items-center text-xs">
         <a
           href="/"
           className="text-muted hover:text-text transition-colors cursor-pointer"
         >
           ← cd ..
         </a>
-        <div className="flex items-center gap-4">
-          {app.isAuthor && dbMatch && dbMatch.authorId === app.user?.id && (
-            <>
-              <button
-                onClick={() => app.openEditor(dbMatch.id)}
-                className="text-muted hover:text-mauve transition-colors cursor-pointer"
-              >
-                edit
-              </button>
-              <DeleteConfirm
-                confirmMessage="delete this post?"
-                onConfirm={() => app.deletePost(dbMatch.id)}
-              />
-            </>
-          )}
-          <span className="text-dim">q to go back</span>
-        </div>
       </div>
     </div>
   );

@@ -1,34 +1,18 @@
 import { useBlogEditor } from "../../common/hooks/useBlogEditor";
 
 export function BlogEditor() {
-  const { app, post, bodyRef, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
+  const { app, post, bodyRef, titleRef, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
 
   if (!post) return null;
 
   return (
     <div className="px-4 py-6 space-y-4 font-mono text-sm">
-      <input
-        className="w-full text-xl font-bold text-teal leading-snug bg-transparent outline-none placeholder:text-teal/30"
-        placeholder="Title..."
-        value={app.draftTitle}
-        onChange={handleTitleChange}
-      />
-      <div className="text-xs text-muted">{post.createdAt.slice(0, 10)}</div>
-      <div className="border-t border-border" />
-      <div
-        ref={bodyRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleBodyInput}
-        className="text-sm leading-relaxed text-subtext outline-none min-h-[300px] whitespace-pre-wrap empty:before:content-[attr(data-placeholder)] empty:before:text-dim"
-        data-placeholder="Start writing..."
-      />
-      <div className="border-t border-border pt-4 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <button
           onClick={() => app.closeEditor()}
-          className="text-xs text-muted font-mono"
+          className="text-sm text-muted font-mono active:text-text"
         >
-          ← cd ..
+          ← back
         </button>
         <div className="flex items-center gap-3">
           <span
@@ -48,6 +32,23 @@ export function BlogEditor() {
           </button>
         </div>
       </div>
+      <input
+        ref={titleRef}
+        className="w-full text-xl font-bold text-teal leading-snug bg-transparent outline-none placeholder:text-teal/30"
+        placeholder="Title..."
+        value={app.draftTitle}
+        onChange={handleTitleChange}
+      />
+      <div className="text-xs text-muted">{post.createdAt.slice(0, 10)}</div>
+      <div className="border-t border-border" />
+      <div
+        ref={bodyRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleBodyInput}
+        className="text-sm leading-relaxed text-subtext outline-none min-h-[300px] whitespace-pre-wrap empty:before:content-[attr(data-placeholder)] empty:before:text-dim"
+        data-placeholder="Start writing..."
+      />
     </div>
   );
 }
