@@ -64,15 +64,34 @@ html.ui-desktop {
   min-height: 1.5em;
 }
 
-/* Fenced code lines read as a contiguous block (consecutive full-width lines
-   share the same surface background). The reader stays opaque; the editor's
-   background is translucent so the selection layer (drawn behind the lines)
-   shows through on code lines too. */
+/* Fenced code renders as one padded, rounded box. Every line in the block shares
+   the background + horizontal padding; the first/last lines round the corners and
+   add the vertical padding. The ``` markers are hidden on both sides, so the box
+   "covers them up"; the language shows as a dim label on the first line. The
+   reader stays opaque; the editor's background is translucent so the selection
+   layer (drawn behind the lines) shows through on code lines too. */
+.md-line-code,
+.cm-editor .cm-line.cm-md-code {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
 .md-line-code {
   background: var(--color-surface);
 }
 .cm-editor .cm-line.cm-md-code {
   background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+}
+.md-line-code-open,
+.cm-editor .cm-line.cm-md-code-open {
+  padding-top: 0.5rem;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+.md-line-code-close,
+.cm-editor .cm-line.cm-md-code-close {
+  padding-bottom: 0.5rem;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
 }
 
 /* --- Markdown structure --- */
@@ -82,6 +101,11 @@ html.ui-desktop {
 }
 .tok-mark {
   color: var(--color-dim);
+}
+/* Fenced-code language label (e.g. the `js` after ```). */
+.tok-labelName {
+  color: var(--color-muted);
+  font-style: italic;
 }
 .tok-monospace {
   color: var(--color-teal);

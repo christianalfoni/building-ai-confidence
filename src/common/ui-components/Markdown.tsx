@@ -28,31 +28,37 @@ export function Markdown({ source }: { source: string }) {
   // 2. Find code-fence delimiter lines so we can hide the ``` markers, and find
   //    list nesting depth per offset for indentation.
   const lines = splitLines(source);
-  const fenceLineSet = new Set<number>();
-  const codeLineSet = new Set<number>();
+  const codeBlock = new Map<number, { open: boolean; close: boolean }>();
+  const hidden: Array<[number, number]> = [];
   tree.iterate({
     enter: (n) => {
-      if (n.name === "CodeMark") fenceLineSet.add(lineIndexAt(lines, n.from));
-      if (n.name === "CodeText") {
-        for (let i = lineIndexAt(lines, n.from); i <= lineIndexAt(lines, n.to); i++) {
-          codeLineSet.add(i);
+      if (n.name === "FencedCode") {
+        const first = lineIndexAt(lines, n.from);
+        const last = lineIndexAt(lines, Math.max(n.from, n.to - 1));
+        for (let i = first; i <= last; i++) {
+          codeBlock.set(i, { open: i === first, close: i === last });
         }
       }
+      if (n.name === "CodeMark") hidden.push([n.from, n.to]);
     },
   });
 
   return (
     <div className="md-reader">
       {lines.map((line, i) => {
-        if (fenceLineSet.has(i)) return null; // hide ``` fence lines
-
         const depth = listDepthAt(tree, line, source);
-        const children = renderLine(line, source, spans);
-        const className = codeLineSet.has(i) ? `${MD_LINE_CLASS} md-line-code` : MD_LINE_CLASS;
+        const children = renderLine(line, source, spans, hidden);
+        const block = codeBlock.get(i);
+        const classes = [MD_LINE_CLASS];
+        if (block) {
+          classes.push("md-line-code");
+          if (block.open) classes.push("md-line-code-open");
+          if (block.close) classes.push("md-line-code-close");
+        }
         return (
           <div
             key={i}
-            className={className}
+            className={classes.join(" ")}
             style={depth > 0 ? { paddingLeft: `${depth * LIST_INDENT_REM}rem` } : undefined}
           >
             {children.length > 0 ? children : " "}
@@ -96,24 +102,45 @@ function listDepthAt(tree: Tree, line: Line, source: string): number {
   return depth;
 }
 
-// Render one line's text, slicing in the highlight spans that overlap it.
-function renderLine(line: Line, source: string, spans: Span[]): ReactNode[] {
-  const out: ReactNode[] = [];
-  let pos = line.from;
-  for (const s of spans) {
-    if (s.to <= line.from) continue;
-    if (s.from >= line.to) break;
-    const from = Math.max(s.from, line.from);
-    const to = Math.min(s.to, line.to);
-    if (from >= to) continue;
-    if (from > pos) out.push(<Fragment key={`t${pos}`}>{source.slice(pos, from)}</Fragment>);
-    out.push(
-      <span key={`s${from}`} className={s.cls}>
-        {source.slice(from, to)}
-      </span>,
-    );
-    pos = to;
+// Render one line's text, slicing in the highlight spans that overlap it, while
+// dropping any hidden ranges (the ``` fence marks) so they never show.
+function renderLine(
+  line: Line,
+  source: string,
+  spans: Span[],
+  hidden: Array<[number, number]>,
+): ReactNode[] {
+  // Visible sub-ranges of the line = the line minus the hidden mark ranges.
+  const cuts = hidden
+    .filter(([f, t]) => t > line.from && f < line.to)
+    .map(([f, t]): [number, number] => [Math.max(f, line.from), Math.min(t, line.to)])
+    .sort((a, b) => a[0] - b[0]);
+  const segments: Array<[number, number]> = [];
+  let cursor = line.from;
+  for (const [hf, ht] of cuts) {
+    if (hf > cursor) segments.push([cursor, hf]);
+    cursor = Math.max(cursor, ht);
   }
-  if (pos < line.to) out.push(<Fragment key={`t${pos}`}>{source.slice(pos, line.to)}</Fragment>);
+  if (cursor < line.to) segments.push([cursor, line.to]);
+
+  const out: ReactNode[] = [];
+  for (const [segFrom, segTo] of segments) {
+    let pos = segFrom;
+    for (const s of spans) {
+      if (s.to <= segFrom) continue;
+      if (s.from >= segTo) break;
+      const from = Math.max(s.from, segFrom);
+      const to = Math.min(s.to, segTo);
+      if (from >= to) continue;
+      if (from > pos) out.push(<Fragment key={`t${pos}`}>{source.slice(pos, from)}</Fragment>);
+      out.push(
+        <span key={`s${from}`} className={s.cls}>
+          {source.slice(from, to)}
+        </span>,
+      );
+      pos = to;
+    }
+    if (pos < segTo) out.push(<Fragment key={`t${pos}`}>{source.slice(pos, segTo)}</Fragment>);
+  }
   return out;
 }

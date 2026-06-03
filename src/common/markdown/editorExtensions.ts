@@ -72,31 +72,26 @@ function buildDecorations(view: EditorView): DecorationSet {
   const tree = syntaxTree(state);
   const ranges: Range<Decoration>[] = [];
 
-  // Lines that currently hold a cursor — fence marks on these stay visible so
-  // they can be edited.
-  const cursorLines = new Set<number>();
-  for (const r of state.selection.ranges) {
-    cursorLines.add(state.doc.lineAt(r.head).number);
-  }
-
-  const codeLines = new Set<number>();
+  // Per fenced block, the line range it spans (fence lines included) so the whole
+  // block renders as one box. The backtick marks are always hidden (no
+  // cursor-reveal) — the box "covers them up"; the language stays as a label.
+  const codeBlock = new Map<number, { open: boolean; close: boolean }>();
   tree.iterate({
     enter: (n) => {
-      if (n.name === "CodeText") {
-        const a = state.doc.lineAt(n.from).number;
-        const b = state.doc.lineAt(n.to).number;
-        for (let ln = a; ln <= b; ln++) codeLines.add(ln);
+      if (n.name !== "FencedCode") return;
+      const fence = n.node;
+      const first = state.doc.lineAt(fence.from).number;
+      const last = state.doc.lineAt(Math.max(fence.from, fence.to - 1)).number;
+      for (let ln = first; ln <= last; ln++) {
+        codeBlock.set(ln, { open: ln === first, close: ln === last });
       }
-      if (n.name === "CodeMark" || n.name === "CodeInfo") {
-        const ln = state.doc.lineAt(n.from).number;
-        if (!cursorLines.has(ln) && n.to > n.from) {
-          ranges.push(Decoration.replace({}).range(n.from, n.to));
-        }
+      for (const mk of fence.getChildren("CodeMark")) {
+        if (mk.to > mk.from) ranges.push(Decoration.replace({}).range(mk.from, mk.to));
       }
     },
   });
 
-  // Per-line decorations: code-block background + list indentation.
+  // Per-line decorations: code-block box (background + rounded ends) + list indent.
   for (let ln = 1; ln <= state.doc.lines; ln++) {
     const line = state.doc.line(ln);
     let firstNonWs = line.from;
@@ -104,11 +99,17 @@ function buildDecorations(view: EditorView): DecorationSet {
       firstNonWs++;
     }
     const depth = listDepthAt(tree.resolveInner(firstNonWs, 1));
-    const isCode = codeLines.has(ln);
-    if (!isCode && depth === 0) continue;
+    const block = codeBlock.get(ln);
+    if (!block && depth === 0) continue;
+    const classes: string[] = [];
+    if (block) {
+      classes.push("cm-md-code");
+      if (block.open) classes.push("cm-md-code-open");
+      if (block.close) classes.push("cm-md-code-close");
+    }
     ranges.push(
       Decoration.line({
-        class: isCode ? "cm-md-code" : undefined,
+        class: classes.length ? classes.join(" ") : undefined,
         attributes:
           depth > 0 ? { style: `padding-left:${depth * LIST_INDENT_REM}rem` } : undefined,
       }).range(line.from),
