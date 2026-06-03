@@ -24,6 +24,18 @@ function safeDecode(segment: string): string {
   }
 }
 
+// Escape a JSON string for safe inlining inside a <script> element. Without
+// JSX's auto-escaping we must neutralise `<` (so a post body containing
+// `</script>` can't break out of the tag) and the line/paragraph separators
+// (valid in JSON but not in some legacy JS string parsers). The regex patterns
+// use single-backslash unicode escapes so they match the actual codepoints.
+export function escapeJsonForScript(json: string): string {
+  return json
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 export function invariant<T>(
   value: T,
   error: string,
