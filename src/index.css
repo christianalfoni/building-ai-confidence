@@ -45,3 +45,111 @@
 html.ui-desktop {
   font-size: 150%;
 }
+
+/* ── Markdown editor + reader (shared) ────────────────────────────────────────
+   These rules style BOTH the SSR reader (`.md-reader`) and the CodeMirror
+   editor (`.cm-editor`). The editor and reader feed the same syntax tree through
+   the same highlighter, so they emit identical `tok-*` classes — meaning a
+   single set of rules keeps the edit view and read view looking the same.
+   The markers (`#`, `-`, ```) are intentionally kept visible on both sides. */
+
+.md-reader,
+.cm-editor .cm-content {
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.md-line {
+  min-height: 1.5em;
+}
+
+/* Fenced code lines read as a contiguous block (consecutive full-width lines
+   share the same surface background). */
+.md-line-code,
+.cm-editor .cm-line.cm-md-code {
+  background: var(--color-surface);
+}
+
+/* --- Markdown structure --- */
+.tok-heading {
+  color: var(--color-mauve);
+  font-weight: 700;
+}
+.tok-mark {
+  color: var(--color-dim);
+}
+.tok-monospace {
+  color: var(--color-teal);
+}
+.tok-emphasis {
+  font-style: italic;
+}
+.tok-strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.tok-link,
+.tok-url {
+  color: var(--color-teal);
+  text-decoration: underline;
+}
+.tok-quote {
+  color: var(--color-muted);
+  font-style: italic;
+}
+.tok-list {
+  color: var(--color-subtext);
+}
+
+/* --- Code tokens (nested JS/TS/JSON) --- */
+.tok-keyword {
+  color: var(--color-mauve);
+}
+.tok-string,
+.tok-string2 {
+  color: var(--color-green);
+}
+.tok-number,
+.tok-bool,
+.tok-atom,
+.tok-literal {
+  color: var(--color-teal);
+}
+.tok-comment {
+  color: var(--color-muted);
+  font-style: italic;
+}
+.tok-operator,
+.tok-punctuation {
+  color: var(--color-muted);
+}
+.tok-propertyName,
+.tok-typeName,
+.tok-className {
+  color: var(--color-teal);
+}
+.tok-variableName,
+.tok-definition {
+  color: var(--color-text);
+}
+
+/* --- CodeMirror chrome: make the editor look like plain decorated text --- */
+.cm-editor {
+  background: transparent;
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+.cm-editor .cm-scroller {
+  font-family: var(--font-mono);
+  line-height: 1.625;
+}
+.cm-editor .cm-cursor {
+  border-left-color: var(--color-text);
+}
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground,
+.cm-editor ::selection {
+  background: var(--color-border);
+}

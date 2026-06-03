@@ -11,6 +11,17 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.43.0",
+    "@lezer/highlight": "^1.2.3",
+    "@lezer/javascript": "^1.5.4",
+    "@lezer/json": "^1.0.3",
+    "@lezer/markdown": "^1.6.4",
     "@neondatabase/serverless": "^1.1.0",
     "express": "^5.2.1",
     "lucide-react": "^1.17.0",

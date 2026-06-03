@@ -88,69 +88,112 @@ npm package is current and functional.)
 ## Tasks
 
 ### Dependencies
-- [ ] Add reader/runtime deps to `dependencies`: `@lezer/markdown`,
+- [x] Add reader/runtime deps to `dependencies`: `@lezer/markdown`,
   `@lezer/highlight`, `@lezer/javascript`, `@lezer/json`.
-- [ ] Add editor deps to `dependencies`: `@codemirror/state`, `@codemirror/view`,
+- [x] Add editor deps to `dependencies`: `@codemirror/state`, `@codemirror/view`,
   `@codemirror/language`, `@codemirror/commands`, `@codemirror/lang-markdown`,
   `@codemirror/lang-javascript`, `@codemirror/lang-json`.
 
 ### Shared core (pure, SSR-safe — `src/common/markdown/`)
-- [ ] `parse.ts` — configure and export the `@lezer/markdown` parser, including
+- [x] `parse.ts` — configure and export the `@lezer/markdown` parser, including
   `parseCode` nesting that maps fence info (`js`/`ts`/`tsx`/`json`) to
   `@lezer/javascript` / `@lezer/json`. No `@codemirror/*` imports.
-- [ ] `highlight.ts` — re-export `classHighlighter` and any small shared helpers
-  so editor and reader provably use the same highlighter.
-- [ ] `tokens.ts` (or constants) — shared class names for the non-highlight
-  decorations: hidden-fence class and list-indent class, used by both sides.
+- [x] `highlight.ts` — shared custom `tagHighlighter` (chosen over `classHighlighter`
+  so we control mark/monospace classes) used by both editor and reader.
+- [x] `tokens.ts` — shared constants (`LIST_INDENT_REM`, `MD_LINE_CLASS`) for the
+  non-highlight decorations, used by both sides.
 
 ### Stylesheet (one source of truth — `src/index.css`)
-- [ ] Add markdown rules keyed on `tok-*` classes using existing theme tokens:
-  headings → `mauve`/colour scale, code tokens (keyword/string/number/comment),
-  inline-code/`monospace`, plus the hidden-fence class (`display:none`) and the
-  list-indent class (`padding-left`). Scope so the same classes render the same in
-  the reader container and inside `.cm-content`.
+- [x] Add markdown rules keyed on `tok-*` classes using existing theme tokens:
+  headings → `mauve`, code tokens (keyword/string/number/comment), `monospace`,
+  code-line background, list indent (inline style via shared constant), plus
+  CodeMirror chrome (transparent bg, no outline, matched typography). Scoped so the
+  same classes render the same in `.md-reader` and inside `.cm-content`.
 
 ### Reader (SSR — `src/common/ui-components/`)
-- [ ] `Markdown.tsx` — `({ source }: { source: string })`: parse with the shared
-  parser, run `highlightTree(tree, classHighlighter, …)`, build a React element
-  tree of styled `<span>`s line by line; hide fence marks, add indent class to
-  list lines. Pure (no `@codemirror/*`).
-- [ ] `Markdown.stories.tsx` — stories covering headers, hyphen lists, a fenced
-  JS/TS/JSON block, inline code, and mixed content (acts as the visual reference
-  the editor must match).
+- [x] `Markdown.tsx` — `({ source }: { source: string })`: parse with the shared
+  parser, run `highlightTree(tree, markdownHighlighter, …)`, render line by line
+  with styled `<span>`s; hide ``` fence lines, mark code lines, indent list lines
+  by nesting depth. Pure (no `@codemirror/*`).
+- [x] `Markdown.stories.tsx` — stories covering headers, hyphen lists, fenced
+  TS/JSON/JS blocks, inline code, and mixed content (visual reference the editor
+  must match).
 
 ### Editor (client-only — `src/common/markdown/` + `src/common/ui-components/`)
-- [ ] `editorExtensions.ts` — assemble CM extensions: `markdown({ codeLanguages })`,
-  `markdownKeymap`, `syntaxHighlighting(classHighlighter)`, a `ViewPlugin` that
-  (a) `Decoration.replace`s fence `CodeMark` nodes except on the cursor line and
-  (b) adds the list-indent line decoration, plus a minimal theme (no gutters,
-  transparent bg, matched typography). Imports `@codemirror/*` (client only).
-- [ ] `MarkdownEditor.tsx` — controlled wrapper: creates an `EditorView` inside
+- [x] `editorExtensions.ts` — assemble CM extensions: `markdown({ base, codeLanguages })`,
+  `markdownKeymap`, `syntaxHighlighting(markdownHighlighter)`, a `ViewPlugin` that
+  (a) `Decoration.replace`s fence `CodeMark`/`CodeInfo` nodes except on the cursor
+  line and (b) adds code-line background + list-indent line decorations. Minimal
+  setup (no gutters/line-numbers; transparent bg/typography via CSS). Client-only.
+- [x] `MarkdownEditor.tsx` — controlled wrapper: creates an `EditorView` inside
   `useEffect`, props `{ value, onChange, placeholder }`, syncs external value
-  changes, destroys the view on unmount. Imports `@codemirror/*` (client only);
-  this is the module that gets lazy-imported.
+  changes, destroys the view on unmount. Default export, lazy-imported.
 
 ### Wiring
-- [ ] `useBlogEditor.ts` — drop `bodyRef`/`textContent` and the
-  `textContent`-setting `useEffect`; expose `body` (initial value) and
-  `handleBodyChange(value: string)` that schedules the debounced save. Keep the
-  800ms debounce and pending-field batching.
-- [ ] `BlogEditor.tsx` (desktop + mobile) — replace the `contentEditable` div with
-  `<Suspense fallback={…}><LazyMarkdownEditor value={body} onChange={handleBodyChange} placeholder="Start writing..." /></Suspense>`,
-  where `LazyMarkdownEditor = React.lazy(() => import('…/MarkdownEditor'))`.
-  Preserve surrounding layout/classes.
-- [ ] `BlogPost.tsx` (desktop + mobile) — replace the `post.body.map(<p>)` block
-  with `<Markdown source={dbMatch.body} />`.
-- [ ] `utils.ts` — change `dbPostToPost` `body` from `string[]` to the raw string;
-  confirm `excerpt` and `BlogList` are unaffected.
+- [x] `useBlogEditor.ts` — dropped `bodyRef`/`textContent`; exposes `body` (seeded
+  from the draft) and `handleBodyChange(value)` that schedules the debounced save.
+  Kept the 800ms debounce and pending-field batching.
+- [x] `BlogEditor.tsx` (desktop + mobile) — replaced the `contentEditable` div with
+  `<Suspense><LazyMarkdownEditor value={body} onChange={handleBodyChange} … /></Suspense>`,
+  `LazyMarkdownEditor = lazy(() => import('…/MarkdownEditor'))`. Layout preserved.
+- [x] `BlogPost.tsx` (desktop + mobile) — replaced the `post.body.map(<p>)` block
+  with `<Markdown source={post.body} />`.
+- [x] `utils.ts` — `dbPostToPost` `body` is now the raw string; `excerpt` and
+  `BlogList` (uses `excerpt`, not `body`) unaffected.
 
 ### Verify
-- [ ] `./scripts/validate` (lint, type-check, tests) passes.
-- [ ] `npm run build` succeeds and SSR output contains **no** `@codemirror/*` in
-  the server function bundle (reader is `@lezer/*`-only); confirm the editor chunk
-  is split out (lazy).
-- [ ] Manual smoke (dev): editor shows coloured headers with `#` kept, Enter
-  continues `- ` hyphens with indent, ` ```js ` + Enter hides backticks and
-  highlights code; reader view of the same post matches.
+- [x] `./scripts/validate` (lint, type-check, tests) passes (27 tests, incl. new
+  `Markdown.test.tsx`).
+- [x] `npm run build` succeeds; the editor is a separate lazy chunk
+  (`MarkdownEditor-*.js`, 321 kB). `@codemirror/*` IS inlined into the single-file
+  server bundle (the SSR build has no code-splitting) but is wrapped in esbuild's
+  lazy `__esm` initializer and only invoked via `React.lazy(() => import(...))` —
+  so it never executes during SSR. The reader path is `@lezer/*`-only.
+- [~] Manual interactive smoke (cursor-reveal of fences, Enter list continuation)
+  deferred to the screenshot/visual pass; reader behaviour is covered by unit
+  tests and the build.
 
 ## Report
+
+Implemented the CodeMirror 6 editor + matching SSR reader, both driven by one
+shared Lezer grammar and one stylesheet.
+
+**What was built**
+- Shared core (`src/common/markdown/`): `parse.ts` (standalone `@lezer/markdown`
+  with `parseCode` nesting → JS/TS/TSX/JSON), `highlight.ts` (a custom
+  `tagHighlighter` shared by both sides), `tokens.ts` (shared constants).
+- Reader (`src/common/ui-components/Markdown.tsx`): pure, SSR-safe; renders raw
+  markdown line by line keeping `#`/`-` visible, hides ``` fence lines, marks
+  code lines, indents list lines by nesting depth, and applies the shared
+  `tok-*` highlight classes. Covered by `Markdown.test.tsx` and
+  `Markdown.stories.tsx` (4 stories).
+- Editor (`src/common/markdown/editorExtensions.ts` +
+  `src/common/ui-components/MarkdownEditor.tsx`): CM6 with `markdown({ base,
+  codeLanguages })`, `syntaxHighlighting(markdownHighlighter)`, `markdownKeymap`
+  (Enter continues `- ` hyphen lists), and a `ViewPlugin` that hides fence
+  marks except on the cursor line and adds code-block / list-indent line
+  decorations. Default export, lazy-imported (client-only).
+- Stylesheet (`src/index.css`): one block of `tok-*` rules + CodeMirror chrome,
+  styling reader and editor identically.
+- Wiring: `useBlogEditor` now exposes `body` + `handleBodyChange` (controlled
+  value, same 800 ms debounce); both `BlogEditor`s lazy-load `MarkdownEditor`
+  behind `<Suspense>`; both `BlogPost`s render `<Markdown source={post.body} />`;
+  `dbPostToPost.body` is now the raw markdown string.
+
+**Deviations from the plan**
+- Used a custom `tagHighlighter` instead of the library `classHighlighter`, to
+  control the marker (`tok-mark`) and `tok-monospace` classes. Both sides still
+  share the exact same highlighter instance.
+- The plan's "no `@codemirror/*` in the server bundle" is literally not true: the
+  single-file SSR build (no code-splitting) inlines it. The *intent* holds — it's
+  wrapped in a lazy `__esm` init and only runs client-side via `React.lazy`, so it
+  never executes during SSR (verified in the built bundle).
+
+**Known follow-ups (visual polish, deferred to screenshots)**
+- Editor shows an empty line where a hidden fence was (when the cursor is
+  elsewhere); the reader drops the fence line entirely. Minor asymmetry.
+- Heading markers render dim (`tok-mark` wins over `tok-heading` by source order);
+  acceptable but tunable.
+
+**Validation:** `./scripts/validate` — lint ✓, `tsc -b` ✓, tests ✓ (27 passed).
+`npm run build` ✓ (editor split into its own lazy chunk).

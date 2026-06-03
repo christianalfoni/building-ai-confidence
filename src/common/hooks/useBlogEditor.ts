@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import type { DbPost } from '../../services';
 
@@ -7,15 +7,14 @@ const DEBOUNCE_MS = 800;
 export function useBlogEditor() {
   const app = useApp();
   const post = app.dbPosts.find((p) => p.id === app.draftPostId);
-  const bodyRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFields = useRef<Partial<Pick<DbPost, 'title' | 'body' | 'published'>>>({});
 
-  const initialBody = useRef(post?.body ?? '');
+  // The CodeMirror editor is controlled by this value. Seeded once from the
+  // draft; onChange keeps it in sync and schedules the debounced save.
+  const [body, setBody] = useState(post?.body ?? '');
+
   useEffect(() => {
-    if (bodyRef.current) {
-      bodyRef.current.textContent = initialBody.current;
-    }
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
@@ -35,9 +34,9 @@ export function useBlogEditor() {
     scheduleSave({ title: e.target.value });
   }
 
-  function handleBodyInput() {
-    const body = bodyRef.current?.textContent ?? '';
-    scheduleSave({ body });
+  function handleBodyChange(value: string) {
+    setBody(value);
+    scheduleSave({ body: value });
   }
 
   function handlePublishToggle() {
@@ -46,5 +45,5 @@ export function useBlogEditor() {
     scheduleSave({ published: next });
   }
 
-  return { app, post, bodyRef, handleTitleChange, handleBodyInput, handlePublishToggle };
+  return { app, post, body, handleTitleChange, handleBodyChange, handlePublishToggle };
 }
