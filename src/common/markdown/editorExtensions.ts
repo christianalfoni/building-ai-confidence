@@ -1,14 +1,14 @@
 // CodeMirror 6 extensions for the markdown editor. CLIENT-ONLY: this module
-// imports `@codemirror/*` (which touch the DOM), so it must only ever be loaded
-// in the browser — it is reached via the lazy-imported MarkdownEditor component,
-// never statically from an SSR-rendered tree.
+// imports `@codemirror/*` (which touch the DOM), so it is only reached through
+// the dynamically-imported markdown/editorView module and never executes during
+// SSR.
 //
 // The editor mirrors the SSR reader (src/common/ui-components/Markdown.tsx):
 //   - same Lezer markdown grammar (via @codemirror/lang-markdown)
 //   - same highlighter (markdownHighlighter) → same `tok-*` classes → same CSS
-//   - markers (`#`, `-`) kept visible; ``` fence marks hidden unless the cursor
-//     is on that line; fenced code highlighted by language and given a block bg;
-//     list lines indented by nesting depth.
+//   - structural markers (`#`, `-`) kept visible; multi-line fenced blocks render
+//     as a rounded box with the ``` backticks and language hidden; fenced code
+//     highlighted by language; list lines indented by nesting depth.
 import {
   Decoration,
   type DecorationSet,

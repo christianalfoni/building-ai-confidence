@@ -1,7 +1,8 @@
 // Lazy loader for the client-only CodeMirror editor *logic* (not a component).
 // The heavy `@codemirror/*` code lives in markdown/editorView; we dynamically
-// import it so it stays code-split and out of the SSR/main bundle, and cache the
-// resolved module at module scope so a preloaded editor mounts with no delay.
+// import it so it is code-split out of the main client bundle and never executes
+// during SSR (it's only ever invoked client-side). The resolved module is cached
+// at module scope so a preloaded editor mounts with no delay.
 
 type EditorModule = typeof import("../markdown/editorView");
 

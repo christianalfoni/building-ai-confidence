@@ -51,7 +51,8 @@ html.ui-desktop {
    editor (`.cm-editor`). The editor and reader feed the same syntax tree through
    the same highlighter, so they emit identical `tok-*` classes — meaning a
    single set of rules keeps the edit view and read view looking the same.
-   The markers (`#`, `-`, ```) are intentionally kept visible on both sides. */
+   Structural markers (`#`, `-`) stay visible on both sides; the code-fence
+   backticks (and language) are hidden behind the rounded code block. */
 
 .md-reader,
 .cm-editor .cm-content {

@@ -87,11 +87,17 @@ function splitLines(source: string): Line[] {
   return out;
 }
 
+// Binary search for the line containing `offset` (lines are sorted by `from` and
+// partition the source), so repeated lookups inside tree.iterate stay O(log n).
 function lineIndexAt(lines: Line[], offset: number): number {
-  for (let i = 0; i < lines.length; i++) {
-    if (offset >= lines[i].from && offset <= lines[i].to) return i;
+  let lo = 0;
+  let hi = lines.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (lines[mid].from <= offset) lo = mid;
+    else hi = mid - 1;
   }
-  return lines.length - 1;
+  return lo;
 }
 
 // Number of ListItem ancestors at the line's first non-whitespace character.
