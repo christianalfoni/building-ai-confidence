@@ -61,9 +61,7 @@ export function BlogPost() {
           {post.draft && (
             <>
               <span>·</span>
-              <span className="px-1.5 py-0.5 rounded border border-dashed border-mauve/50 text-mauve/80 bg-mauve/5 font-mono">
-                draft
-              </span>
+              <span className="text-mauve">draft</span>
             </>
           )}
           {post.tags.length > 0 && (

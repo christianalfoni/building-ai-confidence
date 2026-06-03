@@ -35,6 +35,26 @@ export function list() {
   };
 }
 
+// Mixed published/draft rows — the draft label must not make its row taller
+// than a plain published row.
+export function listWithPosts() {
+  const appState = createAppState({
+    user: author,
+    posts: [
+      { ...post1, id: "p2", slug: "second-post", title: "A published post", published: true },
+      { ...post1, published: false },
+    ],
+  });
+  return {
+    element: (
+      <AppContext.Provider value={appState}>
+        <App />
+      </AppContext.Provider>
+    ),
+    appState,
+  };
+}
+
 export function post() {
   // Seed the route in the constructor — reactx forbids mutating the reactive
   // proxy directly from outside a class method.

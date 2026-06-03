@@ -51,9 +51,7 @@ export function BlogList() {
                 {post.title}
               </span>
               {post.draft && (
-                <span className="ml-auto text-xs px-2 py-0.5 rounded border border-dashed border-mauve/50 text-mauve/80 bg-mauve/5 shrink-0 font-mono">
-                  draft
-                </span>
+                <span className="ml-auto text-xs text-mauve shrink-0 font-mono">draft</span>
               )}
             </div>
             <div className="flex items-center gap-2 ml-7">

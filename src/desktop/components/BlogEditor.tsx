@@ -1,7 +1,7 @@
 import { useBlogEditor } from "../../common/hooks/useBlogEditor";
 
 export function BlogEditor() {
-  const { app, post, bodyRef, titleRef, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
+  const { app, post, bodyRef, titleRef, closeEditor, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
 
   if (!post) return null;
 
@@ -53,7 +53,7 @@ export function BlogEditor() {
       />
       <div className="border-t border-border pt-3 flex items-center text-xs">
         <button
-          onClick={() => app.closeEditor()}
+          onClick={closeEditor}
           className="text-muted hover:text-text transition-colors cursor-pointer"
         >
           esc

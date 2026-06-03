@@ -1,7 +1,7 @@
 import { useBlogEditor } from "../../common/hooks/useBlogEditor";
 
 export function BlogEditor() {
-  const { app, post, bodyRef, titleRef, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
+  const { app, post, bodyRef, titleRef, closeEditor, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
 
   if (!post) return null;
 
@@ -9,7 +9,7 @@ export function BlogEditor() {
     <div className="px-4 py-6 space-y-4 font-mono text-sm">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => app.closeEditor()}
+          onClick={closeEditor}
           className="text-sm text-muted font-mono active:text-text"
         >
           ← back
