@@ -1,7 +1,8 @@
 import type { DatabaseService, DbPost, User } from '../index.ts';
 
-// The SSR → client hydration payload, embedded as JSON in the rendered HTML and
-// read back by the browser services so they start already-loaded.
+// The SSR → client hydration payload, embedded as a JSON <script> tag in the
+// rendered HTML and read back by the browser services so they start
+// already-loaded.
 export type InitialData = {
   dbEnabled: boolean;
   isPreview: boolean;

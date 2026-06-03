@@ -5,11 +5,13 @@ import { BlogPost } from "./BlogPost";
 import { BlogEditor } from "./BlogEditor";
 
 function getPageTitle(app: AppState): string {
-  if (app.view === "editor") return "new post — blog";
+  if (app.view === "editor") return "new post — Claude in the Cloud";
   if (app.view === "post") {
-    return app.selectedPost ? `${app.selectedPost.title || "Untitled"} — blog` : "404 — blog";
+    return app.selectedPost
+      ? `${app.selectedPost.title || "Untitled"} — Claude in the Cloud`
+      : "404 — Claude in the Cloud";
   }
-  return "christian alfoni — blog";
+  return "Claude in the Cloud";
 }
 
 export function App() {

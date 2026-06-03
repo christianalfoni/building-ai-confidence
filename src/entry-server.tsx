@@ -9,7 +9,7 @@ import { ServerSessionService } from './services/server/SessionService.ts';
 import { ServerDatabaseService } from './services/server/DatabaseService.ts';
 import { ServerNavigationService } from './services/server/NavigationService.ts';
 import { hiddenAuthorLogins, parseCookie } from '../server/utils.ts';
-import { isMobileUA, parseRoute } from './utils.ts';
+import { escapeJsonForScript, isMobileUA, parseRoute } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
 import DesktopApp from './desktop/App.tsx';
 import MobileApp from './mobile/App.tsx';
@@ -50,23 +50,29 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
       ? htmlStart
       : htmlStart.replace(/<html\b([^>]*)>/, '<html$1 class="ui-desktop">');
 
+    // Embed the hydration payload as an inert JSON script tag that is a sibling
+    // of #root, not part of the React tree — so hydration never touches it and
+    // the client reads it once without re-rendering it. Inserting it right
+    // after the root's closing </div> (the first one in htmlEnd, since the
+    // outlet sits inside #root) keeps it outside the hydrated container yet
+    // before the deferred entry-client module script.
+    const dataScript =
+      `<script type="application/json" id="__initial_data__">` +
+      `${escapeJsonForScript(JSON.stringify(initialData))}</script>`;
+    const htmlTail = htmlEnd.replace('</div>', `</div>${dataScript}`);
+
     const appendEnd = new Transform({
       transform(chunk, _enc, cb) { cb(null, chunk); },
-      flush(cb) { this.push(htmlEnd); cb(); },
+      flush(cb) { this.push(htmlTail); cb(); },
     });
 
     const { pipe } = renderToPipeableStream(
       <StrictMode>
-        <>
-          <div id="__initial_data__" style={{ display: 'none' }}>
-            {JSON.stringify(initialData)}
-          </div>
-          <AppContext value={app}>
-            <Suspense fallback={null}>
-              <App />
-            </Suspense>
-          </AppContext>
-        </>
+        <AppContext value={app}>
+          <Suspense fallback={null}>
+            <App />
+          </Suspense>
+        </AppContext>
       </StrictMode>,
       {
         onShellReady() {

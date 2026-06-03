@@ -38,17 +38,12 @@ export function BlogList() {
           >
             <div className="flex items-start justify-between gap-2 mb-2">
               <span className="font-mono font-semibold text-teal leading-snug">{post.title}</span>
-              <span className="text-xs text-mauve bg-mauve/10 px-2 py-0.5 rounded shrink-0 font-mono">
-                {post.readTime}
-              </span>
+              {post.draft && (
+                <span className="text-xs text-mauve shrink-0 font-mono">draft</span>
+              )}
             </div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs text-muted font-mono">{post.date}</span>
-              {post.draft && (
-                <span className="text-xs px-1.5 py-0.5 rounded border border-dashed border-mauve/50 text-mauve/80 bg-mauve/5 font-mono">
-                  draft
-                </span>
-              )}
             </div>
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
