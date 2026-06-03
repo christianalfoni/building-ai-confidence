@@ -32,8 +32,8 @@ generated template stay untouched.
 **Escaping.** Today the JSX text node auto-escapes `<`/`>`/`&`, so the hidden
 div is accidentally XSS-safe. Writing the script tag as a raw string into the
 stream loses that, so a post body containing `</script>` could break out. A
-tiny helper escapes the JSON string: `<` → `<` (defeats `</script>`),
-plus ` ` / ` ` (valid in JSON but not in JS string literals / some
+tiny helper escapes the JSON string: `<` → `\u003c` (defeats `</script>`),
+plus `\u2028` / `\u2029` (valid in JSON but not in JS string literals / some
 legacy parsers). This makes the handoff strictly more robust than today.
 
 **Alternative ruled out: `window.__INITIAL_DATA__ = {…}` inline script.**
@@ -42,8 +42,8 @@ JS, pollutes `window`, and still needs the same escaping. The inert JSON tag is
 cleaner and keeps the client read path identical to today.
 
 ## Tasks
-- [x] Add an `escapeJsonForScript(json: string)` helper (escapes `<`, ` `,
-  ` `) — colocate near the InitialData type / a server util so both the
+- [x] Add an `escapeJsonForScript(json: string)` helper (escapes `<`, `\u2028`,
+  `\u2029`) — colocate near the InitialData type / a server util so both the
   type and serialization concerns stay together.
 - [x] In `entry-server.tsx`: remove the `<div id="__initial_data__">` from the
   rendered React tree; build the `<script type="application/json"
@@ -64,9 +64,12 @@ cleaner and keeps the client read path identical to today.
 Moved the SSR → client handoff payload out of the React tree.
 
 **Changes**
-- `src/services/client/DatabaseService.ts` — added `escapeJsonForScript()`
-  (escapes `<` → `<`, plus ` ` / ` `) and updated the
-  `InitialData` doc comment to "JSON `<script>` tag".
+- `src/utils.ts` — added `escapeJsonForScript()` (escapes `<` → `\u003c`,
+  plus `\u2028` / `\u2029`), a pure SSR/entry helper alongside `parseRoute`
+  /`isMobileUA` so the server entry takes no runtime dependency on a
+  browser-layer module.
+- `src/services/client/DatabaseService.ts` — updated the `InitialData` doc
+  comment to "JSON `<script>` tag".
 - `src/entry-server.tsx` — removed the hidden `<div id="__initial_data__">` (and
   its fragment wrapper) from the rendered tree; the payload is now an inert
   `<script type="application/json" id="__initial_data__">` inserted **after**
@@ -86,6 +89,6 @@ which would cause a hydration mismatch. Corrected to insert *after* the first
 **Outcomes.** `./scripts/validate` passes — eslint clean, `tsc -b` clean, 23/23
 tests pass. (Lint also caught a real bug: U+2028/U+2029 are ECMAScript line
 terminators and can't appear literally in a regex literal; switched the patterns
-to use ` ` / ` ` escapes.) Headless (Playwright) verification against
+to use `\u2028` / `\u2029` escapes.) Headless (Playwright) verification against
 the dev server confirms: the JSON script tag renders outside `#root` as a
 sibling, the page hydrates with **no** mismatch warnings and no console errors.
