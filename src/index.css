@@ -166,6 +166,14 @@ html.ui-desktop {
 .cm-editor.cm-focused {
   outline: none;
 }
+/* Zero CodeMirror's default content/line padding (≈6px left, 4px top) so the
+   editor text lines up exactly with the reader — no jump when entering edit. */
+.cm-editor .cm-content {
+  padding: 0;
+}
+.cm-editor .cm-line {
+  padding: 0;
+}
 .cm-editor .cm-scroller {
   font-family: var(--font-mono);
   line-height: 1.625;
