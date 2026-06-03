@@ -46,7 +46,7 @@ export function DeleteConfirm({
 
   return (
     <div className="flex items-center gap-3 text-sm font-mono">
-      <span className={status === "error" ? "text-red" : "text-muted"}>
+      <span className={status === "error" ? "text-red" : "text-text"}>
         {status === "error" ? "delete failed" : confirmMessage}
       </span>
       <button type="button" onClick={handleConfirm} className="text-red active:text-red/70">
