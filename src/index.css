@@ -57,7 +57,10 @@ html.ui-desktop {
 .md-reader,
 .cm-editor .cm-content {
   font-family: var(--font-mono);
-  white-space: pre-wrap;
+  /* break-spaces (not pre-wrap) so a run of trailing spaces wraps with the text
+     instead of hanging past the edge — the latter briefly shows a horizontal
+     scrollbar when you hit space at the end of a wrapped line. */
+  white-space: break-spaces;
   word-break: break-word;
 }
 
@@ -182,10 +185,16 @@ html.ui-desktop {
 .cm-editor .cm-cursor {
   border-left-color: var(--color-text);
 }
+/* drawSelection() renders the selection as `.cm-selectionBackground`. With no
+   dark theme configured, CodeMirror's base theme paints the *focused* selection
+   its default light-mode lavender (#d7d4f0) via a high-specificity selector
+   (`&light.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground`),
+   which outweighs a plain class rule. That base rule isn't `!important`, so
+   `!important` here wins without a specificity arms race. */
 .cm-editor .cm-selectionBackground,
 .cm-editor.cm-focused .cm-selectionBackground {
-  background: color-mix(in srgb, var(--color-teal) 28%, transparent);
+  background: color-mix(in srgb, var(--color-teal) 18%, transparent) !important;
 }
 .md-reader ::selection {
-  background: color-mix(in srgb, var(--color-teal) 28%, transparent);
+  background: color-mix(in srgb, var(--color-teal) 18%, transparent);
 }
