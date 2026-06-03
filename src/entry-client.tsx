@@ -25,15 +25,10 @@ const app = reactive(new AppState({ session, database, navigation }));
 hydrateRoot(
   document.getElementById('root')!,
   <StrictMode>
-    <>
-      <div id="__initial_data__" style={{ display: 'none' }}>
-        {JSON.stringify(initialData)}
-      </div>
-      <AppContext value={app}>
-        <Suspense fallback={null}>
-          <PlatformApp />
-        </Suspense>
-      </AppContext>
-    </>
+    <AppContext value={app}>
+      <Suspense fallback={null}>
+        <PlatformApp />
+      </Suspense>
+    </AppContext>
   </StrictMode>,
 );
