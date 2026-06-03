@@ -1,6 +1,7 @@
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
 import { DeleteConfirm } from "../ui-components/DeleteConfirm";
+import { Markdown } from "../../common/ui-components/Markdown";
 import { dbPostToPost } from "../../common/utils";
 
 export function BlogPost() {
@@ -77,12 +78,8 @@ export function BlogPost() {
         </div>
       </div>
       <div className="text-dim text-xs">{"─".repeat(60)}</div>
-      <div className="space-y-3">
-        {post.body.map((p, i) => (
-          <p key={i} className="text-sm leading-relaxed text-subtext">
-            {p}
-          </p>
-        ))}
+      <div className="text-sm leading-relaxed text-subtext">
+        <Markdown source={post.body} />
       </div>
       <div className="border-t border-border pt-3 flex items-center text-xs">
         <a

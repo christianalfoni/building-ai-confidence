@@ -1,7 +1,8 @@
 import { useBlogEditor } from "../../common/hooks/useBlogEditor";
+import MarkdownEditor from "../../common/ui-components/MarkdownEditor";
 
 export function BlogEditor() {
-  const { app, post, bodyRef, titleRef, closeEditor, handleTitleChange, handleBodyInput, handlePublishToggle } = useBlogEditor();
+  const { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle } = useBlogEditor();
 
   if (!post) return null;
 
@@ -38,14 +39,9 @@ export function BlogEditor() {
         )}
       </div>
       <div className="border-t border-border" />
-      <div
-        ref={bodyRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleBodyInput}
-        className="text-sm leading-relaxed text-subtext outline-none min-h-[300px] whitespace-pre-wrap empty:before:content-[attr(data-placeholder)] empty:before:text-dim"
-        data-placeholder="Start writing..."
-      />
+      <div className="text-sm leading-relaxed text-subtext min-h-[300px]">
+        <MarkdownEditor value={body} onChange={handleBodyChange} placeholder="Start writing..." />
+      </div>
     </div>
   );
 }

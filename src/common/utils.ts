@@ -8,7 +8,9 @@ export function dbPostToPost(p: DbPost) {
     date: p.createdAt.slice(0, 10),
     tags: [] as string[],
     excerpt: p.body.slice(0, 120),
-    body: p.body.split('\n\n').filter(Boolean),
+    // Raw markdown — rendered by the shared <Markdown> reader, which keeps the
+    // markers (`#`, `-`, …) visible to mirror the editor.
+    body: p.body,
     draft: !p.published,
   };
 }

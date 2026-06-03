@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import type { DbPost } from '../../services';
 
@@ -7,10 +7,13 @@ const DEBOUNCE_MS = 800;
 export function useBlogEditor() {
   const app = useApp();
   const post = app.dbPosts.find((p) => p.id === app.draftPostId);
-  const bodyRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFields = useRef<Partial<Pick<DbPost, 'title' | 'body' | 'published'>>>({});
+
+  // The CodeMirror editor is controlled by this value. Seeded once from the
+  // draft; onChange keeps it in sync and schedules the debounced save.
+  const [body, setBody] = useState(post?.body ?? '');
 
   // Persist any debounced-but-not-yet-saved edits immediately. Must run before
   // closeEditor() nulls draftPostId — otherwise savePost no-ops and edits made
@@ -40,11 +43,7 @@ export function useBlogEditor() {
     closeRef.current = closeEditor;
   });
 
-  const initialBody = useRef(post?.body ?? '');
   useEffect(() => {
-    if (bodyRef.current) {
-      bodyRef.current.textContent = initialBody.current;
-    }
     // Drop the cursor straight into the title so writing can begin immediately.
     titleRef.current?.focus();
     return () => {
@@ -75,9 +74,9 @@ export function useBlogEditor() {
     scheduleSave({ title: e.target.value });
   }
 
-  function handleBodyInput() {
-    const body = bodyRef.current?.textContent ?? '';
-    scheduleSave({ body });
+  function handleBodyChange(value: string) {
+    setBody(value);
+    scheduleSave({ body: value });
   }
 
   function handlePublishToggle() {
@@ -86,5 +85,5 @@ export function useBlogEditor() {
     scheduleSave({ published: next });
   }
 
-  return { app, post, bodyRef, titleRef, closeEditor, handleTitleChange, handleBodyInput, handlePublishToggle };
+  return { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle };
 }
