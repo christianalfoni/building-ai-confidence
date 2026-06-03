@@ -1,13 +1,25 @@
 import type { DatabaseService, DbPost, User } from '../index.ts';
 
-// The SSR → client hydration payload, embedded as JSON in the rendered HTML and
-// read back by the browser services so they start already-loaded.
+// The SSR → client hydration payload, embedded as a JSON <script> tag in the
+// rendered HTML and read back by the browser services so they start
+// already-loaded.
 export type InitialData = {
   dbEnabled: boolean;
   isPreview: boolean;
   user: User | null;
   posts: DbPost[];
 };
+
+// Escape a JSON string for safe inlining inside a <script> element. Without
+// JSX's auto-escaping we must neutralise `<` (so a post body containing
+// `</script>` can't break out of the tag) and the line/paragraph separators
+// (valid in JSON but not in some legacy JS string parsers).
+export function escapeJsonForScript(json: string): string {
+  return json
+    .replace(/</g, '\\u003c')
+    .replace(/\\u2028/g, '\\u2028')
+    .replace(/\\u2029/g, '\\u2029');
+}
 
 // Browser-side database service. Constructed already-loaded from the embedded
 // initial data, so `preload()` is a no-op; mutations go over the REST API.

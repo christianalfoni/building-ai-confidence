@@ -42,21 +42,50 @@ JS, pollutes `window`, and still needs the same escaping. The inert JSON tag is
 cleaner and keeps the client read path identical to today.
 
 ## Tasks
-- [ ] Add an `escapeJsonForScript(json: string)` helper (escapes `<`, ` `,
+- [x] Add an `escapeJsonForScript(json: string)` helper (escapes `<`, ` `,
   ` `) — colocate near the InitialData type / a server util so both the
   type and serialization concerns stay together.
-- [ ] In `entry-server.tsx`: remove the `<div id="__initial_data__">` from the
+- [x] In `entry-server.tsx`: remove the `<div id="__initial_data__">` from the
   rendered React tree; build the `<script type="application/json"
   id="__initial_data__">` string from the escaped payload and prepend it to
   `htmlEnd` before streaming.
-- [ ] In `entry-client.tsx`: delete the `<div id="__initial_data__">` from the
+- [x] In `entry-client.tsx`: delete the `<div id="__initial_data__">` from the
   hydrated tree (and the now-redundant fragment wrapper if it's only there for
   the div); keep the `getElementById` + `JSON.parse` read.
-- [ ] Update the `InitialData` doc comment in `services/client/DatabaseService.ts`
+- [x] Update the `InitialData` doc comment in `services/client/DatabaseService.ts`
   to say "embedded as a JSON script tag" rather than "JSON in the rendered HTML".
-- [ ] `./scripts/validate` (lint, type-check, tests) passes.
-- [ ] Manually verify via the dev server: SSR HTML contains the script tag
+- [x] `./scripts/validate` (lint, type-check, tests) passes.
+- [x] Manually verify via the dev server: SSR HTML contains the script tag
   outside `#root`, the page hydrates with no console mismatch warning, and posts
   render from the embedded data.
 
 ## Report
+
+Moved the SSR → client handoff payload out of the React tree.
+
+**Changes**
+- `src/services/client/DatabaseService.ts` — added `escapeJsonForScript()`
+  (escapes `<` → `<`, plus ` ` / ` `) and updated the
+  `InitialData` doc comment to "JSON `<script>` tag".
+- `src/entry-server.tsx` — removed the hidden `<div id="__initial_data__">` (and
+  its fragment wrapper) from the rendered tree; the payload is now an inert
+  `<script type="application/json" id="__initial_data__">` inserted **after**
+  the root's closing `</div>` via `htmlEnd.replace('</div>', …)`, so it's a
+  sibling of `#root`, outside the hydrated container, before the client module
+  script. Covers both prod and dev paths (both call `render()`).
+- `src/entry-client.tsx` — deleted the redundant data div + re-`JSON.stringify`
+  and the fragment wrapper; the client still reads `.textContent` + `JSON.parse`
+  exactly once before hydration.
+
+**Deviation from plan.** The plan said to *prepend* the script to `htmlEnd`.
+That was wrong: `htmlEnd` begins with the root's closing `</div>` (the outlet
+sits *inside* `#root`), so prepending placed the script inside the container —
+which would cause a hydration mismatch. Corrected to insert *after* the first
+`</div>` so the script is a true sibling of `#root`.
+
+**Outcomes.** `./scripts/validate` passes — eslint clean, `tsc -b` clean, 23/23
+tests pass. (Lint also caught a real bug: U+2028/U+2029 are ECMAScript line
+terminators and can't appear literally in a regex literal; switched the patterns
+to use ` ` / ` ` escapes.) Headless (Playwright) verification against
+the dev server confirms: the JSON script tag renders outside `#root` as a
+sibling, the page hydrates with **no** mismatch warnings and no console errors.
