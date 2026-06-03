@@ -127,7 +127,7 @@ Data flows one direction: `services → state → contexts → components → ui
 
 Skills in `.claude/skills/` are trusted instructions — invoke them with `/skill-name`.
 
-**Session start:** Run `git branch --show-current`, tell the user the active branch, and confirm work continues on that branch. Sessions run in ephemeral containers; push all work before the session ends.
+**Session start:** Sessions run in ephemeral containers and always begin on a fresh, up-to-date branch — no need to validate the branch. Push all work before the session ends.
 
 **Before any request:** identify the applicable skill. If none fits, tell the user which skills are available.
 

@@ -34,8 +34,9 @@ Example: `work/2026_05_21_user-auth-flow/PLAN.md`
 A short paragraph describing what this plan achieves and why.
 
 ## Considerations
-A summary of the approaches considered, trade-offs evaluated, and the rationale
-for the chosen approach. Include alternatives that were ruled out and why.
+- The approaches considered and the trade-offs evaluated.
+- The rationale for the chosen approach.
+- Alternatives that were ruled out and why.
 
 ## Tasks
 - [ ] Task one
