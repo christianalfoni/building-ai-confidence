@@ -12,23 +12,12 @@ export function BlogEditor() {
           <span className="text-mauve">❯</span>
           <span>edit {post.id}.md</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span
-            className={`px-2 py-0.5 rounded border font-mono text-xs ${
-              app.draftPublished
-                ? "border-green/50 text-green bg-green/10"
-                : "border-dashed border-mauve/50 text-mauve/80 bg-mauve/5"
-            }`}
-          >
-            {app.draftPublished ? "live" : "draft"}
-          </span>
-          <button
-            onClick={handlePublishToggle}
-            className="text-dim hover:text-muted transition-colors cursor-pointer underline underline-offset-2"
-          >
-            {app.draftPublished ? "unpublish" : "publish"}
-          </button>
-        </div>
+        <button
+          onClick={handlePublishToggle}
+          className="text-dim hover:text-muted transition-colors cursor-pointer underline underline-offset-2"
+        >
+          {app.draftPublished ? "unpublish" : "publish"}
+        </button>
       </div>
       <div className="rounded p-4 space-y-2 bg-surface border border-border">
         <input
@@ -40,6 +29,12 @@ export function BlogEditor() {
         />
         <div className="flex items-center gap-3 text-xs text-muted">
           <span>{post.createdAt.slice(0, 10)}</span>
+          {!app.draftPublished && (
+            <>
+              <span>·</span>
+              <span className="text-mauve">draft</span>
+            </>
+          )}
         </div>
       </div>
       <div className="text-dim text-xs">{"─".repeat(60)}</div>

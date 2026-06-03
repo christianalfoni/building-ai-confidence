@@ -14,23 +14,12 @@ export function BlogEditor() {
         >
           ← back
         </button>
-        <div className="flex items-center gap-3">
-          <span
-            className={`text-xs px-2 py-0.5 rounded border font-mono ${
-              app.draftPublished
-                ? "border-green/50 text-green bg-green/10"
-                : "border-dashed border-mauve/50 text-mauve/80 bg-mauve/5"
-            }`}
-          >
-            {app.draftPublished ? "live" : "draft"}
-          </span>
-          <button
-            onClick={handlePublishToggle}
-            className="text-xs text-dim font-mono active:text-muted underline underline-offset-2"
-          >
-            {app.draftPublished ? "unpublish" : "publish"}
-          </button>
-        </div>
+        <button
+          onClick={handlePublishToggle}
+          className="text-xs text-dim font-mono active:text-muted underline underline-offset-2"
+        >
+          {app.draftPublished ? "unpublish" : "publish"}
+        </button>
       </div>
       <input
         ref={titleRef}
@@ -39,7 +28,15 @@ export function BlogEditor() {
         value={app.draftTitle}
         onChange={handleTitleChange}
       />
-      <div className="text-xs text-muted">{post.createdAt.slice(0, 10)}</div>
+      <div className="flex items-center gap-2 text-xs text-muted">
+        <span>{post.createdAt.slice(0, 10)}</span>
+        {!app.draftPublished && (
+          <>
+            <span>·</span>
+            <span className="text-mauve">draft</span>
+          </>
+        )}
+      </div>
       <div className="border-t border-border" />
       <div
         ref={bodyRef}
