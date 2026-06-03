@@ -13,8 +13,10 @@ import {
   Decoration,
   type DecorationSet,
   EditorView,
+  type KeyBinding,
   ViewPlugin,
   type ViewUpdate,
+  drawSelection,
   keymap,
 } from "@codemirror/view";
 import type { Extension, Range } from "@codemirror/state";
@@ -131,14 +133,35 @@ const decorationPlugin = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 );
 
+// Pressing ArrowDown at the very end of the document appends a fresh line and
+// moves into it — the escape hatch for getting out of a trailing code block.
+const exitDownAtDocEnd: KeyBinding = {
+  key: "ArrowDown",
+  run: (view) => {
+    const { state } = view;
+    const sel = state.selection.main;
+    if (!sel.empty || sel.head !== state.doc.length) return false;
+    view.dispatch({
+      changes: { from: state.doc.length, insert: "\n" },
+      selection: { anchor: state.doc.length + 1 },
+      scrollIntoView: true,
+    });
+    return true;
+  },
+};
+
 export function editorExtensions(): Extension[] {
   return [
     markdown({ base: markdownLanguage, codeLanguages }),
     syntaxHighlighting(markdownHighlighter),
     history(),
+    // Draw CodeMirror's own cursor/selection so the caret blinks and is styled
+    // by our theme (the native contentEditable caret was effectively invisible).
+    drawSelection(),
     decorationPlugin,
     EditorView.lineWrapping,
+    // exitDownAtDocEnd first so it wins over the default ArrowDown binding.
     // markdownKeymap continues `- ` lists on Enter (keeps the hyphen).
-    keymap.of([...markdownKeymap, ...defaultKeymap, ...historyKeymap]),
+    keymap.of([exitDownAtDocEnd, ...markdownKeymap, ...defaultKeymap, ...historyKeymap]),
   ];
 }

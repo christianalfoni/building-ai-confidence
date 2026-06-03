@@ -1,8 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { useBlogEditor } from "../../common/hooks/useBlogEditor";
-
-// Client-only: keeps CodeMirror out of the SSR bundle.
-const MarkdownEditor = lazy(() => import("../../common/ui-components/MarkdownEditor"));
+import { LazyMarkdownEditor } from "../../common/ui-components/markdownEditorLazy";
 
 export function BlogEditor() {
   const { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle } = useBlogEditor();
@@ -44,7 +42,7 @@ export function BlogEditor() {
       <div className="border-t border-border" />
       <div className="text-sm leading-relaxed text-subtext min-h-[300px]">
         <Suspense fallback={<div className="text-dim">loading editor…</div>}>
-          <MarkdownEditor
+          <LazyMarkdownEditor
             value={body}
             onChange={handleBodyChange}
             placeholder="Start writing..."
