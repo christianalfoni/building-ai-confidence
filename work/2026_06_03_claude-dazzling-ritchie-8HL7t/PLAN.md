@@ -197,3 +197,13 @@ shared Lezer grammar and one stylesheet.
 
 **Validation:** `./scripts/validate` — lint ✓, `tsc -b` ✓, tests ✓ (27 passed).
 `npm run build` ✓ (editor split into its own lazy chunk).
+
+**Post-review refinements**
+- Visible blinking caret + styled selection via `drawSelection()` (the native
+  contentEditable caret was invisible).
+- Preload the CodeMirror chunk for signed-in users (`preloadMarkdownEditor`) so
+  the first edit opens instantly.
+- Code blocks: typing ` ``` ` + Enter auto-inserts the closing fence (cursor on an
+  empty code line); backspacing an empty block removes both fences; selection is
+  now visible inside code lines (editor code background made translucent so the
+  selection layer shows through). Replaced the earlier ArrowDown escape hatch.

@@ -65,10 +65,14 @@ html.ui-desktop {
 }
 
 /* Fenced code lines read as a contiguous block (consecutive full-width lines
-   share the same surface background). */
-.md-line-code,
-.cm-editor .cm-line.cm-md-code {
+   share the same surface background). The reader stays opaque; the editor's
+   background is translucent so the selection layer (drawn behind the lines)
+   shows through on code lines too. */
+.md-line-code {
   background: var(--color-surface);
+}
+.cm-editor .cm-line.cm-md-code {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
 
 /* --- Markdown structure --- */
@@ -149,7 +153,9 @@ html.ui-desktop {
   border-left-color: var(--color-text);
 }
 .cm-editor .cm-selectionBackground,
-.cm-editor.cm-focused .cm-selectionBackground,
-.cm-editor ::selection {
-  background: var(--color-border);
+.cm-editor.cm-focused .cm-selectionBackground {
+  background: color-mix(in srgb, var(--color-teal) 28%, transparent);
+}
+.md-reader ::selection {
+  background: color-mix(in srgb, var(--color-teal) 28%, transparent);
 }

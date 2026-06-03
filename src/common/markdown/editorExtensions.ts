@@ -19,7 +19,7 @@ import {
   drawSelection,
   keymap,
 } from "@codemirror/view";
-import type { Extension, Range } from "@codemirror/state";
+import type { EditorState, Extension, Range } from "@codemirror/state";
 import { history, historyKeymap, defaultKeymap } from "@codemirror/commands";
 import {
   LanguageDescription,
@@ -133,17 +133,66 @@ const decorationPlugin = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 );
 
-// Pressing ArrowDown at the very end of the document appends a fresh line and
-// moves into it — the escape hatch for getting out of a trailing code block.
-const exitDownAtDocEnd: KeyBinding = {
-  key: "ArrowDown",
+// Find the FencedCode node enclosing an offset, if any.
+function enclosingFence(state: EditorState, pos: number): SyntaxNode | null {
+  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, 1); n; n = n.parent) {
+    if (n.name === "FencedCode") return n;
+  }
+  return null;
+}
+
+// Typing ``` (optionally with a language) and pressing Enter auto-inserts the
+// closing fence, dropping the cursor onto an empty code line between them.
+const autoCloseFence: KeyBinding = {
+  key: "Enter",
   run: (view) => {
     const { state } = view;
     const sel = state.selection.main;
-    if (!sel.empty || sel.head !== state.doc.length) return false;
+    if (!sel.empty) return false;
+    const line = state.doc.lineAt(sel.head);
+    if (sel.head !== line.to) return false; // only at the end of the fence line
+    const m = /^(\s*)(`{3,})([^\s`]*)\s*$/.exec(line.text);
+    if (!m) return false;
+    // Don't double-close a fence that already has its closing marker.
+    const fence = enclosingFence(state, line.from);
+    if (fence && fence.getChildren("CodeMark").length >= 2) return false;
+    const fenceMark = m[2];
     view.dispatch({
-      changes: { from: state.doc.length, insert: "\n" },
-      selection: { anchor: state.doc.length + 1 },
+      changes: { from: sel.head, insert: `\n\n${fenceMark}` },
+      selection: { anchor: line.to + 1 },
+      scrollIntoView: true,
+    });
+    return true;
+  },
+};
+
+// Backspacing inside an empty fenced block removes the whole block (both fences)
+// rather than leaving stray ``` markers behind.
+const removeEmptyCodeBlock: KeyBinding = {
+  key: "Backspace",
+  run: (view) => {
+    const { state } = view;
+    const sel = state.selection.main;
+    if (!sel.empty) return false;
+    const fence = enclosingFence(state, sel.head);
+    if (!fence) return false;
+    const codeText = fence.getChild("CodeText");
+    const content = codeText ? state.doc.sliceString(codeText.from, codeText.to) : "";
+    if (content.trim() !== "") return false; // only when the block is empty
+    // Don't fire while the cursor sits on a fence marker line — let the user edit
+    // the ``` / language normally there.
+    const fenceLineNums = new Set(
+      fence.getChildren("CodeMark").map((mk) => state.doc.lineAt(mk.from).number),
+    );
+    if (fenceLineNums.has(state.doc.lineAt(sel.head).number)) return false;
+    let from = fence.from;
+    let to = fence.to;
+    // Absorb one adjacent newline so removing the block doesn't leave a gap.
+    if (to < state.doc.length && state.doc.sliceString(to, to + 1) === "\n") to += 1;
+    else if (from > 0 && state.doc.sliceString(from - 1, from) === "\n") from -= 1;
+    view.dispatch({
+      changes: { from, to, insert: "" },
+      selection: { anchor: from },
       scrollIntoView: true,
     });
     return true;
@@ -160,8 +209,14 @@ export function editorExtensions(): Extension[] {
     drawSelection(),
     decorationPlugin,
     EditorView.lineWrapping,
-    // exitDownAtDocEnd first so it wins over the default ArrowDown binding.
-    // markdownKeymap continues `- ` lists on Enter (keeps the hyphen).
-    keymap.of([exitDownAtDocEnd, ...markdownKeymap, ...defaultKeymap, ...historyKeymap]),
+    // autoCloseFence / removeEmptyCodeBlock run before the default Enter/Backspace
+    // bindings. markdownKeymap continues `- ` lists on Enter (keeps the hyphen).
+    keymap.of([
+      autoCloseFence,
+      removeEmptyCodeBlock,
+      ...markdownKeymap,
+      ...defaultKeymap,
+      ...historyKeymap,
+    ]),
   ];
 }
