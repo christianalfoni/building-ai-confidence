@@ -202,7 +202,11 @@ shared Lezer grammar and one stylesheet.
 - Visible blinking caret + styled selection via `drawSelection()` (the native
   contentEditable caret was invisible).
 - Preload the CodeMirror chunk for signed-in users (`preloadMarkdownEditor`) so
-  the first edit opens instantly.
+  the first edit opens instantly. Editor uses a module-cached dynamic import (not
+  `React.lazy`) and a `useLayoutEffect` that mounts the view synchronously when the
+  chunk is already preloaded — no Suspense fallback flash. The heavy CM code lives
+  in `markdown/editorView.ts` (its own chunk); `MarkdownEditor.tsx` is a tiny
+  stable wrapper with no static `@codemirror/*` imports.
 - Code blocks: typing ` ``` ` + Enter auto-inserts the closing fence (cursor on an
   empty code line); backspacing an empty block removes both fences; selection is
   now visible inside code lines (editor code background made translucent so the

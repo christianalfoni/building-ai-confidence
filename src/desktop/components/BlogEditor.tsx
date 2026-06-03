@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { useBlogEditor } from "../../common/hooks/useBlogEditor";
-import { LazyMarkdownEditor } from "../../common/ui-components/markdownEditorLazy";
+import MarkdownEditor from "../../common/ui-components/MarkdownEditor";
 
 export function BlogEditor() {
   const { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle } = useBlogEditor();
@@ -41,13 +40,7 @@ export function BlogEditor() {
       </div>
       <div className="text-dim text-xs">{"─".repeat(60)}</div>
       <div className="text-sm leading-relaxed text-subtext min-h-[200px]">
-        <Suspense fallback={<div className="text-dim">loading editor…</div>}>
-          <LazyMarkdownEditor
-            value={body}
-            onChange={handleBodyChange}
-            placeholder="Start writing..."
-          />
-        </Suspense>
+        <MarkdownEditor value={body} onChange={handleBodyChange} placeholder="Start writing..." />
       </div>
       <div className="border-t border-border pt-3 flex items-center text-xs">
         <button

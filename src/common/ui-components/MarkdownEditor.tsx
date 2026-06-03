@@ -1,10 +1,12 @@
-// Controlled CodeMirror 6 wrapper for the article body. CLIENT-ONLY: it imports
-// `@codemirror/*`, so it must be reached via `React.lazy(() => import(...))` and
-// never rendered on the server. Default export so it can be lazily imported.
-import { useEffect, useRef } from "react";
-import { EditorState } from "@codemirror/state";
-import { EditorView, placeholder as placeholderExt } from "@codemirror/view";
-import { editorExtensions } from "../markdown/editorExtensions";
+// Controlled CodeMirror wrapper for the article body. This component is a stable,
+// statically-importable React component with NO static `@codemirror/*` imports —
+// the heavy editor code is pulled in via a dynamic import (markdownEditorLazy),
+// so CodeMirror stays code-split and never runs during SSR. If the editor chunk
+// was preloaded (signed-in authors), the view is created synchronously on mount
+// with no loading flash; otherwise the host stays empty until the chunk loads.
+import { useEffect, useLayoutEffect, useRef } from "react";
+import type { EditorView } from "@codemirror/view"; // type-only — erased at build
+import { getLoadedEditorModule, preloadMarkdownEditor } from "./markdownEditorLazy";
 
 type Props = {
   value: string;
@@ -20,32 +22,30 @@ export default function MarkdownEditor({ value, onChange, placeholder }: Props) 
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Create the editor once.
-  useEffect(() => {
-    if (!host.current) return;
-    const view = new EditorView({
-      parent: host.current,
-      state: EditorState.create({
+  // Create the editor view once the (possibly preloaded) chunk is available.
+  useLayoutEffect(() => {
+    let cancelled = false;
+    const mount = (mod: NonNullable<ReturnType<typeof getLoadedEditorModule>>) => {
+      if (cancelled || !host.current || viewRef.current) return;
+      viewRef.current = mod.createEditorView({
+        parent: host.current,
         doc: value,
-        extensions: [
-          ...editorExtensions(),
-          placeholderExt(placeholder ?? ""),
-          EditorView.updateListener.of((u) => {
-            if (u.docChanged) onChangeRef.current(u.state.doc.toString());
-          }),
-        ],
-      }),
-    });
-    viewRef.current = view;
+        placeholder,
+        onChange: (v) => onChangeRef.current(v),
+      });
+    };
+    const loaded = getLoadedEditorModule();
+    if (loaded) mount(loaded);
+    else preloadMarkdownEditor().then(mount);
     return () => {
-      view.destroy();
+      cancelled = true;
+      viewRef.current?.destroy();
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value changes (e.g. switching to a different draft) without
-  // clobbering the user's in-progress edits.
+  // Sync external value changes (e.g. switching drafts) without clobbering edits.
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;

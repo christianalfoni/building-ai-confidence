@@ -1,12 +1,27 @@
-import { lazy } from "react";
+// Lazy loader for the client-only CodeMirror editor *logic* (not a component).
+// The heavy `@codemirror/*` code lives in markdown/editorView; we dynamically
+// import it so it stays code-split and out of the SSR/main bundle, and cache the
+// resolved module at module scope so a preloaded editor mounts with no delay.
 
-// Single source of truth for the client-only CodeMirror editor import. The lazy
-// component and the preloader share the same dynamic import so warming the chunk
-// (when a signed-in author lands) means the editor opens instantly later.
-const importMarkdownEditor = () => import("./MarkdownEditor");
+type EditorModule = typeof import("../markdown/editorView");
 
-export const LazyMarkdownEditor = lazy(importMarkdownEditor);
+let cached: EditorModule | null = null;
+let pending: Promise<EditorModule> | null = null;
 
-export function preloadMarkdownEditor() {
-  void importMarkdownEditor();
+// Warm the editor chunk ahead of time (called when a signed-in author lands).
+// Safe to call repeatedly.
+export function preloadMarkdownEditor(): Promise<EditorModule> {
+  if (cached) return Promise.resolve(cached);
+  if (!pending) {
+    pending = import("../markdown/editorView").then((mod) => {
+      cached = mod;
+      return mod;
+    });
+  }
+  return pending;
+}
+
+// Synchronously returns the editor module if it has already been loaded.
+export function getLoadedEditorModule(): EditorModule | null {
+  return cached;
 }
