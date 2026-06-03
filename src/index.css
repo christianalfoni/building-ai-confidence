@@ -81,15 +81,17 @@ html.ui-desktop {
 .cm-editor .cm-line.cm-md-code {
   background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
+/* The opening/closing fence lines carry no visible text (``` and language are
+   hidden), so they collapse into slim rounded padding bands at the top/bottom. */
 .md-line-code-open,
 .cm-editor .cm-line.cm-md-code-open {
-  padding-top: 0.5rem;
+  min-height: 0.6rem;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
 }
 .md-line-code-close,
 .cm-editor .cm-line.cm-md-code-close {
-  padding-bottom: 0.5rem;
+  min-height: 0.6rem;
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
 }
@@ -101,11 +103,6 @@ html.ui-desktop {
 }
 .tok-mark {
   color: var(--color-dim);
-}
-/* Fenced-code language label (e.g. the `js` after ```). */
-.tok-labelName {
-  color: var(--color-muted);
-  font-style: italic;
 }
 .tok-monospace {
   color: var(--color-teal);

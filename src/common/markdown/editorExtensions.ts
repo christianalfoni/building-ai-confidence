@@ -82,11 +82,19 @@ function buildDecorations(view: EditorView): DecorationSet {
       const fence = n.node;
       const first = state.doc.lineAt(fence.from).number;
       const last = state.doc.lineAt(Math.max(fence.from, fence.to - 1)).number;
+      // A still-being-typed ``` is a single line — not a block yet. The block is
+      // created once it spans multiple lines (i.e. after Enter).
+      if (first === last) return;
       for (let ln = first; ln <= last; ln++) {
         codeBlock.set(ln, { open: ln === first, close: ln === last });
       }
+      // Hide the ``` markers and the language info — both live "behind" the box.
       for (const mk of fence.getChildren("CodeMark")) {
         if (mk.to > mk.from) ranges.push(Decoration.replace({}).range(mk.from, mk.to));
+      }
+      const info = fence.getChild("CodeInfo");
+      if (info && info.to > info.from) {
+        ranges.push(Decoration.replace({}).range(info.from, info.to));
       }
     },
   });
@@ -177,15 +185,12 @@ const removeEmptyCodeBlock: KeyBinding = {
     if (!sel.empty) return false;
     const fence = enclosingFence(state, sel.head);
     if (!fence) return false;
+    const first = state.doc.lineAt(fence.from).number;
+    const last = state.doc.lineAt(Math.max(fence.from, fence.to - 1)).number;
+    if (first === last) return false; // a lone ``` being typed — not a block
     const codeText = fence.getChild("CodeText");
     const content = codeText ? state.doc.sliceString(codeText.from, codeText.to) : "";
     if (content.trim() !== "") return false; // only when the block is empty
-    // Don't fire while the cursor sits on a fence marker line — let the user edit
-    // the ``` / language normally there.
-    const fenceLineNums = new Set(
-      fence.getChildren("CodeMark").map((mk) => state.doc.lineAt(mk.from).number),
-    );
-    if (fenceLineNums.has(state.doc.lineAt(sel.head).number)) return false;
     let from = fence.from;
     let to = fence.to;
     // Absorb one adjacent newline so removing the block doesn't leave a gap.

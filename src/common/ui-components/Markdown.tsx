@@ -32,14 +32,18 @@ export function Markdown({ source }: { source: string }) {
   const hidden: Array<[number, number]> = [];
   tree.iterate({
     enter: (n) => {
-      if (n.name === "FencedCode") {
-        const first = lineIndexAt(lines, n.from);
-        const last = lineIndexAt(lines, Math.max(n.from, n.to - 1));
-        for (let i = first; i <= last; i++) {
-          codeBlock.set(i, { open: i === first, close: i === last });
-        }
+      if (n.name !== "FencedCode") return;
+      const first = lineIndexAt(lines, n.from);
+      const last = lineIndexAt(lines, Math.max(n.from, n.to - 1));
+      if (first === last) return; // single-line ``` — not a block yet
+      for (let i = first; i <= last; i++) {
+        codeBlock.set(i, { open: i === first, close: i === last });
       }
-      if (n.name === "CodeMark") hidden.push([n.from, n.to]);
+      // Hide the ``` markers and the language info — both live behind the box.
+      const node = n.node;
+      for (const mk of node.getChildren("CodeMark")) hidden.push([mk.from, mk.to]);
+      const info = node.getChild("CodeInfo");
+      if (info) hidden.push([info.from, info.to]);
     },
   });
 

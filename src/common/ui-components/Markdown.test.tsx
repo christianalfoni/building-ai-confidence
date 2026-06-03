@@ -19,15 +19,19 @@ describe("Markdown reader", () => {
     expect(container.textContent).toContain("- second");
   });
 
-  it("hides the ``` fence lines but highlights the code", () => {
+  it("hides the ``` markers and language, but highlights the code", () => {
     const source = ["```js", "const x = 1;", "```"].join("\n");
     const { container } = render(<Markdown source={source} />);
-    // Fence delimiter lines are not rendered.
+    // The ``` markers and the language label live behind the box, not shown.
     expect(container.textContent).not.toContain("```");
+    expect(container.textContent).not.toContain("js");
     // Code text remains, with language highlighting applied.
     expect(container.textContent).toContain("const x = 1;");
     const keyword = container.querySelector(".tok-keyword");
     expect(keyword?.textContent).toBe("const");
+    // The block is boxed (open + close rows present).
+    expect(container.querySelector(".md-line-code-open")).not.toBeNull();
+    expect(container.querySelector(".md-line-code-close")).not.toBeNull();
   });
 
   it("renders nothing for empty source", () => {
