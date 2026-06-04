@@ -157,7 +157,8 @@ function buildDecorations(view: EditorView): DecorationSet {
   // Image-only lines render as a centered <img> — always, so the image never
   // flips back to its markdown. When the selection is on the line the image
   // shows a highlight (selected unit); pending uploads and code-fence lines stay
-  // as literal text.
+  // as literal text. A line decoration matches the reader's vertical spacing so
+  // the image doesn't shift when leaving the editor.
   for (let ln = 1; ln <= state.doc.lines; ln++) {
     if (codeBlock.has(ln)) continue;
     const line = state.doc.line(ln);
@@ -166,6 +167,7 @@ function buildDecorations(view: EditorView): DecorationSet {
     const [, alt, url] = m;
     if (url.startsWith(UPLOAD_SENTINEL)) continue;
     const selected = state.selection.ranges.some((r) => r.from <= line.to && r.to >= line.from);
+    ranges.push(Decoration.line({ class: "cm-md-image-line" }).range(line.from));
     ranges.push(
       Decoration.replace({ widget: new ImageWidget(url, alt, selected) }).range(line.from, line.to),
     );
@@ -297,19 +299,50 @@ const removeEmptyCodeBlock: KeyBinding = {
   },
 };
 
-// When the caret moves *into* an image line, expand the selection to cover the
-// whole line so the image reads as a selected unit. Expansion only happens
-// strictly inside the line, leaving its two boundaries as places the cursor
-// passes through — so arrowing past an image navigates naturally rather than
-// trapping the cursor on it.
+// When an empty caret lands anywhere on an image line, expand the selection to
+// cover the whole line so the image always reads as one selected unit (never a
+// caret resting at the markdown's start/middle/end). Leaving the image is driven
+// explicitly by the arrow-key bindings below, so this can safely grab the line
+// boundaries too.
 const imageSelection = EditorState.transactionFilter.of((tr) => {
   if (!tr.selection || tr.docChanged) return tr;
   const range = tr.newSelection.main;
   if (!range.empty) return tr;
   const line = imageLineAt(tr.state, range.head);
-  if (!line || range.head <= line.from || range.head >= line.to) return tr;
+  if (!line || range.head < line.from || range.head > line.to) return tr;
   return [tr, { selection: { anchor: line.from, head: line.to } }];
 });
+
+// Where the caret should land when leaving a fully-selected image line in the
+// given direction: the start of the next line / end of the previous line. Null
+// when the selection isn't exactly an image line. Pure, so it's unit-testable.
+export function selectedImageLeavePos(state: EditorState, forward: boolean): number | null {
+  const range = state.selection.main;
+  if (range.empty) return null;
+  const line = imageLineAt(state, range.head);
+  if (!line || range.from !== line.from || range.to !== line.to) return null;
+  const doc = state.doc;
+  return forward
+    ? line.number < doc.lines
+      ? doc.line(line.number + 1).from
+      : doc.length
+    : line.number > 1
+      ? doc.line(line.number - 1).to
+      : 0;
+}
+
+// A single arrow press past a selected image lands on the neighbouring line
+// rather than re-selecting it (the filter above would otherwise re-grab a
+// collapsed caret on the image line).
+function leaveSelectedImage(view: EditorView, forward: boolean): boolean {
+  const pos = selectedImageLeavePos(view.state, forward);
+  if (pos === null) return false;
+  view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+  return true;
+}
+
+const imageArrowRight: KeyBinding = { key: "ArrowRight", run: (v) => leaveSelectedImage(v, true) };
+const imageArrowLeft: KeyBinding = { key: "ArrowLeft", run: (v) => leaveSelectedImage(v, false) };
 
 // The doc range to remove when deleting an image line: the line plus one
 // adjacent newline so no blank gap is left behind.
@@ -458,6 +491,8 @@ export function editorExtensions(opts: EditorOptions = {}): Extension[] {
     keymap.of([
       deleteImageLineBack,
       deleteImageLineForward,
+      imageArrowRight,
+      imageArrowLeft,
       autoCloseFence,
       removeEmptyCodeBlock,
       ...markdownKeymap,

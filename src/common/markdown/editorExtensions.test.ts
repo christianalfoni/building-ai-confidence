@@ -2,7 +2,13 @@
 // it reads as a selected unit, the boundaries stay passable, code-fence images
 // stay literal, and deletion removes the whole line.
 import { EditorState } from "@codemirror/state";
-import { editorExtensions, imageLineAt, imageLineDeletion } from "./editorExtensions";
+import {
+  editorExtensions,
+  imageLineAt,
+  imageLineDeletion,
+  selectedImageLeavePos,
+} from "./editorExtensions";
+import { createEditorView } from "./editorView";
 
 function stateWith(doc: string, head: number): EditorState {
   return EditorState.create({
@@ -25,7 +31,7 @@ describe("image line editor behaviour", () => {
     expect(tr.state.selection.main.to).toBe(lineFrom + img.length);
   });
 
-  it("leaves the line boundaries passable (no expansion at start/end)", () => {
+  it("selects the whole image even at the line boundaries (no caret rest)", () => {
     const doc = `intro\n${img}\noutro`;
     const lineFrom = "intro\n".length;
     const lineTo = lineFrom + img.length;
@@ -35,8 +41,28 @@ describe("image line editor behaviour", () => {
     const atEnd = EditorState.create({ doc, extensions: editorExtensions() }).update({
       selection: { anchor: lineTo },
     });
-    expect(atStart.state.selection.main.empty).toBe(true);
-    expect(atEnd.state.selection.main.empty).toBe(true);
+    expect(atStart.state.selection.main).toMatchObject({ from: lineFrom, to: lineTo });
+    expect(atEnd.state.selection.main).toMatchObject({ from: lineFrom, to: lineTo });
+  });
+
+  it("leaves a selected image to the neighbouring line on arrow press", () => {
+    const doc = `intro\n${img}\noutro`;
+    const lineFrom = "intro\n".length;
+    const lineTo = lineFrom + img.length;
+    const state = EditorState.create({
+      doc,
+      selection: { anchor: lineFrom, head: lineTo },
+      extensions: editorExtensions(),
+    });
+    // forward → start of "outro"; backward → end of "intro".
+    expect(selectedImageLeavePos(state, true)).toBe(lineTo + 1);
+    expect(selectedImageLeavePos(state, false)).toBe("intro".length);
+  });
+
+  it("does not treat a collapsed caret as a leavable image selection", () => {
+    const doc = `intro\n${img}\noutro`;
+    const state = stateWith(doc, 0);
+    expect(selectedImageLeavePos(state, true)).toBeNull();
   });
 
   it("treats an image-only line as an image unit", () => {
@@ -64,5 +90,17 @@ describe("image line editor behaviour", () => {
     const doc = "![cat](uploading:abc-123)";
     const state = stateWith(doc, 3);
     expect(imageLineAt(state, 3)).toBeNull();
+  });
+
+  it("mounts an image widget in a real editor view (line + replace decorations)", () => {
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const view = createEditorView({ parent, doc: `hi\n${img}\nbye`, onChange: () => {} });
+    const el = parent.querySelector("img.md-image");
+    expect(el).not.toBeNull();
+    expect(el).toHaveAttribute("src", "https://blob.test/cat.png");
+    expect(parent.querySelector(".cm-md-image-line")).not.toBeNull();
+    view.destroy();
+    parent.remove();
   });
 });

@@ -58,7 +58,7 @@ export function Markdown({ source }: { source: string }) {
           : IMAGE_LINE_RE.exec(source.slice(line.from, line.to));
         if (img && !img[2].startsWith("uploading:")) {
           return (
-            <div key={i} className={MD_LINE_CLASS}>
+            <div key={i} className={`${MD_LINE_CLASS} md-line-image`}>
               <img className={MD_IMAGE_CLASS} src={img[2]} alt={img[1]} draggable={false} />
             </div>
           );

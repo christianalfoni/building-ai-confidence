@@ -73,7 +73,10 @@ html.ui-desktop {
    off and not draggable, so it reads as content, never a clickable element. */
 .md-image {
   display: block;
-  margin: 1.25rem auto;
+  /* Horizontal centring only — vertical spacing lives on the image line padding
+     (.md-line-image / .cm-md-image-line) so it can't margin-collapse, and the
+     editor and reader render identical gaps (no jump when leaving edit mode). */
+  margin: 0 auto;
   max-width: 100%;
   height: auto;
   /* A subtle frame matching the code block: same 6px radius and a 2px border in
@@ -82,6 +85,17 @@ html.ui-desktop {
   border-radius: 6px;
   pointer-events: none;
   user-select: none;
+}
+
+/* Vertical breathing room around an image, applied as padding (not margin) on
+   both the reader line and the editor line so the two stay pixel-identical. */
+.md-line-image,
+.cm-editor .cm-line.cm-md-image-line {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+.md-line-image {
+  min-height: 0;
 }
 
 /* Editor only: when the selection is on the image line, the image reads as a
