@@ -97,6 +97,13 @@ html.ui-desktop {
 .md-line-image {
   min-height: 0;
 }
+/* CodeMirror frames a replaced block widget with zero-width `cm-widgetBuffer`
+   <img>s (1em tall each) for cursor placement. On an image line the caret is
+   hidden and navigation is handled explicitly, so collapse them — otherwise they
+   add ~2 line-heights of space the reader doesn't have. */
+.cm-editor .cm-md-image-line .cm-widgetBuffer {
+  display: none;
+}
 
 /* Editor only: when the selection is on the image line, the image reads as a
    selected unit (a teal ring matching the selection colour) instead of revealing

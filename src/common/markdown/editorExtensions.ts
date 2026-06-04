@@ -342,7 +342,9 @@ function leaveSelectedImage(view: EditorView, forward: boolean): boolean {
 }
 
 const imageArrowRight: KeyBinding = { key: "ArrowRight", run: (v) => leaveSelectedImage(v, true) };
+const imageArrowDown: KeyBinding = { key: "ArrowDown", run: (v) => leaveSelectedImage(v, true) };
 const imageArrowLeft: KeyBinding = { key: "ArrowLeft", run: (v) => leaveSelectedImage(v, false) };
+const imageArrowUp: KeyBinding = { key: "ArrowUp", run: (v) => leaveSelectedImage(v, false) };
 
 // The doc range to remove when deleting an image line: the line plus one
 // adjacent newline so no blank gap is left behind.
@@ -493,6 +495,8 @@ export function editorExtensions(opts: EditorOptions = {}): Extension[] {
       deleteImageLineForward,
       imageArrowRight,
       imageArrowLeft,
+      imageArrowDown,
+      imageArrowUp,
       autoCloseFence,
       removeEmptyCodeBlock,
       ...markdownKeymap,
