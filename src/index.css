@@ -76,6 +76,9 @@ html.ui-desktop {
   margin: 1.25rem auto;
   max-width: 100%;
   height: auto;
+  /* A subtle frame matching the code block: same 6px radius and a 2px border in
+     the code block's surface colour. */
+  border: 2px solid var(--color-surface);
   border-radius: 6px;
   pointer-events: none;
   user-select: none;
@@ -87,6 +90,12 @@ html.ui-desktop {
 .cm-editor .cm-md-image-selected {
   outline: 2px solid color-mix(in srgb, var(--color-teal) 55%, transparent);
   outline-offset: 2px;
+}
+
+/* While an image is the active selection, the ring is the only affordance — the
+   blinking caret would just sit awkwardly beside it, so hide it. */
+.cm-editor.cm-image-selected .cm-cursorLayer {
+  display: none;
 }
 
 /* Fenced code renders as one padded, rounded box. Every line in the block shares

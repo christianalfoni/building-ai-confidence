@@ -819,3 +819,72 @@ def png(w,h,rgb):
 - Read: `work/2026_06_04_claude-bold-ritchie-1Nul1/PLAN.md` ✓
 
 - Edit: `work/2026_06_04_claude-bold-ritchie-1Nul1/PLAN.md` ✓
+
+- Bash: `./scripts/capture-agent-sessions 2>&1 | tail -3; git add -A && git commit -q -m ` ✓
+
+- Bash: `git push -u origin claude/bold-ritchie-1Nul1 2>&1 | tail -3` ✓
+
+**Agent:** Now update the PR description and resolve the addressed review threads.
+
+- ToolSearch ✓
+
+- update_pull_request: `christianalfoni` ✓
+
+**Agent:** Now reply to the documentation-nit thread and resolve all addressed threads.
+
+- add_reply_to_pull_request_comment: `christianalfoni` ✓
+
+**Agent:** Now resolving all five threads:
+
+- resolve_review_thread: `christianalfoni` ✓
+
+- resolve_review_thread: `christianalfoni` ✓
+
+- resolve_review_thread: `christianalfoni` ✓
+
+- resolve_review_thread: `christianalfoni` ✓
+
+- resolve_review_thread: `christianalfoni` ✓
+
+**Agent:** Done — both parts are complete and pushed to PR #41.
+
+## Copilot review (all 5 threads addressed & resolved)
+1. **415 for non-PNG** — `/api/upload` now explicitly rejects any non-`image/png` content type with 415 (was falling through to a 400).
+2. **Images inside code fences** — both the editor widget and the reader now skip lines inside ``` blocks, so code stays code.
+3. **Pending-upload tracking** — now keyed on the unique sentinel URL, not the whole token, so editing alt text mid-upload no longer orphans the placeholder; success replaces just the URL, failure deletes the line.
+4. **Alt sanitization** — `altFromFile` strips `[]()`/newlines and collapses whitespace so a filename can't produce broken markdown.
+5. **`![alt]` doc nit** — code already uses standard `![alt](url)`; replied to clarify (the description was a GitHub image-render artifact) and updated the PR body.
+
+## Your UX change
+The image **no longer flips to markdown** when the cursor is on it. Instead:
+- It stays rendered and gains a **teal selection ring** when the selection is on its line.
+- A transaction filter expands the caret to a full-line selection only when it moves *strictly inside*, leaving the two line boundaries passable — so **arrowing past navigates naturally**.
+- **Backspace/Delete** while the image is selected removes the line, deleting the image.
+
+New tests: `editorExtensions.test.ts` (selection expansion, boundary pass-through, code-fence exclusion, deletion) and reader image tests in `Markdown.test.tsx`.
+
+**Validation:** lint clean, type-check clean, **36/36 tests pass**, production build assembles.
+
+Two notes:
+- I couldn't exercise the full drag/paste flow end-to-end here since it needs `BLOB_READ_WRITE_TOKEN` + an authed session — best verified on the preview deploy once the Blob store is set up.
+- The selection-ring interaction is verified via state-level unit tests rather than a screenshot (a static shot can't capture cursor behavior, and the editor needs auth + a draft to mount).
+
+Want me to subscribe to PR #41 to auto-handle new CI/review activity?
+
+**User:** Okay, great stuff. About the image selection, we do not need to have the cursor blinking when having that selection.
+
+Also we need to add some border to the image, also with the same border radius as the code block. Maybe it would be nice with a 2px border using same background color as code block.
+
+**Agent:** Two small refinements. Let me add a plugin that hides the caret while an image is the active selection, and update the border CSS.
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now the CSS — add the border and hide the caret when an image is selected:
+
+- Edit: `src/index.css` ✓
+
+- Bash: `./scripts/validate 2>&1 | tail -10` ✓
+
+**Agent:** Clean. Commit and push:

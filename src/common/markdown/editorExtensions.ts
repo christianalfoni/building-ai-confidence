@@ -214,6 +214,26 @@ const decorationPlugin = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 );
 
+// Toggles a class on the editor while an image line is the active (full-line)
+// selection, so its blinking caret can be hidden — the selection ring is the
+// only affordance needed for a selected image.
+const imageSelectedClass = ViewPlugin.fromClass(
+  class {
+    constructor(view: EditorView) {
+      this.sync(view);
+    }
+    update(u: ViewUpdate) {
+      if (u.selectionSet || u.docChanged) this.sync(u.view);
+    }
+    sync(view: EditorView) {
+      const r = view.state.selection.main;
+      const line = r.empty ? null : imageLineAt(view.state, r.head);
+      const on = !!line && r.from === line.from && r.to === line.to;
+      view.dom.classList.toggle("cm-image-selected", on);
+    }
+  },
+);
+
 // Find the FencedCode node enclosing an offset, if any.
 function enclosingFence(state: EditorState, pos: number): SyntaxNode | null {
   for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, 1); n; n = n.parent) {
@@ -429,6 +449,7 @@ export function editorExtensions(opts: EditorOptions = {}): Extension[] {
     drawSelection(),
     decorationPlugin,
     imageSelection,
+    imageSelectedClass,
     EditorView.lineWrapping,
     ...(opts.uploadImage ? [imageDropPaste(opts.uploadImage)] : []),
     // deleteImageLine* and autoCloseFence / removeEmptyCodeBlock run before the
