@@ -8,6 +8,7 @@ import { NeonDatabase } from '../server/neon.ts';
 import { ServerSessionService } from './services/server/SessionService.ts';
 import { ServerDatabaseService } from './services/server/DatabaseService.ts';
 import { ServerNavigationService } from './services/server/NavigationService.ts';
+import { ServerMediaService } from './services/server/MediaService.ts';
 import { hiddenAuthorLogins, parseCookie } from '../server/utils.ts';
 import { escapeJsonForScript, isMobileUA, parseRoute } from './utils.ts';
 import type { InitialData } from './services/client/DatabaseService.ts';
@@ -26,13 +27,14 @@ export async function render(req: Request, res: Response, htmlOverride?: string)
     const session = new ServerSessionService(db, sessionId, isPreview);
     const database = new ServerDatabaseService(db, session, hiddenAuthorLogins());
     const navigation = new ServerNavigationService(parseRoute(req.path));
+    const media = new ServerMediaService();
 
     // Resolve the user first so the database can filter the author's own
     // unpublished posts.
     await session.preload();
     await database.preload();
 
-    const app = new AppState({ session, database, navigation });
+    const app = new AppState({ session, database, navigation, media });
     const initialData: InitialData = {
       dbEnabled: !!db,
       isPreview,

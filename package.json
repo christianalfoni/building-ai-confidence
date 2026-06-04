@@ -23,6 +23,7 @@
     "@lezer/json": "^1.0.3",
     "@lezer/markdown": "^1.6.4",
     "@neondatabase/serverless": "^1.1.0",
+    "@vercel/blob": "^2.4.0",
     "express": "^5.2.1",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",

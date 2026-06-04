@@ -12,13 +12,14 @@ export function createEditorView(opts: {
   doc: string;
   placeholder?: string;
   onChange: (value: string) => void;
+  uploadImage?: (file: File) => Promise<string>;
 }): EditorView {
   return new EditorView({
     parent: opts.parent,
     state: EditorState.create({
       doc: opts.doc,
       extensions: [
-        ...editorExtensions(),
+        ...editorExtensions({ uploadImage: opts.uploadImage }),
         placeholderExt(opts.placeholder ?? ""),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) opts.onChange(u.state.doc.toString());

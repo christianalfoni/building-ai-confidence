@@ -68,12 +68,63 @@ html.ui-desktop {
   min-height: 1.5em;
 }
 
-/* Fenced code renders as one padded, rounded box. Every line in the block shares
-   the background + horizontal padding; the first/last lines round the corners and
-   add the vertical padding. The ``` markers are hidden on both sides, so the box
-   "covers them up"; the language shows as a dim label on the first line. The
-   reader stays opaque; the editor's background is translucent so the selection
-   layer (drawn behind the lines) shows through on code lines too. */
+/* Images render as a centered block with vertical breathing room, on both the
+   reader (<img>) and the editor's image widget. Not interactive — pointer-events
+   off and not draggable, so it reads as content, never a clickable element. */
+.md-image {
+  display: block;
+  /* Horizontal centring only — vertical spacing lives on the image line padding
+     (.md-line-image / .cm-md-image-line) so it can't margin-collapse, and the
+     editor and reader render identical gaps (no jump when leaving edit mode). */
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  /* A subtle frame matching the code block: same 6px radius and a 2px border in
+     the code block's surface colour. */
+  border: 2px solid var(--color-surface);
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Vertical breathing room around an image, applied as padding (not margin) on
+   both the reader line and the editor line so the two stay pixel-identical. */
+.md-line-image,
+.cm-editor .cm-line.cm-md-image-line {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+.md-line-image {
+  min-height: 0;
+}
+/* CodeMirror frames a replaced block widget with zero-width `cm-widgetBuffer`
+   <img>s (1em tall each) for cursor placement. On an image line the caret is
+   hidden and navigation is handled explicitly, so collapse them — otherwise they
+   add ~2 line-heights of space the reader doesn't have. */
+.cm-editor .cm-md-image-line .cm-widgetBuffer {
+  display: none;
+}
+
+/* Editor only: when the selection is on the image line, the image reads as a
+   selected unit (a teal ring matching the selection colour) instead of revealing
+   its markdown. The next cursor move navigates past it; Backspace deletes it. */
+.cm-editor .cm-md-image-selected {
+  outline: 2px solid color-mix(in srgb, var(--color-teal) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* While an image is the active selection, the ring is the only affordance — the
+   blinking caret would just sit awkwardly beside it, so hide it. */
+.cm-editor.cm-image-selected .cm-cursorLayer {
+  display: none;
+}
+
+/* Fenced code renders as one padded, rounded box made only of the code content
+   lines — the opening/closing ``` lines are collapsed away (see .*-code-fence).
+   Every content line shares the background + horizontal padding; the first/last
+   round the corners and add the vertical padding. The reader stays opaque; the
+   editor's background is translucent so the selection layer (drawn behind the
+   lines) shows through on code lines too. */
 .md-line-code,
 .cm-editor .cm-line.cm-md-code {
   padding-left: 0.75rem;
@@ -85,19 +136,30 @@ html.ui-desktop {
 .cm-editor .cm-line.cm-md-code {
   background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
-/* The opening/closing fence lines carry no visible text (``` and language are
-   hidden), so they collapse into slim rounded padding bands at the top/bottom. */
+/* First/last code line: round the box corners and add the vertical padding. */
 .md-line-code-open,
 .cm-editor .cm-line.cm-md-code-open {
-  min-height: 0.6rem;
+  padding-top: 0.5rem;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
 }
 .md-line-code-close,
 .cm-editor .cm-line.cm-md-code-close {
-  min-height: 0.6rem;
+  padding-bottom: 0.5rem;
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
+}
+/* The ``` fence lines themselves are never shown: collapsed to nothing in the
+   reader, and in the editor too (the caret skips them, so they're not editable). */
+.md-line-code-fence {
+  display: none;
+}
+.cm-editor .cm-line.cm-md-code-fence {
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  line-height: 0;
+  overflow: hidden;
 }
 
 /* --- Markdown structure --- */

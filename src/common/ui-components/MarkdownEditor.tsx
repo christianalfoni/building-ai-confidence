@@ -12,15 +12,22 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  uploadImage?: (file: File) => Promise<string>;
 };
 
-export default function MarkdownEditor({ value, onChange, placeholder }: Props) {
+export default function MarkdownEditor({ value, onChange, placeholder, uploadImage }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+  // The view is created once on mount; route uploads through a ref so it always
+  // calls the latest callback without re-creating the editor.
+  const uploadImageRef = useRef(uploadImage);
+  useEffect(() => {
+    uploadImageRef.current = uploadImage;
+  }, [uploadImage]);
 
   // Create the editor view once the (possibly preloaded) chunk is available.
   useLayoutEffect(() => {
@@ -32,6 +39,9 @@ export default function MarkdownEditor({ value, onChange, placeholder }: Props) 
         doc: value,
         placeholder,
         onChange: (v) => onChangeRef.current(v),
+        uploadImage: uploadImageRef.current
+          ? (file: File) => uploadImageRef.current!(file)
+          : undefined,
       });
     };
     const loaded = getLoadedEditorModule();

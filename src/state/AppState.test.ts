@@ -1,7 +1,7 @@
 import { reactive } from "reactx";
 import { AppState } from "./AppState";
 import type { DbPost, User } from "../services";
-import { FakeDatabaseService, FakeNavigationService, FakeSessionService } from "../test-utils";
+import { FakeDatabaseService, FakeMediaService, FakeNavigationService, FakeSessionService } from "../test-utils";
 import type { Route } from "../utils";
 
 function makeUser(githubLogin: string): User {
@@ -33,7 +33,8 @@ function makeState(opts: {
   const session = new FakeSessionService({ user: opts.user, isPreview: opts.isPreview });
   const database = opts.database ?? new FakeDatabaseService({ posts: opts.posts });
   const navigation = opts.navigation ?? new FakeNavigationService(opts.route);
-  return reactive(new AppState({ session, database, navigation }));
+  const media = new FakeMediaService();
+  return reactive(new AppState({ session, database, navigation, media }));
 }
 
 describe("AppState", () => {

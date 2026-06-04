@@ -6,6 +6,7 @@ import { AppState } from "./state/AppState";
 import type {
   DatabaseService,
   DbPost,
+  MediaService,
   NavigationService,
   Services,
   SessionService,
@@ -82,6 +83,16 @@ export class FakeNavigationService implements NavigationService {
   }
 }
 
+// In-memory media service for tests. Records uploads and returns a fake URL.
+export class FakeMediaService implements MediaService {
+  uploads: File[] = [];
+
+  async uploadImage(file: File): Promise<string> {
+    this.uploads.push(file);
+    return `https://blob.test/${file.name}`;
+  }
+}
+
 export type CreateServicesOptions = {
   user?: User | null;
   isPreview?: boolean;
@@ -90,6 +101,7 @@ export type CreateServicesOptions = {
   session?: SessionService;
   database?: DatabaseService;
   navigation?: NavigationService;
+  media?: MediaService;
 };
 
 export function createServices(opts: CreateServicesOptions = {}): Services {
@@ -97,6 +109,7 @@ export function createServices(opts: CreateServicesOptions = {}): Services {
     session: opts.session ?? new FakeSessionService({ user: opts.user, isPreview: opts.isPreview }),
     database: opts.database ?? new FakeDatabaseService({ posts: opts.posts }),
     navigation: opts.navigation ?? new FakeNavigationService(opts.route),
+    media: opts.media ?? new FakeMediaService(),
   };
 }
 
