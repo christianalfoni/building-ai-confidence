@@ -85,5 +85,5 @@ export function useBlogEditor() {
     scheduleSave({ published: next });
   }
 
-  return { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle };
+  return { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle, uploadImage: app.uploadImage };
 }

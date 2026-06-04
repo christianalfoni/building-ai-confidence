@@ -10,7 +10,7 @@ import type { SyntaxNode, Tree } from "@lezer/common";
 import { highlightTree } from "@lezer/highlight";
 import { markdownParser } from "../markdown/parse";
 import { markdownHighlighter } from "../markdown/highlight";
-import { LIST_INDENT_REM, MD_LINE_CLASS } from "../markdown/tokens";
+import { IMAGE_LINE_RE, LIST_INDENT_REM, MD_IMAGE_CLASS, MD_LINE_CLASS } from "../markdown/tokens";
 
 type Span = { from: number; to: number; cls: string };
 
@@ -50,6 +50,16 @@ export function Markdown({ source }: { source: string }) {
   return (
     <div className="md-reader">
       {lines.map((line, i) => {
+        // A line that is solely a markdown image renders as a centered, non-
+        // clickable block image — mirroring the editor's image widget.
+        const img = IMAGE_LINE_RE.exec(source.slice(line.from, line.to));
+        if (img && !img[2].startsWith("uploading:")) {
+          return (
+            <div key={i} className={MD_LINE_CLASS}>
+              <img className={MD_IMAGE_CLASS} src={img[2]} alt={img[1]} draggable={false} />
+            </div>
+          );
+        }
         const depth = listDepthAt(tree, line, source);
         const children = renderLine(line, source, spans, hidden);
         const block = codeBlock.get(i);

@@ -47,9 +47,16 @@ export interface NavigationService {
   navigate(path: string): void;
 }
 
+// Uploads media (currently PNG images) and returns the public URL to embed in a
+// post. Browser-only in practice — SSR never uploads.
+export interface MediaService {
+  uploadImage(file: File): Promise<string>;
+}
+
 // The single object of infrastructure passed into `AppState`.
 export type Services = {
   session: SessionService;
   database: DatabaseService;
   navigation: NavigationService;
+  media: MediaService;
 };

@@ -2,7 +2,7 @@ import { useBlogEditor } from "../../common/hooks/useBlogEditor";
 import MarkdownEditor from "../../common/ui-components/MarkdownEditor";
 
 export function BlogEditor() {
-  const { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle } = useBlogEditor();
+  const { app, post, body, titleRef, closeEditor, handleTitleChange, handleBodyChange, handlePublishToggle, uploadImage } = useBlogEditor();
 
   if (!post) return null;
 
@@ -40,7 +40,7 @@ export function BlogEditor() {
       </div>
       <div className="border-t border-border" />
       <div className="text-sm leading-relaxed text-subtext min-h-[300px]">
-        <MarkdownEditor value={body} onChange={handleBodyChange} placeholder="Start writing..." />
+        <MarkdownEditor value={body} onChange={handleBodyChange} placeholder="Start writing..." uploadImage={uploadImage} />
       </div>
     </div>
   );

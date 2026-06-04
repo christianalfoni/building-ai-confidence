@@ -16,6 +16,7 @@ import {
   type KeyBinding,
   ViewPlugin,
   type ViewUpdate,
+  WidgetType,
   drawSelection,
   keymap,
 } from "@codemirror/view";
@@ -31,7 +32,40 @@ import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 import type { SyntaxNode } from "@lezer/common";
 import { markdownHighlighter } from "./highlight";
-import { LIST_INDENT_REM } from "./tokens";
+import { IMAGE_LINE_RE, LIST_INDENT_REM, MD_IMAGE_CLASS } from "./tokens";
+
+// A still-uploading image carries this sentinel as its URL so the decoration
+// shows the raw markdown (not a broken <img>) until the real URL swaps in.
+const UPLOAD_SENTINEL = "uploading:";
+
+export type EditorOptions = {
+  // Uploads a PNG and resolves to its public URL. Supplied by the app layer;
+  // when absent (e.g. tests/SSR), drop/paste upload is disabled.
+  uploadImage?: (file: File) => Promise<string>;
+};
+
+// Renders an image-only markdown line as a centered, non-clickable image. Atomic
+// so the caret can't land inside it; the line reverts to raw text when selected.
+class ImageWidget extends WidgetType {
+  readonly url: string;
+  readonly alt: string;
+  constructor(url: string, alt: string) {
+    super();
+    this.url = url;
+    this.alt = alt;
+  }
+  eq(other: ImageWidget) {
+    return other.url === this.url && other.alt === this.alt;
+  }
+  toDOM() {
+    const img = document.createElement("img");
+    img.src = this.url;
+    img.alt = this.alt;
+    img.className = MD_IMAGE_CLASS;
+    img.draggable = false;
+    return img;
+  }
+}
 
 // Keep this set in sync with parse.ts (the reader's nested code parsers).
 const codeLanguages = [
@@ -98,6 +132,21 @@ function buildDecorations(view: EditorView): DecorationSet {
       }
     },
   });
+
+  // Image-only lines render as a centered <img>, except while the caret sits on
+  // the line (so it can be edited/deleted) or while the upload is still pending.
+  for (let ln = 1; ln <= state.doc.lines; ln++) {
+    const line = state.doc.line(ln);
+    const m = IMAGE_LINE_RE.exec(line.text);
+    if (!m) continue;
+    const [, alt, url] = m;
+    if (url.startsWith(UPLOAD_SENTINEL)) continue;
+    const caretOnLine = state.selection.ranges.some((r) => r.from <= line.to && r.to >= line.from);
+    if (caretOnLine) continue;
+    ranges.push(
+      Decoration.replace({ widget: new ImageWidget(url, alt) }).range(line.from, line.to),
+    );
+  }
 
   // Per-line decorations: code-block box (background + rounded ends) + list indent.
   for (let ln = 1; ln <= state.doc.lines; ln++) {
@@ -205,7 +254,93 @@ const removeEmptyCodeBlock: KeyBinding = {
   },
 };
 
-export function editorExtensions(): Extension[] {
+// The PNG files in a drop/paste payload (we only support PNG).
+function pngFiles(data: DataTransfer | null): File[] {
+  if (!data) return [];
+  return Array.from(data.files).filter((f) => f.type === "image/png");
+}
+
+// Alt text from a filename: drop the extension, fall back to empty.
+function altFromFile(file: File): string {
+  return file.name.replace(/\.[^.]+$/, "");
+}
+
+// Inserts an image on its own line at `pos`, uploads it, then swaps the pending
+// placeholder URL for the real one (or removes the line if the upload fails).
+function insertImageUpload(
+  view: EditorView,
+  file: File,
+  pos: number,
+  uploadImage: (file: File) => Promise<string>,
+) {
+  const alt = altFromFile(file);
+  const nonce = crypto.randomUUID();
+  const pendingUrl = `${UPLOAD_SENTINEL}${nonce}`;
+  const token = `![${alt}](${pendingUrl})`;
+
+  // Force the image onto its own line.
+  const line = view.state.doc.lineAt(pos);
+  const prefix = pos === line.from ? "" : "\n";
+  const suffix = pos === line.to ? "" : "\n";
+  const insert = `${prefix}${token}${suffix}`;
+  const tokenFrom = pos + prefix.length;
+
+  view.dispatch({
+    changes: { from: pos, insert },
+    selection: { anchor: tokenFrom + token.length },
+    scrollIntoView: true,
+  });
+
+  // Locate the placeholder in the (possibly mutated) doc by its unique URL.
+  const findToken = () => {
+    const idx = view.state.doc.toString().indexOf(token);
+    return idx === -1 ? null : { from: idx, to: idx + token.length };
+  };
+
+  uploadImage(file)
+    .then((url) => {
+      const range = findToken();
+      if (!range) return; // author deleted the placeholder — nothing to do
+      view.dispatch({
+        changes: { from: range.from, to: range.to, insert: `![${alt}](${url})` },
+      });
+    })
+    .catch((err) => {
+      console.error("[image upload]", err);
+      const range = findToken();
+      if (!range) return;
+      // Remove the placeholder and one adjacent newline so no blank line lingers.
+      let from = range.from;
+      let to = range.to;
+      if (to < view.state.doc.length && view.state.doc.sliceString(to, to + 1) === "\n") to += 1;
+      else if (from > 0 && view.state.doc.sliceString(from - 1, from) === "\n") from -= 1;
+      view.dispatch({ changes: { from, to, insert: "" } });
+    });
+}
+
+// Drag-drop and paste of a PNG: upload it and insert the image at the drop point
+// (drop) or the caret (paste). Only the first PNG in a payload is handled.
+function imageDropPaste(uploadImage: (file: File) => Promise<string>): Extension {
+  return EditorView.domEventHandlers({
+    drop(event, view) {
+      const [file] = pngFiles(event.dataTransfer);
+      if (!file) return false;
+      event.preventDefault();
+      const pos = view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? view.state.selection.main.head;
+      insertImageUpload(view, file, pos, uploadImage);
+      return true;
+    },
+    paste(event, view) {
+      const [file] = pngFiles(event.clipboardData);
+      if (!file) return false;
+      event.preventDefault();
+      insertImageUpload(view, file, view.state.selection.main.head, uploadImage);
+      return true;
+    },
+  });
+}
+
+export function editorExtensions(opts: EditorOptions = {}): Extension[] {
   return [
     markdown({ base: markdownLanguage, codeLanguages }),
     syntaxHighlighting(markdownHighlighter),
@@ -215,6 +350,7 @@ export function editorExtensions(): Extension[] {
     drawSelection(),
     decorationPlugin,
     EditorView.lineWrapping,
+    ...(opts.uploadImage ? [imageDropPaste(opts.uploadImage)] : []),
     // autoCloseFence / removeEmptyCodeBlock run before the default Enter/Backspace
     // bindings. markdownKeymap continues `- ` lists on Enter (keeps the hyphen).
     keymap.of([

@@ -97,6 +97,13 @@ export class AppState {
     this.services.navigation.navigate('/');
   }
 
+  // Uploads a PNG and returns its public URL for embedding in the post body.
+  // Threaded down to the editor's drop/paste handlers (reactx binds methods on
+  // access, so passing `app.uploadImage` by reference keeps `this`).
+  uploadImage(file: File): Promise<string> {
+    return this.services.media.uploadImage(file);
+  }
+
   async signOut() {
     await this.services.session.signOut();
     this.services.navigation.navigate('/');

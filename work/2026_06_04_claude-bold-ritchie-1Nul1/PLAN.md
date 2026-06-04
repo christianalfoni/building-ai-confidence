@@ -68,31 +68,69 @@ an image-only line as a **centered block image with vertical margins, not clicka
 ## Tasks
 
 ### Persistence (server)
-- [ ] Add `@vercel/blob` to `package.json` dependencies; add `BLOB_READ_WRITE_TOKEN=` to `.env.example`.
-- [ ] Add `POST /api/upload` in `server/routes/api.ts`: `express.raw({ type: 'image/png', limit: '5mb' })`, auth (session + `ALLOWED_LOGINS`), PNG magic-byte check, `put('posts/<uuid>.png', buf, { access: 'public', contentType: 'image/png', token })`, respond `{ url }`. 415/400 on bad input, 500 when token missing.
+- [x] Add `@vercel/blob` to `package.json` dependencies; add `BLOB_READ_WRITE_TOKEN=` to `.env.example`.
+- [x] Add `POST /api/upload` in `server/routes/api.ts`: `express.raw({ type: 'image/png', limit: '5mb' })`, auth (session + `ALLOWED_LOGINS`), PNG magic-byte check, `put('posts/<uuid>.png', buf, { access: 'public', contentType: 'image/png', token })`, respond `{ url }`. 415/400 on bad input, 500 when token missing.
 
 ### Services / state wiring
-- [ ] Add `MediaService { uploadImage(file: File): Promise<string> }` to `src/services/index.ts` and include it in `Services`.
-- [ ] Client impl `src/services/client/MediaService.ts`: `fetch('/api/upload', { method:'POST', headers:{'Content-Type':'image/png'}, body:file })` → returns `url`.
-- [ ] Server impl `src/services/server/MediaService.ts`: `uploadImage` throws (SSR never uploads).
-- [ ] Construct `media` in `entry-client.tsx` and `entry-server.tsx`; pass into `AppState`.
-- [ ] Add `AppState.uploadImage(file)` delegating to `services.media.uploadImage`.
+- [x] Add `MediaService { uploadImage(file: File): Promise<string> }` to `src/services/index.ts` and include it in `Services`.
+- [x] Client impl `src/services/client/MediaService.ts`: `fetch('/api/upload', { method:'POST', headers:{'Content-Type':'image/png'}, body:file })` → returns `url`.
+- [x] Server impl `src/services/server/MediaService.ts`: `uploadImage` throws (SSR never uploads).
+- [x] Construct `media` in `entry-client.tsx` and `entry-server.tsx`; pass into `AppState`.
+- [x] Add `AppState.uploadImage(file)` delegating to `services.media.uploadImage`. (Also added `FakeMediaService` to `src/test-utils.tsx`.)
 
 ### Editor (CodeMirror)
-- [ ] `MD_IMAGE_CLASS` constant in `src/common/markdown/tokens.ts`.
-- [ ] Thread an `uploadImage` callback through `MarkdownEditor` prop → `createEditorView` opts → `editorExtensions(opts)`.
-- [ ] Add `EditorView.domEventHandlers` for `drop` (use `posAtCoords`) and `paste`: filter to `image/png`, insert placeholder on its own line at the position, upload, swap in the URL (or remove on failure).
-- [ ] Extend `buildDecorations` to replace image-only lines with a centered, non-clickable `<img>` widget, suppressed when the caret is on that line and for `uploading…` placeholders.
-- [ ] Pass `app.uploadImage` from `useBlogEditor` into both `desktop/components/BlogEditor.tsx` and `mobile/components/BlogEditor.tsx`.
+- [x] `MD_IMAGE_CLASS` constant in `src/common/markdown/tokens.ts` (plus `IMAGE_LINE_RE`).
+- [x] Thread an `uploadImage` callback through `MarkdownEditor` prop → `createEditorView` opts → `editorExtensions(opts)`.
+- [x] Add `EditorView.domEventHandlers` for `drop` (use `posAtCoords`) and `paste`: filter to `image/png`, insert placeholder on its own line at the position, upload, swap in the URL (or remove on failure).
+- [x] Extend `buildDecorations` to replace image-only lines with a centered, non-clickable `<img>` widget, suppressed when the caret is on that line and for `uploading…` placeholders.
+- [x] Pass `app.uploadImage` from `useBlogEditor` into both `desktop/components/BlogEditor.tsx` and `mobile/components/BlogEditor.tsx`.
 
 ### Reader
-- [ ] In `src/common/ui-components/Markdown.tsx`, render image-only lines as a centered `<img>` (using the Lezer `Image` node) instead of text spans.
+- [x] In `src/common/ui-components/Markdown.tsx`, render image-only lines as a centered `<img>` instead of text spans. (Used the shared `IMAGE_LINE_RE` per line rather than a separate Lezer `Image`-node pass — simpler and keeps editor/reader detection identical.)
 
 ### Styles
-- [ ] Add `.md-image` rules in `src/index.css`: `display:block; margin: <space> auto; max-width:100%; pointer-events:none;` plus `draggable=false`, shared by editor widget and reader.
+- [x] Add `.md-image` rules in `src/index.css`: `display:block; margin: <space> auto; max-width:100%; pointer-events:none;` plus `draggable=false`, shared by editor widget and reader.
 
 ### Verify
-- [ ] `./scripts/validate` (lint, type-check, tests) passes.
-- [ ] Manual: drag a PNG and paste a PNG in the editor → centered image renders; reader shows the same; caret-on-line reveals the markdown; non-PNG ignored.
+- [x] `./scripts/validate` (lint, type-check, tests) passes.
+- [ ] Manual: drag a PNG and paste a PNG in the editor → centered image renders; reader shows the same; caret-on-line reveals the markdown; non-PNG ignored. *(Requires `BLOB_READ_WRITE_TOKEN` + auth — to be exercised on the preview deploy.)*
 
 ## Report
+
+Implemented PNG image support end to end. No DB schema change — images are stored
+in Vercel Blob and embedded in the post body as standard markdown `![alt](url)`.
+
+**Persistence:** Promoted `@vercel/blob` to a direct dependency and added
+`BLOB_READ_WRITE_TOKEN` to `.env.example`. New `POST /api/upload` route
+(`server/routes/api.ts`) takes the raw PNG bytes (`express.raw`, 5 MB cap),
+enforces the same auth as the other write routes, validates the PNG magic bytes,
+uploads via `put('posts/<uuid>.png', …, { access: 'public' })`, and returns
+`{ url }`. Missing token → 500; non-PNG → 415.
+
+**Wiring:** Added a dedicated `MediaService` (`uploadImage(file) → url`) with a
+client impl (POSTs to `/api/upload`) and a server stub (throws — SSR never
+uploads), wired into `Services`, both entry points, and `AppState.uploadImage`.
+`FakeMediaService` added to test-utils.
+
+**Editor:** `useBlogEditor` exposes `app.uploadImage`, threaded through both
+platform `BlogEditor`s → `MarkdownEditor` → `createEditorView` →
+`editorExtensions`. Drag-drop (`posAtCoords`) and paste of a PNG insert the image
+markdown on its own line at the position, show an `uploading:`-sentinel
+placeholder, then swap in the real URL (or remove the line on failure). A
+`Decoration.replace` widget renders image-only lines as a centered, non-clickable
+`<img>`, reverting to raw markdown when the caret is on the line or while pending.
+
+**Reader:** `Markdown.tsx` renders image-only lines as a centered `<img>` via the
+shared `IMAGE_LINE_RE`. Shared `.md-image` CSS (centered block, margins,
+`pointer-events:none`, not draggable) styles both sides identically.
+
+**Deviations from plan:** (1) Reader uses the shared `IMAGE_LINE_RE` per line
+rather than a separate Lezer `Image`-node pass — keeps editor/reader detection
+identical and simpler. (2) `ImageWidget` uses explicit field declarations instead
+of TS parameter properties (required by the repo's `erasableSyntaxOnly`). (3)
+Drop/paste handles the first PNG in a payload only (predictable positioning).
+
+**Outcomes:** `./scripts/validate` — lint clean, type-check clean, 27/27 tests
+pass. `npm run build` — client + server Build Output assembled successfully.
+Manual drag/paste verification needs `BLOB_READ_WRITE_TOKEN` + an authed session,
+to be done on the preview deploy.

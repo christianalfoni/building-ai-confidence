@@ -68,6 +68,19 @@ html.ui-desktop {
   min-height: 1.5em;
 }
 
+/* Images render as a centered block with vertical breathing room, on both the
+   reader (<img>) and the editor's image widget. Not interactive — pointer-events
+   off and not draggable, so it reads as content, never a clickable element. */
+.md-image {
+  display: block;
+  margin: 1.25rem auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Fenced code renders as one padded, rounded box. Every line in the block shares
    the background + horizontal padding; the first/last lines round the corners and
    add the vertical padding. The ``` markers are hidden on both sides, so the box
