@@ -185,6 +185,13 @@ html.ui-desktop {
   color: var(--color-teal);
   text-decoration: underline;
 }
+/* Read-mode inline links render as clean clickable anchors (markers + URL
+   hidden). Matches the link-token colour so they read consistently. */
+.md-reader .md-link {
+  color: var(--color-teal);
+  text-decoration: underline;
+  cursor: pointer;
+}
 .tok-quote {
   color: var(--color-muted);
   font-style: italic;

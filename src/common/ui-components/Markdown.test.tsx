@@ -59,4 +59,28 @@ describe("Markdown reader", () => {
     const { container } = render(<Markdown source="![cat](uploading:abc-123)" />);
     expect(container.querySelector("img")).toBeNull();
   });
+
+  it("renders an inline link as a clean anchor that opens in a new tab", () => {
+    const { container } = render(
+      <Markdown source="see [the docs](https://example.com/docs) now" />,
+    );
+    const a = container.querySelector("a");
+    expect(a).not.toBeNull();
+    expect(a).toHaveAttribute("href", "https://example.com/docs");
+    expect(a).toHaveAttribute("target", "_blank");
+    expect(a).toHaveAttribute("rel", "noopener noreferrer");
+    // Only the link text shows — the markers and URL are hidden.
+    expect(a?.textContent).toBe("the docs");
+    expect(container.textContent).toContain("see ");
+    expect(container.textContent).toContain(" now");
+    expect(container.textContent).not.toContain("https://example.com/docs");
+    expect(container.textContent).not.toContain("](");
+  });
+
+  it("leaves a link inside a fenced code block as literal text", () => {
+    const source = "```\n[the docs](https://example.com)\n```";
+    const { container } = render(<Markdown source={source} />);
+    expect(container.querySelector("a")).toBeNull();
+    expect(container.textContent).toContain("[the docs](https://example.com)");
+  });
 });
