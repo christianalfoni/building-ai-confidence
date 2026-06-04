@@ -28,7 +28,9 @@ export function Markdown({ source }: { source: string }) {
   // 2. Find code-fence delimiter lines so we can hide the ``` markers, and find
   //    list nesting depth per offset for indentation.
   const lines = splitLines(source);
-  const codeBlock = new Map<number, { open: boolean; close: boolean }>();
+  // Mirrors the editor: the ``` lines are collapsed away (`fence`); only the code
+  // content lines form the box, the first/last rounding its corners.
+  const codeBlock = new Map<number, { fence: boolean; top: boolean; bottom: boolean }>();
   const hidden: Array<[number, number]> = [];
   tree.iterate({
     enter: (n) => {
@@ -36,8 +38,10 @@ export function Markdown({ source }: { source: string }) {
       const first = lineIndexAt(lines, n.from);
       const last = lineIndexAt(lines, Math.max(n.from, n.to - 1));
       if (first === last) return; // single-line ``` — not a block yet
+      const top = first + 1;
+      const bottom = last - 1;
       for (let i = first; i <= last; i++) {
-        codeBlock.set(i, { open: i === first, close: i === last });
+        codeBlock.set(i, { fence: i === first || i === last, top: i === top, bottom: i === bottom });
       }
       // Hide the ``` markers and the language info — both live behind the box.
       const node = n.node;
@@ -67,10 +71,12 @@ export function Markdown({ source }: { source: string }) {
         const children = renderLine(line, source, spans, hidden);
         const block = codeBlock.get(i);
         const classes = [MD_LINE_CLASS];
-        if (block) {
+        if (block?.fence) {
+          classes.push("md-line-code-fence");
+        } else if (block) {
           classes.push("md-line-code");
-          if (block.open) classes.push("md-line-code-open");
-          if (block.close) classes.push("md-line-code-close");
+          if (block.top) classes.push("md-line-code-open");
+          if (block.bottom) classes.push("md-line-code-close");
         }
         return (
           <div

@@ -88,6 +88,23 @@ export function imageLineAt(state: EditorState, pos: number) {
   return line;
 }
 
+// Line numbers of the opening/closing ``` lines of every multi-line fenced block.
+// These lines are collapsed and non-editable, so the caret skips over them.
+export function getFenceLines(state: EditorState): Set<number> {
+  const set = new Set<number>();
+  syntaxTree(state).iterate({
+    enter: (n) => {
+      if (n.name !== "FencedCode") return;
+      const first = state.doc.lineAt(n.from).number;
+      const last = state.doc.lineAt(Math.max(n.from, n.to - 1)).number;
+      if (first === last) return;
+      set.add(first);
+      set.add(last);
+    },
+  });
+  return set;
+}
+
 // Keep this set in sync with parse.ts (the reader's nested code parsers).
 const codeLanguages = [
   LanguageDescription.of({
@@ -127,10 +144,11 @@ function buildDecorations(view: EditorView): DecorationSet {
   const tree = syntaxTree(state);
   const ranges: Range<Decoration>[] = [];
 
-  // Per fenced block, the line range it spans (fence lines included) so the whole
-  // block renders as one box. The backtick marks are always hidden (no
-  // cursor-reveal) — the box "covers them up"; the language stays as a label.
-  const codeBlock = new Map<number, { open: boolean; close: boolean }>();
+  // Per fenced block: the opening/closing ``` lines are collapsed away entirely
+  // (`fence`), and only the code content lines form the box — the first/last of
+  // them round the corners (`top`/`bottom`). The ``` markers and language are
+  // also replaced so nothing of the fence shows.
+  const codeBlock = new Map<number, { fence: boolean; top: boolean; bottom: boolean }>();
   tree.iterate({
     enter: (n) => {
       if (n.name !== "FencedCode") return;
@@ -140,8 +158,11 @@ function buildDecorations(view: EditorView): DecorationSet {
       // A still-being-typed ``` is a single line — not a block yet. The block is
       // created once it spans multiple lines (i.e. after Enter).
       if (first === last) return;
+      const top = first + 1;
+      const bottom = last - 1;
       for (let ln = first; ln <= last; ln++) {
-        codeBlock.set(ln, { open: ln === first, close: ln === last });
+        const isFence = ln === first || ln === last;
+        codeBlock.set(ln, { fence: isFence, top: ln === top, bottom: ln === bottom });
       }
       // Hide the ``` markers and the language info — both live "behind" the box.
       for (const mk of fence.getChildren("CodeMark")) {
@@ -184,10 +205,13 @@ function buildDecorations(view: EditorView): DecorationSet {
     const block = codeBlock.get(ln);
     if (!block && depth === 0) continue;
     const classes: string[] = [];
-    if (block) {
+    if (block?.fence) {
+      // The ``` line: collapsed and non-editable (the caret skips it).
+      classes.push("cm-md-code-fence");
+    } else if (block) {
       classes.push("cm-md-code");
-      if (block.open) classes.push("cm-md-code-open");
-      if (block.close) classes.push("cm-md-code-close");
+      if (block.top) classes.push("cm-md-code-open");
+      if (block.bottom) classes.push("cm-md-code-close");
     }
     ranges.push(
       Decoration.line({
@@ -346,6 +370,34 @@ const imageArrowDown: KeyBinding = { key: "ArrowDown", run: (v) => leaveSelected
 const imageArrowLeft: KeyBinding = { key: "ArrowLeft", run: (v) => leaveSelectedImage(v, false) };
 const imageArrowUp: KeyBinding = { key: "ArrowUp", run: (v) => leaveSelectedImage(v, false) };
 
+// Hops the caret over the collapsed ``` fence lines so they can't be landed on.
+// `dir` is +1 (down/right) or -1 (up/left). For horizontal moves it only fires
+// at the line edge in the travel direction; vertical moves always fire when the
+// adjacent line is a fence. Returns false when no fence is in the way so default
+// motion (and the image bindings) still run.
+export function skipFence(view: EditorView, dir: 1 | -1, horizontal: boolean): boolean {
+  const { state } = view;
+  const range = state.selection.main;
+  if (!range.empty) return false;
+  const doc = state.doc;
+  const cur = doc.lineAt(range.head);
+  if (horizontal && range.head !== (dir === 1 ? cur.to : cur.from)) return false;
+  let target = cur.number + dir;
+  const fences = getFenceLines(state);
+  if (target < 1 || target > doc.lines || !fences.has(target)) return false;
+  while (target >= 1 && target <= doc.lines && fences.has(target)) target += dir;
+  // Block sits at the document edge — nothing beyond the fence to move to.
+  if (target < 1 || target > doc.lines) return true;
+  const pos = dir === 1 ? doc.line(target).from : doc.line(target).to;
+  view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+  return true;
+}
+
+const fenceArrowRight: KeyBinding = { key: "ArrowRight", run: (v) => skipFence(v, 1, true) };
+const fenceArrowDown: KeyBinding = { key: "ArrowDown", run: (v) => skipFence(v, 1, false) };
+const fenceArrowLeft: KeyBinding = { key: "ArrowLeft", run: (v) => skipFence(v, -1, true) };
+const fenceArrowUp: KeyBinding = { key: "ArrowUp", run: (v) => skipFence(v, -1, false) };
+
 // The doc range to remove when deleting an image line: the line plus one
 // adjacent newline so no blank gap is left behind.
 export function imageLineDeletion(state: EditorState): { from: number; to: number } | null {
@@ -497,6 +549,10 @@ export function editorExtensions(opts: EditorOptions = {}): Extension[] {
       imageArrowLeft,
       imageArrowDown,
       imageArrowUp,
+      fenceArrowRight,
+      fenceArrowLeft,
+      fenceArrowDown,
+      fenceArrowUp,
       autoCloseFence,
       removeEmptyCodeBlock,
       ...markdownKeymap,
