@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { Tag } from "../ui-components/Tag";
 import { DeleteConfirm } from "../ui-components/DeleteConfirm";
@@ -7,6 +8,42 @@ import { dbPostToPost } from "../../common/utils";
 export function BlogPost() {
   const app = useApp();
   const dbMatch = app.selectedPost;
+  const deleteRef = useRef<HTMLSpanElement>(null);
+
+  // The author can manage the post addressed by the current URL.
+  const canManage = !!dbMatch && app.isAuthor && dbMatch.authorId === app.user?.id;
+  const postId = dbMatch?.id;
+
+  // Author keyboard shortcuts: `e` opens the editor, `d` arms the delete
+  // confirmation — it clicks the same "delete" trigger a mouse would, so the
+  // on-screen yes/no still gates the actual delete (one keypress never deletes).
+  // The single-button check means a second `d` while the confirm is showing
+  // can't accidentally fire "yes". Ignored while typing or with modifiers held.
+  useEffect(() => {
+    if (!canManage || !postId) return;
+    const id = postId;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement;
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.key === "e") {
+        e.preventDefault();
+        app.openEditor(id);
+      } else if (e.key === "d") {
+        e.preventDefault();
+        const buttons = deleteRef.current?.querySelectorAll("button");
+        if (buttons?.length === 1) buttons[0].click();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [app, canManage, postId]);
 
   if (!dbMatch) {
     return (
@@ -48,10 +85,12 @@ export function BlogPost() {
             >
               edit
             </button>
-            <DeleteConfirm
-              confirmMessage="delete this post?"
-              onConfirm={() => app.deletePost(dbMatch.id)}
-            />
+            <span ref={deleteRef}>
+              <DeleteConfirm
+                confirmMessage="delete this post?"
+                onConfirm={() => app.deletePost(dbMatch.id)}
+              />
+            </span>
           </div>
         )}
       </div>
