@@ -51,8 +51,11 @@ export function Markdown({ source }: { source: string }) {
     <div className="md-reader">
       {lines.map((line, i) => {
         // A line that is solely a markdown image renders as a centered, non-
-        // clickable block image — mirroring the editor's image widget.
-        const img = IMAGE_LINE_RE.exec(source.slice(line.from, line.to));
+        // clickable block image — mirroring the editor's image widget. Lines
+        // inside a fenced code block stay literal (code is code).
+        const img = codeBlock.has(i)
+          ? null
+          : IMAGE_LINE_RE.exec(source.slice(line.from, line.to));
         if (img && !img[2].startsWith("uploading:")) {
           return (
             <div key={i} className={MD_LINE_CLASS}>

@@ -81,6 +81,14 @@ html.ui-desktop {
   user-select: none;
 }
 
+/* Editor only: when the selection is on the image line, the image reads as a
+   selected unit (a teal ring matching the selection colour) instead of revealing
+   its markdown. The next cursor move navigates past it; Backspace deletes it. */
+.cm-editor .cm-md-image-selected {
+  outline: 2px solid color-mix(in srgb, var(--color-teal) 55%, transparent);
+  outline-offset: 2px;
+}
+
 /* Fenced code renders as one padded, rounded box. Every line in the block shares
    the background + horizontal padding; the first/last lines round the corners and
    add the vertical padding. The ``` markers are hidden on both sides, so the box

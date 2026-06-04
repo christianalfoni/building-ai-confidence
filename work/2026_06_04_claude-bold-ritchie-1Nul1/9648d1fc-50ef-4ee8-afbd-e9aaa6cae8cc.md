@@ -1,6 +1,6 @@
-# acc52802-0a89-4dc9-98d5-7716986358dd
+# 9648d1fc-50ef-4ee8-afbd-e9aaa6cae8cc
 
-**Session:** `acc52802-0a89-4dc9-98d5-7716986358dd`
+**Session:** `9648d1fc-50ef-4ee8-afbd-e9aaa6cae8cc`
 **Project:** `building-ai-confidence`
 **Date:** 2026-06-04 09:23:03
 **Harness:** Claude Code 2.1.162
@@ -658,13 +658,13 @@ Drag-` ✓
 
 **Agent:** Validation passes. Now creating the PR.
 
-- ToolSearch: `select:mcp__github__create_pull_request,mcp__github__list_pu` ✓
+- ToolSearch ✓
 
-- list_pull_requests: `christianalfoni` ✓
+- list_pull_requests: `christianalfoni:claude/bold-ritchie-1Nul1` ✓
 
 **Agent:** No existing PR. Creating one:
 
-- create_pull_request: `christianalfoni` ✓
+- create_pull_request: `main` ✓
 
 **Agent:** PR created: **https://github.com/christianalfoni/building-ai-confidence/pull/41**
 
@@ -679,3 +679,143 @@ Implementation is complete, pushed, validated, and submitted. Quick summary of w
 **One action on your side before this works in production:** create a Vercel Blob store and add `BLOB_READ_WRITE_TOKEN` to Doppler (steps are in my earlier message). Until then the upload route returns a 500 "not configured" and the editor cleanly drops the placeholder.
 
 Want me to watch PR #41 for CI and review comments? I can subscribe and auto-address feedback if you'd like.
+
+**User:** Where do I get my BLOB_READ_WRITE_TOKEN?
+
+**Agent:** `BLOB_READ_WRITE_TOKEN` is generated when you create a **Vercel Blob store** and connect it to this project. Steps:
+
+1. Go to the **Vercel dashboard** → your project (`building-ai-confidence`) → **Storage** tab.
+2. Click **Create Database** → choose **Blob** → give it a name (e.g. `blog-images`) → **Create**.
+3. When prompted (or via the store's **Connect Project** action), connect it to this project. Vercel then auto-creates the env var **`BLOB_READ_WRITE_TOKEN`** for the project.
+4. Reveal/copy the token value — it looks like `vercel_blob_rw_xxxxxxxx_xxxxxxxxxxxx`. You'll find it under the store's **`.env.local` snippet** / **Connect** panel, or in the project's **Settings → Environment Variables**.
+
+### Where to put it for this project
+
+This repo manages secrets via **Doppler** (per `DEPLOYMENT.md`), so the source of truth isn't the Vercel UI env vars — add it to Doppler:
+
+- Add `BLOB_READ_WRITE_TOKEN` = (the copied value) to your Doppler config for this project, in the same environment(s) you use for prod/preview.
+- For **local dev**, copy it into your `.env` (the key is already in `.env.example`).
+
+A couple of notes:
+- It's a **read-write, server-side** token — it only lives in the `/api/upload` handler and is never shipped to the browser. Keep it secret.
+- Until the token is present, the upload route returns `500 "Blob storage is not configured"` and the editor cleanly drops the upload placeholder — writing text still works.
+
+If you'd rather not use Doppler for this one and let Vercel inject it directly, that also works at runtime — but local dev and the project's secret-management convention both point to Doppler, so I'd put it there.
+
+Want me to keep watching PR #41 for CI/review while you set this up?
+
+**User:** Okay, this is really great. Could you first address the comments from CoPilot and then I want you to address a UX thing. When moving the cursor the image flips into its markdown text version. I do not want that. Rather highlight the image as a selection. If I keep moving the cursors, just navigate naturally in the document. If I where to hit BACKSPACE during the selection though, remove the markdown text itself (which removes the image)
+
+**Agent:** Let me first fetch the Copilot review comments on PR #41.
+
+- ToolSearch ✓
+
+- pull_request_read: `get_review_comments` ✓
+
+**Agent:** I have 5 Copilot comments plus your UX change. Let me re-read the current editor extension file to edit precisely, and check the selection color tokens.
+
+- Read: `src/common/markdown/editorExtensions.ts` ✓
+
+- Bash: `grep -n "selectionBackground\|selectionMatch\|::selection\|cm-selectionBackgroun` ✓
+
+**Agent:** Now I'll implement all the changes. First, the imports and `ImageWidget` (add `selected` state + selected class):
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now update the image decoration loop — always render, skip code blocks, mark selected:
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now let me view the keybindings and helpers section to add the selection filter and backspace handling:
+
+- Read: `src/common/markdown/editorExtensions.ts` ✓
+
+- Read: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now add the selection filter and image-line deletion command after `removeEmptyCodeBlock`:
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now fix the alt sanitization and the pending-URL search (Copilot #3, #4). Let me read those functions:
+
+- Read: `src/common/markdown/editorExtensions.ts` ✓
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now wire the new extensions into `editorExtensions()` (the filter + delete keybindings). Let me view that function:
+
+- Read: `src/common/markdown/editorExtensions.ts` ✓
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+**Agent:** Now add the selected-image CSS. Let me add it near the existing `.md-image` rule:
+
+- Edit: `src/index.css` ✓
+
+**Agent:** Now the reader code-block skip (Copilot #2). Let me update `Markdown.tsx`:
+
+- Edit: `src/common/ui-components/Markdown.tsx` ✓
+
+**Agent:** Now the API 415 fix (Copilot #1). Let me read the current upload handler:
+
+- Read: `server/routes/api.ts` ✓
+
+- Edit: `server/routes/api.ts` ✓
+
+**Agent:** Now let me export the testable helpers and add a focused test. First, export them:
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+- Edit: `src/common/markdown/editorExtensions.ts` ✓
+
+- Write: `src/common/markdown/editorExtensions.test.ts` ✓
+
+- Bash: `npx vitest --run src/common/markdown/editorExtensions.test.ts 2>&1 | tail -35` ✓
+
+**Agent:** All 6 new tests pass — including the code-fence and boundary cases. Now run the full validation and build:
+
+- Bash: `./scripts/validate 2>&1 | tail -20` ✓
+
+**Agent:** Let me confirm the production build still works:
+
+- Bash: `npm run build 2>&1 | grep -v "INVALID_ANNOTATION\|mobx\|PURE\|╭\|│\|╰\|├\|─\|Hel` ✓
+
+**Agent:** Build passes. Let me check whether there's a story I can use to visually verify the image renders centered:
+
+- Bash: `ls /home/user/building-ai-confidence/src/**/*.stories.tsx 2>/dev/null; find /hom` ✓
+
+- Read: `src/desktop/components/Markdown.stories.tsx` ✓
+
+**Agent:** Let me generate a small sample PNG so I can add a visual story and screenshot the centered rendering:
+
+- Bash: `python3 -c "
+import zlib, struct, base64
+def png(w,h,rgb):
+    raw=b''
+    for y` ✓
+
+**Agent:** API Error: an image in the conversation could not be processed and was removed. Re-read the file with a different approach if you still need it.
+
+**Agent:** The data URI rendering tripped the harness. Rather than a screenshot, I'll add a fast component test for the reader (more valuable — it locks in the image rendering and the code-fence exclusion):
+
+- Write: `src/common/ui-components/Markdown.test.tsx` ✗
+
+- Bash: `ls -la /home/user/building-ai-confidence/src/common/ui-components/Markdown.test.` ✓
+
+- Read: `src/common/ui-components/Markdown.test.tsx` ✓
+
+**Agent:** There's already a Markdown test file. Let me append my image tests to it:
+
+- Edit: `src/common/ui-components/Markdown.test.tsx` ✓
+
+- Bash: `./scripts/validate 2>&1 | tail -12` ✓
+
+**Agent:** All 36 tests pass. Let me update the plan, then commit and push.
+
+- Read: `work/2026_06_04_claude-bold-ritchie-1Nul1/PLAN.md` ✓
+
+- Edit: `work/2026_06_04_claude-bold-ritchie-1Nul1/PLAN.md` ✓

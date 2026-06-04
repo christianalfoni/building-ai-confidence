@@ -38,4 +38,25 @@ describe("Markdown reader", () => {
     const { container } = render(<Markdown source="" />);
     expect(container.firstChild).toBeNull();
   });
+
+  it("renders an image-only line as a centered md-image", () => {
+    const { container } = render(<Markdown source="![cat](https://blob.test/cat.png)" />);
+    const img = container.querySelector("img");
+    expect(img).not.toBeNull();
+    expect(img).toHaveClass("md-image");
+    expect(img).toHaveAttribute("src", "https://blob.test/cat.png");
+    expect(img).toHaveAttribute("alt", "cat");
+  });
+
+  it("leaves an image inside a fenced code block as literal text", () => {
+    const source = "```\n![cat](https://blob.test/cat.png)\n```";
+    const { container } = render(<Markdown source={source} />);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toContain("![cat](https://blob.test/cat.png)");
+  });
+
+  it("does not render a still-uploading placeholder as an image", () => {
+    const { container } = render(<Markdown source="![cat](uploading:abc-123)" />);
+    expect(container.querySelector("img")).toBeNull();
+  });
 });

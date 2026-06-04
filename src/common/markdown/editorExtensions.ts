@@ -20,7 +20,8 @@ import {
   drawSelection,
   keymap,
 } from "@codemirror/view";
-import type { EditorState, Extension, Range } from "@codemirror/state";
+import { EditorState } from "@codemirror/state";
+import type { Extension, Range } from "@codemirror/state";
 import { history, historyKeymap, defaultKeymap } from "@codemirror/commands";
 import {
   LanguageDescription,
@@ -38,33 +39,53 @@ import { IMAGE_LINE_RE, LIST_INDENT_REM, MD_IMAGE_CLASS } from "./tokens";
 // shows the raw markdown (not a broken <img>) until the real URL swaps in.
 const UPLOAD_SENTINEL = "uploading:";
 
+// Added to the image when the selection is on its line, so it reads as a
+// selected unit (highlight ring) instead of revealing its markdown.
+const IMAGE_SELECTED_CLASS = "cm-md-image-selected";
+
 export type EditorOptions = {
   // Uploads a PNG and resolves to its public URL. Supplied by the app layer;
   // when absent (e.g. tests/SSR), drop/paste upload is disabled.
   uploadImage?: (file: File) => Promise<string>;
 };
 
-// Renders an image-only markdown line as a centered, non-clickable image. Atomic
-// so the caret can't land inside it; the line reverts to raw text when selected.
+// Renders an image-only markdown line as a centered, non-clickable image. The
+// line never reverts to raw text; when selected it gains a highlight ring, and
+// Backspace removes the whole line (see imageLineAt / deleteImageLine).
 class ImageWidget extends WidgetType {
   readonly url: string;
   readonly alt: string;
-  constructor(url: string, alt: string) {
+  readonly selected: boolean;
+  constructor(url: string, alt: string, selected: boolean) {
     super();
     this.url = url;
     this.alt = alt;
+    this.selected = selected;
   }
   eq(other: ImageWidget) {
-    return other.url === this.url && other.alt === this.alt;
+    return other.url === this.url && other.alt === this.alt && other.selected === this.selected;
   }
   toDOM() {
     const img = document.createElement("img");
     img.src = this.url;
     img.alt = this.alt;
-    img.className = MD_IMAGE_CLASS;
+    img.className = this.selected ? `${MD_IMAGE_CLASS} ${IMAGE_SELECTED_CLASS}` : MD_IMAGE_CLASS;
     img.draggable = false;
     return img;
   }
+}
+
+// The line at `pos` when it is an image-only line that should behave as a single
+// image unit: matches the image syntax, isn't a pending upload, and isn't inside
+// a fenced code block (where ``` content must stay literal). Otherwise null.
+export function imageLineAt(state: EditorState, pos: number) {
+  const line = state.doc.lineAt(pos);
+  const m = IMAGE_LINE_RE.exec(line.text);
+  if (!m || m[2].startsWith(UPLOAD_SENTINEL)) return null;
+  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(line.from, 1); n; n = n.parent) {
+    if (n.name === "FencedCode") return null;
+  }
+  return line;
 }
 
 // Keep this set in sync with parse.ts (the reader's nested code parsers).
@@ -133,18 +154,20 @@ function buildDecorations(view: EditorView): DecorationSet {
     },
   });
 
-  // Image-only lines render as a centered <img>, except while the caret sits on
-  // the line (so it can be edited/deleted) or while the upload is still pending.
+  // Image-only lines render as a centered <img> — always, so the image never
+  // flips back to its markdown. When the selection is on the line the image
+  // shows a highlight (selected unit); pending uploads and code-fence lines stay
+  // as literal text.
   for (let ln = 1; ln <= state.doc.lines; ln++) {
+    if (codeBlock.has(ln)) continue;
     const line = state.doc.line(ln);
     const m = IMAGE_LINE_RE.exec(line.text);
     if (!m) continue;
     const [, alt, url] = m;
     if (url.startsWith(UPLOAD_SENTINEL)) continue;
-    const caretOnLine = state.selection.ranges.some((r) => r.from <= line.to && r.to >= line.from);
-    if (caretOnLine) continue;
+    const selected = state.selection.ranges.some((r) => r.from <= line.to && r.to >= line.from);
     ranges.push(
-      Decoration.replace({ widget: new ImageWidget(url, alt) }).range(line.from, line.to),
+      Decoration.replace({ widget: new ImageWidget(url, alt, selected) }).range(line.from, line.to),
     );
   }
 
@@ -254,15 +277,68 @@ const removeEmptyCodeBlock: KeyBinding = {
   },
 };
 
+// When the caret moves *into* an image line, expand the selection to cover the
+// whole line so the image reads as a selected unit. Expansion only happens
+// strictly inside the line, leaving its two boundaries as places the cursor
+// passes through — so arrowing past an image navigates naturally rather than
+// trapping the cursor on it.
+const imageSelection = EditorState.transactionFilter.of((tr) => {
+  if (!tr.selection || tr.docChanged) return tr;
+  const range = tr.newSelection.main;
+  if (!range.empty) return tr;
+  const line = imageLineAt(tr.state, range.head);
+  if (!line || range.head <= line.from || range.head >= line.to) return tr;
+  return [tr, { selection: { anchor: line.from, head: line.to } }];
+});
+
+// The doc range to remove when deleting an image line: the line plus one
+// adjacent newline so no blank gap is left behind.
+export function imageLineDeletion(state: EditorState): { from: number; to: number } | null {
+  const line = imageLineAt(state, state.selection.main.head);
+  if (!line) return null;
+  let from = line.from;
+  let to = line.to;
+  if (to < state.doc.length && state.doc.sliceString(to, to + 1) === "\n") to += 1;
+  else if (from > 0 && state.doc.sliceString(from - 1, from) === "\n") from -= 1;
+  return { from, to };
+}
+
+// Backspace/Delete while the selection is on an image line removes the whole
+// line (its markdown), which removes the image.
+function makeDeleteImageLine(key: string): KeyBinding {
+  return {
+    key,
+    run: (view) => {
+      const del = imageLineDeletion(view.state);
+      if (!del) return false;
+      view.dispatch({
+        changes: { from: del.from, to: del.to, insert: "" },
+        selection: { anchor: del.from },
+        scrollIntoView: true,
+      });
+      return true;
+    },
+  };
+}
+
+const deleteImageLineBack = makeDeleteImageLine("Backspace");
+const deleteImageLineForward = makeDeleteImageLine("Delete");
+
 // The PNG files in a drop/paste payload (we only support PNG).
 function pngFiles(data: DataTransfer | null): File[] {
   if (!data) return [];
   return Array.from(data.files).filter((f) => f.type === "image/png");
 }
 
-// Alt text from a filename: drop the extension, fall back to empty.
+// Alt text from a filename: drop the extension and strip characters that would
+// break the markdown image token or the image-line regex (brackets, parens,
+// newlines). Collapses whitespace; may end up empty, which is a valid alt.
 function altFromFile(file: File): string {
-  return file.name.replace(/\.[^.]+$/, "");
+  return file.name
+    .replace(/\.[^.]+$/, "")
+    .replace(/[[\]()\r\n]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Inserts an image on its own line at `pos`, uploads it, then swaps the pending
@@ -291,27 +367,30 @@ function insertImageUpload(
     scrollIntoView: true,
   });
 
-  // Locate the placeholder in the (possibly mutated) doc by its unique URL.
-  const findToken = () => {
-    const idx = view.state.doc.toString().indexOf(token);
-    return idx === -1 ? null : { from: idx, to: idx + token.length };
+  // Locate the pending URL (unique per upload) in the possibly-mutated doc.
+  // Tracking just the URL — not the whole token — survives the author editing the
+  // alt text while the upload is in flight.
+  const findPendingUrl = () => {
+    const idx = view.state.doc.toString().indexOf(pendingUrl);
+    return idx === -1 ? null : idx;
   };
 
   uploadImage(file)
     .then((url) => {
-      const range = findToken();
-      if (!range) return; // author deleted the placeholder — nothing to do
-      view.dispatch({
-        changes: { from: range.from, to: range.to, insert: `![${alt}](${url})` },
-      });
+      const idx = findPendingUrl();
+      if (idx === null) return; // author deleted the placeholder — nothing to do
+      // Replace only the URL, preserving any alt-text edits made meanwhile.
+      view.dispatch({ changes: { from: idx, to: idx + pendingUrl.length, insert: url } });
     })
     .catch((err) => {
       console.error("[image upload]", err);
-      const range = findToken();
-      if (!range) return;
-      // Remove the placeholder and one adjacent newline so no blank line lingers.
-      let from = range.from;
-      let to = range.to;
+      const idx = findPendingUrl();
+      if (idx === null) return;
+      // Remove the whole placeholder line plus one adjacent newline so no blank
+      // line lingers.
+      const line = view.state.doc.lineAt(idx);
+      let from = line.from;
+      let to = line.to;
       if (to < view.state.doc.length && view.state.doc.sliceString(to, to + 1) === "\n") to += 1;
       else if (from > 0 && view.state.doc.sliceString(from - 1, from) === "\n") from -= 1;
       view.dispatch({ changes: { from, to, insert: "" } });
@@ -349,11 +428,15 @@ export function editorExtensions(opts: EditorOptions = {}): Extension[] {
     // by our theme (the native contentEditable caret was effectively invisible).
     drawSelection(),
     decorationPlugin,
+    imageSelection,
     EditorView.lineWrapping,
     ...(opts.uploadImage ? [imageDropPaste(opts.uploadImage)] : []),
-    // autoCloseFence / removeEmptyCodeBlock run before the default Enter/Backspace
-    // bindings. markdownKeymap continues `- ` lists on Enter (keeps the hyphen).
+    // deleteImageLine* and autoCloseFence / removeEmptyCodeBlock run before the
+    // default Enter/Backspace bindings. markdownKeymap continues `- ` lists on
+    // Enter (keeps the hyphen).
     keymap.of([
+      deleteImageLineBack,
+      deleteImageLineForward,
       autoCloseFence,
       removeEmptyCodeBlock,
       ...markdownKeymap,

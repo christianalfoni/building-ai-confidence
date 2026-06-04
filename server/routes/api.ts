@@ -54,8 +54,16 @@ export function registerApiRoutes(app: Application) {
       const user = await db.getUser(sessionId);
       if (!user || !ALLOWED_LOGINS.includes(user.githubLogin)) { res.status(403).json({ error: 'Forbidden' }); return; }
 
+      // raw() only parses when the content-type is image/png; anything else
+      // leaves req.body unparsed. Reject those explicitly with 415 so non-PNG
+      // uploads get a consistent "unsupported type" answer, not "empty body".
+      if (!(req.headers['content-type'] ?? '').includes('image/png')) {
+        res.status(415).json({ error: 'Only PNG images are supported' });
+        return;
+      }
       const buf = req.body;
       if (!Buffer.isBuffer(buf) || buf.length === 0) { res.status(400).json({ error: 'Empty body' }); return; }
+      // Defence in depth: confirm the bytes really are a PNG, not just the header.
       if (buf.length < PNG_MAGIC.length || !buf.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
         res.status(415).json({ error: 'Only PNG images are supported' });
         return;

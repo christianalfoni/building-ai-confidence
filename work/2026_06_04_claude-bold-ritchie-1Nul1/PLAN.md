@@ -134,3 +134,30 @@ Drop/paste handles the first PNG in a payload only (predictable positioning).
 pass. `npm run build` — client + server Build Output assembled successfully.
 Manual drag/paste verification needs `BLOB_READ_WRITE_TOKEN` + an authed session,
 to be done on the preview deploy.
+
+## Follow-up: review feedback + selected-image UX (round 2)
+
+**UX change (requested):** the image no longer flips to raw markdown when the
+caret is on its line. Instead the image stays rendered and, when the selection is
+on the line, shows a teal **selection ring** (`.cm-md-image-selected`). A
+transaction filter expands the caret to a full-line selection when it moves
+*strictly inside* the image (the two line boundaries stay passable, so arrowing
+past navigates naturally). **Backspace/Delete** while on the image line removes
+the whole line — i.e. deletes the image. New `editorExtensions.test.ts` covers
+selection expansion, boundary pass-through, code-fence exclusion, and deletion.
+
+**Copilot review fixes:**
+- `POST /api/upload` now rejects non-`image/png` content types with **415**
+  explicitly (previously fell through to a 400 "empty body").
+- Image widget/reader **skip lines inside fenced code blocks** (code stays code) —
+  fixed in both `editorExtensions.ts` and `Markdown.tsx`; covered by new tests.
+- The pending-upload swap now tracks the **unique URL** (not the whole token), so
+  editing alt text mid-upload no longer orphans the placeholder; success replaces
+  just the URL, failure deletes the line.
+- `altFromFile` **sanitizes** the filename (strips `[]()`/newlines, collapses
+  whitespace) so it can't produce invalid markdown or break the regex.
+- Copilot's note about `[alt]` vs `![alt]` in the description: implementation uses
+  standard `![alt](url)`; PR description updated to match.
+
+**Outcomes (round 2):** `./scripts/validate` — lint clean, type-check clean,
+**36/36 tests** pass. `npm run build` — Build Output assembled successfully.
