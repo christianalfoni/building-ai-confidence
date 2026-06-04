@@ -159,4 +159,19 @@ describe("fenced code block fence lines", () => {
     view.destroy();
     parent.remove();
   });
+
+  it("opens a new line below a code block that ends the document", () => {
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    // Block is the last thing in the doc — no line after the closing ```.
+    const view = createEditorView({ parent, doc: "above\n```\ncode\n```", onChange: () => {} });
+    const len = view.state.doc.length;
+    view.dispatch({ selection: { anchor: view.state.doc.line(3).from } }); // on "code"
+    expect(skipFence(view, 1, false)).toBe(true);
+    // A trailing newline was added and the caret sits on the new empty line.
+    expect(view.state.doc.toString()).toBe("above\n```\ncode\n```\n");
+    expect(view.state.selection.main.head).toBe(len + 1);
+    view.destroy();
+    parent.remove();
+  });
 });

@@ -386,8 +386,20 @@ export function skipFence(view: EditorView, dir: 1 | -1, horizontal: boolean): b
   const fences = getFenceLines(state);
   if (target < 1 || target > doc.lines || !fences.has(target)) return false;
   while (target >= 1 && target <= doc.lines && fences.has(target)) target += dir;
-  // Block sits at the document edge — nothing beyond the fence to move to.
-  if (target < 1 || target > doc.lines) return true;
+  if (target < 1 || target > doc.lines) {
+    // The fence runs to a document edge. Going down off a code block that ends
+    // the document, open a fresh line below it so there's somewhere to escape to;
+    // at the very top there's nothing to do.
+    if (dir === 1) {
+      const at = doc.length;
+      view.dispatch({
+        changes: { from: at, insert: "\n" },
+        selection: { anchor: at + 1 },
+        scrollIntoView: true,
+      });
+    }
+    return true;
+  }
   const pos = dir === 1 ? doc.line(target).from : doc.line(target).to;
   view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
   return true;
